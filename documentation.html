@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <title>FFDEditor/Documentation</title>
+  </head>
+
+  <body>
+    <h2>Documentation</h2>
+
+    <p>
+      For detailed help, troubleshooting, and an exhaustive delineation of the .ffd file format. [TODO links].   
+    </p>
+
+    <h3>
+      Help and Troubleshooting
+    </h3>
+
+    <p>Feel free to <a href="contact.html" target="_blank">reach out</a>.</p>
+
+    <h3>
+      The .ffd File Format
+    </h3>
+
+    <p>
+First, a primer on binary files.<br>
+
+Binary is a way to represent data. In our case, it will help to think of it as a way to represent numbers. Computers operate in binary, so it's a natural choice when storing data compactly. (Perhaps WildTangent also did not want us to tamper too much!)<br>
+      
+The number system we grew up knowing is called decimal. Consider a number, 1234567890. What does it mean when we write it like this? Consider its equality to: 1*10<sup>9</sup> + 2*10<sup>8</sup> + 3*10<sup>7</sup> + 4*10<sup>6</sup> + 5*10<sup>5</sup> + 6*10<sup>4</sup> + 7*10<sup>3</sup> + 8*10<sup>2</sup> + 9*10<sup>1</sup> + 0*10<sup>0</sup>. Do you see a pattern here? Each digit in the original number 1234567890 appears in this polynomial, right to left, as a coefficient for a base raised to an incremententally increasing power, beginning from 0.<br>
+
+Herein lies the crux of the difference between binary and decimal. In decimal, the base is 10, but in binary the base is 2. This is why binary is called base-2, and decimal base-10. So when we write a binary number 1001001100101100000001011010010<sub>2</sub>, what does it mean? The pattern is the same, just the base is different. This expands to 1*2<sup>30</sup> + 0*2<sup>29</sup> + 0*2<sup>28</sup> + 1*2<sup>27</sup> + 0*2<sup>26</sup> + 0*2<sup>25</sup> + 1*2<sup>24</sup> + 1*2<sup>23</sup> + 0*2<sup>22</sup> + 0*2<sup>21</sup> + 1*2<sup>20</sup> + 0*2<sup>19</sup> + 1*2<sup>18</sup> + 1*2<sup>17</sup> + 0*2<sup>16</sup> + 0*2<sup>15</sup> + 0*2<sup>14</sup> + 0*2<sup>13</sup> + 0*2<sup>12</sup> + 0*2<sup>11</sup> + 0*2<sup>10</sup> + 1*2<sup>9</sup> + 0*2<sup>8</sup> + 1*2<sup>7</sup> + 1*2<sup>6</sup> + 0*2<sup>5</sup> + 1*2<sup>4</sup> + 0*2<sup>3</sup> + 0*2<sup>2</sup> + 1*2<sup>1</sup> + 0*2<sup>0</sup>, which ends up being 1234567890<sub>10</sub>. <br>
+
+The takeaway here is that binary is just another way of representing data, and every number can be expressed in both binary and decimal.<br>
+
+That's binary, now what's a file? For our purposes, a file is a stream of bits.
+    </p>
+    <pre>
+void CCharacterSaveInstance::Save( FILE* pFile )	// open file to save to
+{
+  uint16 Size = m_TemplateName.length();
+  fwrite( &Size, sizeof( uint16 ), 1, pFile );
+  fwrite( m_TemplateName.c_str(), sizeof( char ) * Size, 1, pFile );
+
+  Size = m_OriginalTemplateName.length();
+  fwrite( &Size, sizeof( uint16 ), 1, pFile );
+  fwrite( m_OriginalTemplateName.c_str(), sizeof( char ) * Size, 1, pFile );
+
+  fwrite( &m_ExistenceTime, sizeof( float32 ), 1, pFile );
+
+  fwrite( &m_IsPlayer, sizeof( bool ), 1, pFile );
+
+  if( m_IsPlayer )
+  {
+    for( uint32 i = 0; i < KJournalStatistics; i++ )
+    {
+      int32 Value = m_JournalStats[i];
+      fwrite( &Value, sizeof( EJournalStatistic ), 1, pFile );
+    }
+  }
+
+  fwrite( &m_TransformationDuration, sizeof( float32 ), 1, pFile );
+
+  fwrite( &m_LifeDuration, sizeof( float32 ), 1, pFile );
+
+  fwrite( &m_TownTimer, sizeof( float32 ), 1, pFile );
+
+  fwrite( &m_Difficulty, sizeof( m_Difficulty ), 1, pFile );
+
+  fwrite( &m_Scale, sizeof( float32 ), 1, pFile );
+
+  fwrite( &m_Bravery, sizeof( float32 ), 1, pFile );
+
+  fwrite( &m_MasterIndex, sizeof( int32 ), 1, pFile );
+
+  fwrite( &m_DungeonSeed, sizeof( int32 ), 1, pFile );
+
+  Size = m_Name.length();
+  fwrite( &Size, sizeof( uint16 ), 1, pFile );
+  fwrite( m_Name.c_str(), sizeof( char ) * Size, 1, pFile );
+
+  Size = m_AncestorName.length();
+  fwrite( &Size, sizeof( uint16 ), 1, pFile );
+  fwrite( m_AncestorName.c_str(), sizeof( char ) * Size, 1, pFile );
+
+  fwrite( &m_Lineage, sizeof( int32 ), 1, pFile );
+
+  fwrite( &m_IsMerchant, sizeof( bool ), 1, pFile );
+
+  fwrite( &m_MerchantType, sizeof( EMerchant ), 1, pFile );
+
+  fwrite( &m_Gender, sizeof( EGender ), 1, pFile );
+
+  fwrite( &m_HeadIndex, sizeof( int32 ), 1, pFile );
+
+  fwrite( &m_HairIndex, sizeof( int32 ), 1, pFile );
+
+  fwrite( &m_LastDungeonLevel, sizeof( int32 ), 1, pFile );
+
+  fwrite( &m_HasOpenPortal, sizeof( bool ), 1, pFile );
+  fwrite( &m_PortalDepth, sizeof( uint32 ), 1, pFile );
+  fwrite( &m_PortalPosition, sizeof( D3DXVECTOR3 ), 1, pFile );
+
+  fwrite( &m_Position, sizeof( D3DXVECTOR3 ), 1, pFile );
+
+  fwrite( &m_Orientation, sizeof( D3DXMATRIX ), 1, pFile );
+
+  fwrite( &m_Level, sizeof( int32 ), 1, pFile );
+  fwrite( &m_Experience, sizeof( int32 ), 1, pFile );
+
+  fwrite( &m_HP, sizeof( float32 ), 1, pFile );
+  fwrite( &m_MaxHP, sizeof( int32 ), 1, pFile );
+
+  fwrite( &m_Fame, sizeof( int32 ), 1, pFile );
+  fwrite( &m_FameRank, sizeof( int32 ), 1, pFile );
+
+  fwrite( &m_Stamina, sizeof( float32 ), 1, pFile );
+  fwrite( &m_MaxStamina, sizeof( int32 ), 1, pFile );
+
+  fwrite( &m_Mana, sizeof( float32 ), 1, pFile );
+  fwrite( &m_MaxMana, sizeof( int32 ), 1, pFile );
+
+  fwrite( &m_ToHitBonus, sizeof( int32 ), 1, pFile );
+  fwrite( &m_OriginalToHitBonus, sizeof( int32 ), 1, pFile );
+
+  fwrite( &m_NaturalArmor, sizeof( int32 ), 1, pFile );
+  fwrite( &m_OriginalNaturalArmor, sizeof( int32 ), 1, pFile );
+
+  fwrite( &m_ExperienceAward, sizeof( int32 ), 1, pFile );
+
+  fwrite( &m_FameAward, sizeof( int32 ), 1, pFile );
+
+  fwrite( &m_UnusedStatPoints, sizeof( int32 ), 1, pFile );
+  fwrite( &m_UnusedSkillPoints, sizeof( int32 ), 1, pFile );
+
+  fwrite( &m_Unique, sizeof( bool ), 1, pFile );
+
+  for( uint32 i = 0; i < KDamageTypes; i++ )
+  {
+    fwrite( &m_DamageResistance[i], sizeof( int32 ), 1, pFile );
+  }
+
+  for( i = 0; i < KSkills; i++ )
+  {
+    int32 Point = m_SkillPoints[i];
+    fwrite( &Point, sizeof( int32 ), 1, pFile );
+  }
+
+  for( i = 0; i < KMagicSpheres; i++ )
+  {
+    for( uint32 j = 0; j < KMaximumSpellsPerSphere; j++ )
+    {
+      std::string Name( m_KnownSpells[i][j] );
+      uint16 Size = Name.length();
+      fwrite( &Size, sizeof( uint16 ), 1, pFile );
+      if( Size > 0 )
+      {
+        fwrite( Name.c_str(), sizeof( char ) * Size, 1, pFile );
+      }
+    }
+  }
+
+  Size = m_ActiveSpellName.length();
+  fwrite( &Size, sizeof( uint16 ), 1, pFile );
+  if( Size > 0 )
+  {
+    fwrite( m_ActiveSpellName.c_str(), sizeof( char ) * Size, 1, pFile );
+  }
+
+  fwrite( &m_Strength, sizeof( int32 ), 1, pFile );
+  fwrite( &m_OriginalStrength, sizeof( int32 ), 1, pFile );
+  fwrite( &m_Dexterity, sizeof( int32 ), 1, pFile );
+  fwrite( &m_OriginalDexterity, sizeof( int32 ), 1, pFile );
+  fwrite( &m_Vitality, sizeof( int32 ), 1, pFile );
+  fwrite( &m_OriginalVitality, sizeof( int32 ), 1, pFile );
+  fwrite( &m_Magic, sizeof( int32 ), 1, pFile );
+  fwrite( &m_OriginalMagic, sizeof( int32 ), 1, pFile );
+
+  fwrite( &m_WalkingSpeed, sizeof( float32 ), 1, pFile );
+  fwrite( &m_RunningSpeed, sizeof( float32 ), 1, pFile );
+
+  fwrite( &m_Gold, sizeof( int32 ), 1, pFile );
+
+  for( uint32 j = 0; j < KActivationTypes; j++ )
+  {
+    int32 Effects( m_pEffects[j].size() );
+    fwrite( &Effects , sizeof( int32 ), 1, pFile );
+    for( uint32 i = 0; i < (uint32)Effects; i++ )
+    {
+      CEffect* pEffect = m_pEffects[j][i];
+
+      Size = pEffect->Name().length();
+      fwrite( &Size, sizeof( uint16 ), 1, pFile );
+      fwrite( pEffect->Name().c_str(), sizeof( char ) * Size, 1, pFile );
+
+      Size = pEffect->Message().length();
+      fwrite( &Size, sizeof( uint16 ), 1, pFile );
+      fwrite( pEffect->Message().c_str(), sizeof( char ) * Size, 1, pFile );
+
+      bool Exclusive( pEffect->Exclusive() );
+      fwrite( &Exclusive, sizeof( bool ), 1, pFile );
+
+      EEffectType Type( pEffect->Type() );
+      fwrite( &Type, sizeof( EEffectType ), 1, pFile );
+
+      EDamageType DamageType( pEffect->DamageType() );
+      fwrite( &DamageType, sizeof( EDamageType ), 1, pFile );
+
+      bool Positive( pEffect->Positive() );
+      fwrite( &Positive, sizeof( bool ), 1, pFile );
+      EEffectActivation Activation( pEffect->Activation() );
+      fwrite( &Activation, sizeof( EEffectActivation ), 1, pFile );
+
+      int32 ChanceOfSuccess( pEffect->ChanceOfSuccess() );
+      fwrite( &ChanceOfSuccess, sizeof( int32 ), 1, pFile );
+      int32 ChanceOfSuccessBonus( pEffect->ChanceOfSuccessBonus() );
+      fwrite( &ChanceOfSuccessBonus, sizeof( int32 ), 1, pFile );
+      int32 ChanceOfSuccessBonusPercent( pEffect->ChanceOfSuccessBonusPercent() );
+      fwrite( &ChanceOfSuccessBonusPercent, sizeof( int32 ), 1, pFile );
+
+      int32 Duration( pEffect->Duration() );
+      fwrite( &Duration, sizeof( int32 ), 1, pFile );
+      int32 DurationBonus( pEffect->DurationBonus() );
+      fwrite( &DurationBonus, sizeof( int32 ), 1, pFile );
+      int32 DurationBonusPercent( pEffect->DurationBonusPercent() );
+      fwrite( &DurationBonusPercent, sizeof( int32 ), 1, pFile );
+
+      float32 Value( pEffect->Value() );
+      fwrite( &Value, sizeof( int32 ), 1, pFile );
+      float32 ValueBonus( pEffect->ValueBonus() );
+      fwrite( &ValueBonus, sizeof( int32 ), 1, pFile );
+      float32 ValueBonusPercent( pEffect->ValueBonusPercent() );
+      fwrite( &ValueBonusPercent, sizeof( int32 ), 1, pFile );
+
+      float32 Value2( pEffect->Value2() );
+      fwrite( &Value2, sizeof( int32 ), 1, pFile );
+      float32 Value2Bonus( pEffect->Value2Bonus() );
+      fwrite( &Value2Bonus, sizeof( int32 ), 1, pFile );
+      float32 Value2BonusPercent( pEffect->Value2BonusPercent() );
+      fwrite( &Value2BonusPercent, sizeof( int32 ), 1, pFile );
+
+      float32 Value3( pEffect->Value3() );
+      fwrite( &Value3, sizeof( int32 ), 1, pFile );
+      float32 Value3Bonus( pEffect->Value3Bonus() );
+      fwrite( &Value3Bonus, sizeof( int32 ), 1, pFile );
+      float32 Value3BonusPercent( pEffect->Value3BonusPercent() );
+      fwrite( &Value3BonusPercent, sizeof( int32 ), 1, pFile );
+
+      float32 PriceMultiplier( pEffect->PriceMultiplier() );
+      fwrite( &PriceMultiplier, sizeof( float32 ), 1, pFile );
+    }
+  }
+
+  uint32 SubItems = m_pItemInstances.size();
+  fwrite( &SubItems , sizeof( uint32 ), 1, pFile );
+  for( j = 0; j < SubItems; j++ )
+  {
+    m_pItemInstances[j]->Save( pFile );
+  }
+
+  uint32 Quests = m_pQuests.size();
+  fwrite( &Quests , sizeof( uint32 ), 1, pFile );
+  for( j = 0; j < Quests; j++ )
+  {
+    m_pQuests[j]->Save( pFile );
+  }
+
+  Quests = 0;
+  if( m_pMasterQuest != NULL )
+  {
+    Quests = 1;
+  }
+  fwrite( &Quests , sizeof( uint32 ), 1, pFile );
+  if( Quests == 1 )
+  {
+    m_pMasterQuest->Save( pFile );
+  }
+
+} // CCharacterSaveInstance::Save()
+    </pre>
+
+
+
+    
+  </body>
+  
+</html>

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+
+<html>
+
+  <head>
+    <title>FFDEditor/Contact</title>
+    <link href="contact.css" rel="stylesheet" type="text/css"/>
+  </head>
+
+  <body>
+    <h2>Contact</h2>
+
+    <p>You may join a community (Discord preferred) and mention FFDEditor.</p>
+    <ul>
+      <li>
+        Discord
+        <a href="https://discord.gg/r2bZDk4C3y" target="_blank">FATE Community</a>
+      </li>
+      <li>
+        Subreddit <a href="https://www.reddit.com/r/FateTheGame/" target="_blank">r/FateTheGame</a>
+      </li>
+    </ul>
+    
+    <p>
+      You may also leave a comment here, and I'll do my best to check often.
+    </p>
+    
+    <hr>
+    
+    <div id="commentArea">
+      <div id="commentArea-statement">
+        <p>
+          I want to help demystify the inner workings of the game, contribute to the playerbase’s collective knowledge, give players more freedom to experiment and test and play as they want. But I hope this website's use continues beyond that, extending also as inspiration for others wanting to work more generally with lower level under-the-hood mechanics and implementations, anyone interested in game source code, save files, and the series’ specific implementation decisions. I'm glad to take some of the first steps [credits] in making it more accessible and understandable, and showing just a bit of what's possible with the source code released.
+        </p>
+
+        <p>
+          For greater access to uncovering the games' inner workings and knowledge about binary files, save file formats, and software!
+        </p>
+
+        <label for="nameBox">Display Name:</label>
+        <textarea id="nameBox"></textarea>
+        
+        <label for="commentBox">Comment: </label>
+        <textarea id="commentBox"></textarea>
+        
+        <button id="submit">Submit</button>
+        
+      </div>
+      <div id="commentArea-comments">
+        <p id="numComments">There are no commments currently.</p>
+        <hr>
+      </div>
+    </div>
+
+    
+    <!-- Modal -->
+    <div id="thanks-modal" class="modal">
+
+      <!-- Modal content -->
+      <div class="modal-content">
+        <div id="modal-text-container">
+          <p id="thanks-modal-content">This is placeholder text hello yes I love my girlfriend Angela Xiang!</p>
+        </div>
+        <img id="robedFate" src="../img/robedFate.png">
+      </div>
+
+    </div>
+    
+
+    <!--My script-->
+    <script src="../contactScript.js"></script>
+    
+  </body>
+  
+</html>

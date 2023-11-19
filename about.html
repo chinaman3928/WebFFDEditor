@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+  <title>FFDEditor/About</title>
+</head>
+
+<body>
+  <h2>About</h2>
+
+  <h3>What is This?</h3>
+
+  <p>
+    This is a website for save (.ffd) file manipulation for WildTangent’s dungeon crawler
+    FATE series (specifically, the original, Undiscovered Realms, and Traitor Soul). But what's special about these games' save files? Well, an .ffd is a binary file—that is, it's meant to be parsed by a computer program but is more or less unreadable to us. If you've tried opening one in a text editor, you might've seen something like this. [TODO img] There is some familiar English text, but most of it looks garbled. Looking at a file like this, would you know how to, say, change your player name? Your gold amount? Add or remove item enchants?
+  </p>
+  <p>
+  In game communities, players often ask about details and possibilities regarding the game’s implementation and mechanics. Though there exists some playerbase collective of knowledge already, it is largely empirical. Plus, players and modders have to work within the confines of the executable as-is. Luckily, the source code for the first two games has been released [TODO link]! But so far, not much work has been done with it. In this case, it reveals an actually well-defined file format that used to look gibberish.
+  </p>
+
+  <p>
+    I want to help demystify the inner workings of the game, contribute to the playerbase’s collective knowledge, give players more freedom to experiment and test and play as they want. But I hope this website's use continues beyond that, extending also as inspiration for others wanting to work more generally with lower level under-the-hood mechanics and implementations, anyone interested in game source code, save files, and the series’ specific implementation decisions. I'm glad to take some of the first steps [credits] in making it more accessible and understandable, and showing just a bit of what's possible with the source code released.
+  </p>
+
+  <h3>How Does This All Work?</h3>
+  <p>
+    basic instructions and to-knows for using. basic 'it works by storing the changes you make and then at the end writing everything in the same way the game would'
+  </p>
+  <p>
+    Detailed help, troubleshooting, and an exhaustive delineation of the .ffd file format can be found in the documentation [TODO link].
+  </p>
+
+  <h3>What Risk Is There to Me?</h3>
+  <p>The only information<sup>1</sup> this website tracks is the number of times each edit is made, so I know what's
+    useful and what changes to make going forward.
+  </p>
+  <p>
+    This website can only read from files you pick. Precisely, whichever .ffd you choose in
+    addition to the default [TODO x, y, z]. Information in these files is necessary for it to function properly, but it will never modify file content (except possibly metadata such as time last accessed).
+  </p>
+  <p>
+    Something might oops. (Note there is inherent risk and guesswork in editing Traitor Soul games, since only the first two games' codebases were released.) If an error occurs or the downloaded file doesn't load correctly, don't worry—your original files are untouched. But please let me know so I can investigate.
+  </p>
+
+  <p><sup>1</sup>The one exception is that comments are saved, I hope unsurprisingly. Everything else is discarded or never collected to begin with.</p>
+
+  <h3>Credits</h3>
+  <p>
+    The game source code is the property of WildTangent. It is archived
+    <a href="https://archive.org/details/fate_source_code" target="_blank">here</a>.
+  </p>
+
+  <p>The three title screen images (OG, UR, TS) shown on the main page belong to WildTangent. I found them on my
+    WildTangent installation through the path '[Game Directory]/common/local_assets/img'.</p>
+
+  <p>Thanks to Leirach (link TODO) and their website for general inspiration.</p>
+
+  <p>Infinite thank yous to the few but dear people in my life for their support.</p>
+
+</body>
+
+</html>
