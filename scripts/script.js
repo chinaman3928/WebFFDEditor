@@ -4,6 +4,44 @@
 //TODO uint32 and int32 confusions?
 
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+const gameSelect_og = document.getElementById("gameSelect-og");
+const gameSelect_ur = document.getElementById("gameSelect-ur");
+const gameSelect_ts = document.getElementById("gameSelect-ts");
+
+let SELECTED = "gameSelect-og";
+document.getElementById(SELECTED).classList.add("gameSelect-selected");
+
+gameSelect_og.addEventListener("click", clickGame);
+gameSelect_og.addEventListener("mouseover", hoverGame); gameSelect_og.addEventListener("mouseout", hoverGame);
+gameSelect_ur.addEventListener("click", clickGame);
+gameSelect_ur.addEventListener("mouseover", hoverGame); gameSelect_ur.addEventListener("mouseout", hoverGame);
+gameSelect_ts.addEventListener("click", clickGame);
+gameSelect_ts.addEventListener("mouseover", hoverGame); gameSelect_ts.addEventListener("mouseout", hoverGame);
+function clickGame(ev)
+{
+	if (ev.target.id != SELECTED)
+	{
+		document.getElementById(SELECTED).classList.remove("gameSelect-selected");
+		document.getElementById(SELECTED = ev.target.id).classList.add("gameSelect-selected")
+	}
+}
+function hoverGame(ev)
+{
+	const classList = document.getElementById(ev.target.id).classList;
+	if (ev.type == "mouseout")
+		classList.remove("gameSelect-hover");
+	else if (!classList.contains("gameSelect-selected"))
+		classList.add("gameSelect-hover");
+}
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// PARSING
+
 GAME = "UR";
 STEAM_GOG = false;
 
@@ -598,6 +636,7 @@ function parse() {
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
+// WRITING
 
 function downloadFile(clickEv) {
 	wobj.i = 0;

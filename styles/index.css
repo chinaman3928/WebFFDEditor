@@ -45,8 +45,12 @@ html {
   border: 2px solid transparent;
 }
 
-.gameSelect-img:hover {
+.gameSelect-hover {
   border: 2px solid red;
+}
+
+.gameSelect-selected {
+  border: 2px solid green;
 }
 
 #datSelect {
