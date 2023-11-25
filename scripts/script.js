@@ -34,7 +34,11 @@ function hoverGame(ev)
 }
 
 let DISTRIBUTION = "SG"
-document.getElementById("distributionSelect").addEventListener("onchange", (ev) => { DISTRIBUTION = ev.target.value; } );
+document.getElementById("distributionSelect").addEventListener("change", changeDistribution);
+function changeDistribution(ev)
+{
+	DISTRIBUTION = ev.target.value;
+}	
 
 
 
