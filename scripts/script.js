@@ -6,25 +6,22 @@
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-const gameSelect_og = document.getElementById("gameSelect-og");
-const gameSelect_ur = document.getElementById("gameSelect-ur");
-const gameSelect_ts = document.getElementById("gameSelect-ts");
+const gameSelectOG = document.getElementById("OG");
+const gameSelectUR = document.getElementById("UR");
+const gameSelectTS = document.getElementById("TS");
 
-let SELECTED = "gameSelect-og";
-document.getElementById(SELECTED).classList.add("gameSelect-selected");
+let GAME = "OG";
+document.getElementById(GAME).classList.add("gameSelect-selected");
 
-gameSelect_og.addEventListener("click", clickGame);
-gameSelect_og.addEventListener("mouseover", hoverGame); gameSelect_og.addEventListener("mouseout", hoverGame);
-gameSelect_ur.addEventListener("click", clickGame);
-gameSelect_ur.addEventListener("mouseover", hoverGame); gameSelect_ur.addEventListener("mouseout", hoverGame);
-gameSelect_ts.addEventListener("click", clickGame);
-gameSelect_ts.addEventListener("mouseover", hoverGame); gameSelect_ts.addEventListener("mouseout", hoverGame);
+gameSelectOG.addEventListener("click", clickGame); gameSelectOG.addEventListener("mouseover", hoverGame); gameSelectOG.addEventListener("mouseout", hoverGame);
+gameSelectUR.addEventListener("click", clickGame); gameSelectUR.addEventListener("mouseover", hoverGame); gameSelectUR.addEventListener("mouseout", hoverGame);
+gameSelectTS.addEventListener("click", clickGame); gameSelectTS.addEventListener("mouseover", hoverGame); gameSelectTS.addEventListener("mouseout", hoverGame);
 function clickGame(ev)
 {
-	if (ev.target.id != SELECTED)
+	if (ev.target.id != GAME)
 	{
-		document.getElementById(SELECTED).classList.remove("gameSelect-selected");
-		document.getElementById(SELECTED = ev.target.id).classList.add("gameSelect-selected")
+		document.getElementById(GAME).classList.remove("gameSelect-selected");
+		document.getElementById(GAME = ev.target.id).classList.add("gameSelect-selected")
 	}
 }
 function hoverGame(ev)
@@ -36,14 +33,13 @@ function hoverGame(ev)
 		classList.add("gameSelect-hover");
 }
 
+let DISTRIBUTION = "SG"
+document.getElementById("distributionSelect").addEventListener("onchange", (ev) => { DISTRIBUTION = ev.target.value; } );
 
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // PARSING
-
-GAME = "UR";
-STEAM_GOG = false;
 
 const robj =
 {
@@ -169,7 +165,7 @@ function parseItem() {
 
 		ret.version = parseUint16();
 		if (ret.version != 1)
-			console.log(`${STEAM_GOG ? 'steam_gog' : 'wt'}UR item version not 1, instead ${ret.version} (uint16 @ ${robj.i - 2})`);
+			console.log(`${DISTRIBUTION == "SG" ? 'steam_gog' : 'wt'}UR item version not 1, instead ${ret.version} (uint16 @ ${robj.i - 2})`);
 	}
 
 	ret.baseName = parseString(16);
@@ -243,7 +239,7 @@ function parseQuest() {
 			parsingError(`UR quest sentinel not -1, instead ${ret.sentinel} (int16 @ ${robj.i - 2})`);
 		ret.version = parseUint16();
 		if (ret.version != 4)
-			console.log(`${STEAM_GOG ? 'steam_gog' : 'wt'}UR quest version not 4, instead ${ret.version} (uint16 @ ${robj.i - 2})`);
+			console.log(`${DISTRIBUTION == "SG" ? 'steam_gog' : 'wt'}UR quest version not 4, instead ${ret.version} (uint16 @ ${robj.i - 2})`);
 	}
 
 	ret.level = parseInt32();
@@ -315,9 +311,9 @@ function parseCharacter() {
 			parsingError(`UR character sentinel not -1, instead ${ret.sentinel} (int16 @ ${robj.i - 2})`);
 
 		ret.version = parseUint16();
-		const expectVersion = STEAM_GOG ? 9 : 8;
+		const expectVersion = DISTRIBUTION == "SG" ? 9 : 8;
 		if (ret.version != expectVersion)
-			console.log(`${STEAM_GOG ? 'steam_gog' : 'wt'}UR character version not ${expectVersion}, instead ${ret.version} (uint16 @ ${robj.i - 2})`);
+			console.log(`${DISTRIBUTION == "SG" ? 'steam_gog' : 'wt'}UR character version not ${expectVersion}, instead ${ret.version} (uint16 @ ${robj.i - 2})`);
 	}
 
 	ret.templateName = parseString(16);
@@ -334,7 +330,7 @@ function parseCharacter() {
 
 	if (ret.isPlayer) {
 		ret.journalStats = [];
-		const nStats = STEAM_GOG ? (GAME == "OG" ? 17 : 19) : 16;
+		const nStats = DISTRIBUTION == "SG" ? (GAME == "OG" ? 17 : 19) : 16;
 		for (let i = 0; i < nStats; ++i)
 			ret.journalStats.push(parseInt32());
 	}
@@ -527,7 +523,7 @@ function parseHistory() {
 			parsingError(`UR history sentinel not -1, instead ${ret.sentinel} (int16 @ ${robj.i - 2})`);
 		ret.version = parseUint16();
 		if (ret.version != 1)
-			console.log(`${STEAM_GOG ? 'steam_gog' : 'wt'}UR history version not 1, instead ${ret.version} (uint16 @ ${robj.i - 2})`);
+			console.log(`${DISTRIBUTION == "SG" ? 'steam_gog' : 'wt'}UR history version not 1, instead ${ret.version} (uint16 @ ${robj.i - 2})`);
 	}
 
 	ret.level = parseUint32();
@@ -572,7 +568,7 @@ function parse() {
 
 		robj.version = parseUint32();
 		if (robj.version != 2)
-			console.log(`${STEAM_GOG ? 'steam_gog' : 'wt'}UR file version not 2, instead ${version} (uint32 @ ${robj.i - 4})`);
+			console.log(`${DISTRIBUTION == "SG" ? 'steam_gog' : 'wt'}UR file version not 2, instead ${version} (uint32 @ ${robj.i - 4})`);
 	}
 
 	robj.mapVisible = parseBool();
@@ -601,7 +597,7 @@ function parse() {
 	for (let i = 0; i < n; ++i)
 		robj.discoveryHistory.push(parseHistory());
 
-	if (STEAM_GOG && GAME == "OG") {
+	if (DISTRIBUTION == "SG" && GAME == "OG") {
 		robj.gemsCollected = parseString(16);
 		robj.fishCaught = parseString(16);
 		//robj.disabledAchievements = parseBool(); //TODO however it seems nothing has this?
@@ -626,7 +622,7 @@ function parse() {
 
 		//TODO TODO TODO angela hardcore check. what to do?
 
-		if (STEAM_GOG) {
+		if (DISTRIBUTION == "SG") {
 			robj.fishList = parseString(16);
 			robj.cardList = parseString(16);
 			//robj.disabledAchievements = parseBool(); //TODO however it seems nothing has this?
@@ -756,7 +752,7 @@ function writeItem(it) {
 			logError(`UR item sentinel not -1, instead ${it.sentinel} (int16 @ ${wobj.i})`);
 		writeInt16(it.sentinel);
 		if (it.version != 1)
-			logWarning(`${STEAM_GOG ? 'steam_gog' : 'wt'}UR item version not 1, instead ${it.version} (uint16 @ ${wobj.i})`);
+			logWarning(`${DISTRIBUTION == "SG" ? 'steam_gog' : 'wt'}UR item version not 1, instead ${it.version} (uint16 @ ${wobj.i})`);
 		writeUint16(it.version);
 	}
 
@@ -815,7 +811,7 @@ function writeQuest(q) {
 			logError(`UR quest sentinel not -1, instead ${q.sentinel} (int16 @ ${wobj.i})`);
 		writeInt16(q.sentinel);
 		if (q.version != 4)
-			logWarning(`${STEAM_GOG ? 'steam_gog' : 'wt'}UR quest version not 4, instead ${q.version} (uint16 @ ${wobj.i})`);
+			logWarning(`${DISTRIBUTION == "SG" ? 'steam_gog' : 'wt'}UR quest version not 4, instead ${q.version} (uint16 @ ${wobj.i})`);
 		writeUint16(q.version);
 	}
 
@@ -868,9 +864,9 @@ function writeCharacter(c) {
 		if (c.sentinel != -1)
 			logError(`UR character sentinel not -1, instead ${c.sentinel} (int16 @ ${wobj.i})`);
 		writeInt16(c.sentinel);
-		const expectVersion = STEAM_GOG ? 9 : 8;
+		const expectVersion = DISTRIBUTION == "SG" ? 9 : 8;
 		if (c.version != expectVersion)
-			logWarning(`${STEAM_GOG ? 'steam_gog' : 'wt'}UR character version not ${expectVersion}, instead ${version} (uint16 @ ${wobj.i})`);
+			logWarning(`${DISTRIBUTION == "SG" ? 'steam_gog' : 'wt'}UR character version not ${expectVersion}, instead ${version} (uint16 @ ${wobj.i})`);
 		writeUint16(c.version);
 	}
 
@@ -1038,7 +1034,7 @@ function writeHistory(h) {
 			logError(`UR history sentinel not -1, instead ${h.sentinel} (int16 @ ${wobj.i})`);
 		writeInt16(h.sentinel);
 		if (h.version != 1)
-			logWarning(`${STEAM_GOG ? 'steam_gog' : 'wt'}UR history version not 1, instead ${h.version} (uint16 @ ${wobj.i})`);
+			logWarning(`${DISTRIBUTION == "SG" ? 'steam_gog' : 'wt'}UR history version not 1, instead ${h.version} (uint16 @ ${wobj.i})`);
 		writeUint16(h.version);
 	}
 
@@ -1072,7 +1068,7 @@ function write() {
 			logError(`UR sentinel not -1, instead ${robj.sentinel} (int32 @ ${wobj.i})`);
 		writeInt32(robj.sentinel);
 		if (robj.version != 2)
-			logWarning(`${STEAM_GOG ? 'steam_gog' : 'wt'}UR version not 2, instead ${robj.version} (uint32 @ ${wobj.i})`);
+			logWarning(`${DISTRIBUTION == "SG" ? 'steam_gog' : 'wt'}UR version not 2, instead ${robj.version} (uint32 @ ${wobj.i})`);
 		writeUint32(robj.version);
 	}
 
@@ -1100,7 +1096,7 @@ function write() {
 	for (let i = 0; i < robj.discoveryHistory.length; ++i)
 		writeHistory(robj.discoveryHistory[i]);
 
-	if (STEAM_GOG && GAME == "OG") {
+	if (DISTRIBUTION == "SG" && GAME == "OG") {
 		writeString(robj.gemsCollected, 16);
 		writeString(robj.fishCaught, 16);
 		//writeBool(robj.disabledAchievements); //TODO however it seems nothing has this?
@@ -1135,7 +1131,7 @@ function write() {
 		}
 
 		//Dream Pet Achivement
-		if (STEAM_GOG) {
+		if (DISTRIBUTION == "SG") {
 			writeString(robj.fishList, 16);
 			writeString(robj.cardList, 16);
 		}
