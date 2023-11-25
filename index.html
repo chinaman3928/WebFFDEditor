@@ -2,101 +2,101 @@
 <html>
 
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width">
-  <title>FFDEditor</title>
-  <link href="styles/index.css" rel="stylesheet" type="text/css" />
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width">
+	<title>FFDEditor</title>
+	<link href="styles/index.css" rel="stylesheet" type="text/css" />
 </head>
 
 <body>
-  <div id="header">
-    <div id="header-title">
-      <p>FFDEDitor</p>
-    </div>
+	<div id="header">
+		<div id="header-title">
+			<p>FFDEDitor</p>
+		</div>
 
-    <div id="header-sectionNav">
-      <a href="#section-player">Player</a>
-      <a href="#section-pets">Pets</a>
-      <a href="#section-quests">Quests</a>
-      <a href="#section-histories">Histories</a>
-      <a href="#section-misc">Misc</a>
-    </div>
+		<div id="header-sectionNav">
+			<a href="#section-player">Player</a>
+			<a href="#section-pets">Pets</a>
+			<a href="#section-quests">Quests</a>
+			<a href="#section-histories">Histories</a>
+			<a href="#section-misc">Misc</a>
+		</div>
 
-    <div id="header-externalNav">
-      <a href="./sandbox/about.html" title="About">
-        <img class="headerImg" src="./img/i.png">
-      </a>
-      <a href="./sandbox/documentation.html" title="Documentation">
-        <img class="headerImg" src="./img/doc.png">
-      </a>
-      <a href="./sandbox/announcements.html" title="Announcements">
-        <img class="headerImg" src="./img/announce.png">
-      </a>
-      <a href="./sandbox/contact.html" title="Contact"> 
-        <img class="headerImg" src="./img/mail.png">
-      </a>
-      <div id="lightDarkToggle" title="Toggle Dark">
-        <img class="headerImg" src="./img/leftWhite.png">
-      </div>
-      <button id="toggleAnimation">Reduce<br>Motion</button>
-    </div> 
-  </div>
+		<div id="header-externalNav">
+			<a href="about.html" title="About">
+				<img class="headerImg" src="./img/i.png">
+			</a>
+			<a href="documentation.html" title="Documentation">
+				<img class="headerImg" src="./img/doc.png">
+			</a>
+			<a href="announcements.html" title="Announcements">
+				<img class="headerImg" src="./img/announce.png">
+			</a>
+			<a href="contact.html" title="Contact"> 
+				<img class="headerImg" src="./img/mail.png">
+			</a>
+			<div id="lightDarkToggle" title="Toggle Dark">
+				<img class="headerImg" src="./img/leftWhite.png">
+			</div>
+			<button id="toggleAnimation">Reduce<br>Motion</button>
+		</div> 
+	</div>
 
-  <div id="gameSelect">
-    <img class="gameSelect-img" src="./img/og.png">
-    <img class="gameSelect-img" src="./img/ur.png">
-    <img class="gameSelect-img" src="./img/ts.png">
-  </div>
+	<div id="gameSelect">
+		<img class="gameSelect-img" src="./img/og.png">
+		<img class="gameSelect-img" src="./img/ur.png">
+		<img class="gameSelect-img" src="./img/ts.png">
+	</div>
 
-  <p>Select your .FFD file.</p>
-  <input type="file" style="display:block">
-  
-  <p style="display:inline-block">On what distribution?</p>
-  <select style="display:block">
-    <option>Steam/GOG.com</option>
-    <option>WildTangent</option>
-  </select>
+	<p>Select your .FFD file.</p>
+	<input type="file" style="display:block">
+	
+	<p style="display:inline-block">On what distribution?</p>
+	<select style="display:block">
+		<option>Steam/GOG.com</option>
+		<option>WildTangent</option>
+	</select>
 
-  <div id="datSelect"> 
-    <div>
-      <p>Your MONSTERS folder:</p>
-      <input type="file" style="display:block">
-    </div>
+	<div id="datSelect"> 
+		<div>
+			<p>Your MONSTERS folder:</p>
+			<input type="file" style="display:block">
+		</div>
 
-    <div>
-      <p>Your ITEMS folder:</p>
-      <input type="file" style="display:block">
-    </div>
+		<div>
+			<p>Your ITEMS folder:</p>
+			<input type="file" style="display:block">
+		</div>
 
-    <div>
-      <p>Your SPELLS folder:</p>
-      <input type="file" style="display:block">
-    </div>
-  </div>
+		<div>
+			<p>Your SPELLS folder:</p>
+			<input type="file" style="display:block">
+		</div>
+	</div>
 
-  <div id="section-player" class="revealable">
-    <p>section-player</p>
-  </div> 
+	<div id="section-player" class="revealable">
+		<p>section-player</p>
+	</div> 
 
-  <div id="section-pets" class="revealable">
-    <p>section-pets</p>
-  </div>
+	<div id="section-pets" class="revealable">
+		<p>section-pets</p>
+	</div>
 
-  <div id="section-quests" class="revealable">
-     <p>section-quests</p>
-  </div>
+	<div id="section-quests" class="revealable">
+		 <p>section-quests</p>
+	</div>
 
-  <div id="section-histories" class="revealable">
-     <p>section-histories</p>
-  </div>
+	<div id="section-histories" class="revealable">
+		 <p>section-histories</p>
+	</div>
 
-  <div id="section-misc" class="revealable">
-     <p>section-misc</p>
-  </div>
+	<div id="section-misc" class="revealable">
+		 <p>section-misc</p>
+	</div>
 
-  <!--my script-->
-  <script src="scripts/indexScript.js"></script>
-  
+	<!--my script-->
+	<script src="scripts/indexScript.js"></script>
+	
 </body>
 
 </html>
