@@ -27,6 +27,7 @@ function nextSpell(dv, i)
 }
 
 //TODO casing and making more robust
+//TODO TODO TODO lmao you can have nested tags which you need to skip stack-like
 //ASSUMES no superfluous whitespace in and between tag/attribute : value pairs
 //ASSUMES each SPELL has exactly one NAME and exactly one SPHERE
 function parseSpellDat(dv, m)
