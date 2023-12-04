@@ -2,8 +2,13 @@ const SPELL_TAG = "[SPELL]";
 const NAME_ATTR = "<NAME>:";
 const SPHERE_ATTR = "<SPHERE>:";
 
+//TODO a global stack for tags
+
 function nextNameOrSphere(dv, i)
 {
+    //TODO if you come across a [] then there is something up
+    // if a subtag then add to stackTag adnd ignore those
+    // if an end SPELL which would empty the stackTag, then thats the end so stop looking
     let j = 0, k = 0;
     while (i < dv.byteLength && j < NAME_ATTR.length && k < SPHERE_ATTR.length)
     {
@@ -21,6 +26,7 @@ function nextNameOrSphere(dv, i)
 
 function nextSpell(dv, i)
 {
+    //TODO but only if the [SPELL] you find is at a time when the tagStack is empty
     for (let j = 0; i < dv.byteLength && j < SPELL_TAG.length;)
         j = (dv[i++] == SPELL_TAG[j]) ? j + 1 : 0;
     return i;
@@ -32,6 +38,7 @@ function nextSpell(dv, i)
 //ASSUMES each SPELL has exactly one NAME and exactly one SPHERE
 function parseSpellDat(dv, m)
 {
+    //TDDO default values for attributes you dont find
     for (let i = nextSpell(dv, 0); i < dv.byteLength; i = nextSpell(dv, i))
     {
         const firstAttr = nextNameOrSphere(dv, i);
