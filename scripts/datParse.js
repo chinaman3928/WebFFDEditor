@@ -1,74 +1,67 @@
-const SPELL_TAG = "[SPELL]";
-const NAME_ATTR = "<NAME>:";
-const SPHERE_ATTR = "<SPHERE>:";
 
-//TODO a global stack for tags
 
-function nextNameOrSphere(dv, i)
+//TODO you can try to optimize within tokenizeNextLine() where if the first token cannot get you anything
+// ie is not [SPELL], <NAME>, <SPHERE>, [something], [/.*]
+// then you know not to continue tokenizing, just go to next line
+// similarly, if you found [SPELL] or [something] or [/.*] then you can also go til next line
+
+//also can optimize by ignoring everything until back in depth 0
+//also can optimize by beelining til end of a nested subgroup
+//also can optimize by ignoring line if the first token.size() < 3
+function parseSpellDat(dv, i, m)
 {
-    //TODO if you come across a [] then there is something up
-    // if a subtag then add to stackTag adnd ignore those
-    // if an end SPELL which would empty the stackTag, then thats the end so stop looking
-    let j = 0, k = 0;
-    while (i < dv.byteLength && j < NAME_ATTR.length && k < SPHERE_ATTR.length)
+    let hasSpell = false;
+    let depth = 0, inSpell = false;
+    let theName = "", lookingForName = true;
+    let theSphere = K_MAGIC_CHARM, lookingForSphere = true;
+
+    while (true)
     {
-        let inc = false;
-        j += (inc = dv[i] == NAME_ATTR[j]);
-        k += (inc = dv[i++] == SPHERE_ATTR[k]);
-        if (!inc) j = k = 0;
+        let tokens = [];
+        if ((i = tokenizeNextLine(dv, i, tokens)) >= dv.byteLength)
+            break;
+        if (tokens.empty() || tokens[0].size() < 3)
+            continue;
+        
+        if (inSpell && depth == 1 && tokens[0].front() == '<' && tokens[0].back() == '>')
+        {
+            if (tokens.size() == 1)
+                return `The line up to but not including ${i} has too few tokens.`;
+
+            if (lookingForName && tokens[0].insideSubstringEquals("NAME"))
+            {
+                theName = tokens[0].insideSubstring();
+                lookingForName = false;
+            }
+            else if (lookingForSphere && tokens[0].insideSubstringEquals("SPHERE"))
+            {
+                theSphere = tokens[0].insideSubstring();
+                lookingForSphere = false;
+            }
+        }
+        else if (tokens[0][0] == '[' && tokens[0][1] == '/' && tokens[0].back() == ']')
+        {
+            if (depth == 0)
+                return `The line up to but not including ${i} has an end tag which closes nothing.`;
+            if (depth == 1 && inSpell)
+            {
+                m.set(theName, theSphere);
+                inSpell = false;
+                theName = "", lookingForName = true;
+                theSphere = K_MAGIC_CHARM, lookingForSphere = true;
+            }
+            --depth;
+        }
+        else if (tokens[0].front() == '[' && tokens[0].back() == ']')
+        {
+            if (depth == 0 && tokens[0].insideSubstringEquals("SPELL"))
+            {
+                hasSpell = inSpell = true;
+            }
+            ++depth;
+        }
     }
-    
-    let ret = {i: i, which: (j == NAME_ATTR.length) ? "N" : (k == SPHERE_ATTR.length ? "S" : null), val: ""};
-    while (ret.i < dv.byteLength && !dv[ret.i].isWhitespace())
-        ret.val += dv[ret.i++];
-    return ret;
-}
-
-function nextSpell(dv, i)
-{
-    //TODO but only if the [SPELL] you find is at a time when the tagStack is empty
-    for (let j = 0; i < dv.byteLength && j < SPELL_TAG.length;)
-        j = (dv[i++] == SPELL_TAG[j]) ? j + 1 : 0;
-    return i;
-}
-
-//TODO casing and making more robust
-//TODO TODO TODO lmao you can have nested tags which you need to skip stack-like
-//ASSUMES no superfluous whitespace in and between tag/attribute : value pairs
-//ASSUMES each SPELL has exactly one NAME and exactly one SPHERE
-function parseSpellDat(dv, m)
-{
-    //TDDO default values for attributes you dont find
-    for (let i = nextSpell(dv, 0); i < dv.byteLength; i = nextSpell(dv, i))
-    {
-        const firstAttr = nextNameOrSphere(dv, i);
-        const secondAttr = nextNameOrSphere(dv, firstAttr.i);
-        if (firstAttr.which == "N") m.set(firstAttr.val, secondAttr.val);
-        else                        m.set(secondAttr.val, firstAttr.val);
-        i = secondAttr.i;
-    }
-}
-
-
-///////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
-function parseLine(dv, i)
-{
-    while (dv[i] == "\t" || dv[i] == ":" || dv[i] == "\r")
-        ++i;
-
-    if (dv[i] == "\n")
-        newLine;
-
-    if (dv[i] == "[")
-    {
-        let nextDelim = getNextDelimOrComment(dv, i + 1);
-        if ()
-    }
-    else if (dv[i] == "<")
-        soethingElse;
-    else
-        nothing for us here;
+    if (hasSpell)
+        m.set(theName, theSphere);
+    return "";
 }
