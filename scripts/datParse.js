@@ -48,3 +48,27 @@ function parseSpellDat(dv, m)
         i = secondAttr.i;
     }
 }
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+function parseLine(dv, i)
+{
+    while (dv[i] == "\t" || dv[i] == ":" || dv[i] == "\r")
+        ++i;
+
+    if (dv[i] == "\n")
+        newLine;
+
+    if (dv[i] == "[")
+    {
+        let nextDelim = getNextDelimOrComment(dv, i + 1);
+        if ()
+    }
+    else if (dv[i] == "<")
+        soethingElse;
+    else
+        nothing for us here;
+}
