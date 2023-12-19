@@ -79,3 +79,48 @@ function parseSpellDat(dv, i, m)
         m.set(theName, theSphere);
     return "";
 }
+
+//ITEMS
+
+// EGrade				m_Grade;
+// std::string			m_Name;
+// std::string			m_EnterableName;
+// std::string			m_UseDescription;
+// bool				m_IsUnique;
+// bool				m_IsArtifact;
+// bool				m_Collideable;
+// bool				m_Useable;
+// bool				m_Purchaseable;
+// float32				m_ScaleVariation;
+// EItemType			m_Type;
+// EItemCategory		m_Category;
+// int32				m_ToHitBonus;
+// int32				m_Value;
+// int32				m_Uses;
+// uint32				m_MinimumArmorBonus;
+// uint32				m_MaximumArmorBonus;
+// uint32				m_MinimumDamage;
+// uint32				m_MaximumDamage;
+// int32				m_MerchantMinimum;
+// int32				m_MerchantMaximum;
+// bool				m_Takeable;
+// bool				m_Destructible;
+// bool				m_Identified;
+// ETarget				m_Target;
+// EAttackSpeed		m_Speed;
+// std::vector< CEffect* >			m_pEffects;
+// std::vector< EStatistic >		m_RequirementStatistic;
+// std::vector< uint32 >			m_RequirementValue;
+// std::string			m_IconPath;
+// std::string			m_IconAlphaPath;
+// uint32				m_IconWidth;
+// uint32				m_IconHeight;
+// std::vector< EDamageType >		m_DamageBonus;
+// std::vector< int32 >			m_DamageBonusValue;
+// int32				m_Rarity;
+// int32				m_FishingRarity;
+// int32				m_MinimumDepth;
+// int32				m_MaximumDepth;
+// int32				m_MinimumFishingDepth;
+// int32				m_MaximumFishingDepth;
+// uint32				m_Sockets;

@@ -41,6 +41,68 @@ function changeDistribution(ev)
 }	
 
 
+const ffdSelector = document.getElementById("ffdSelector");
+const monstersSelector = document.getElementById("datSelect-monsters");
+const itemsSelector = document.getElementById("datSelect-items");
+const spellsSelector = document.getElementById("datSelect-spells");
+
+const runButton = document.getElementById("runButton");	
+runButton.addEventListener("click", run);
+
+//OG
+// MONSTERS	./MONSTERS/en-US/monsters.dat
+// ITEMS	./ITEMS/en-US/items.dat
+// SPELLS	./SPELLS/en-US/spells.dat
+
+//UR
+// MONSTERS	./MONSTERS/en-US/monsters.dat	./REALMS/Goldshare/MONSTERS/en-US/		..Druantia.. ..Typhon.. ..Temple..
+// ITEMS	./ITEMS/en-US/items.dat			./REALMSGoldshareITEMS/en-us/items.dat
+// SPELLS	./SPELLS/en-US/spells.dat		./REALMS/Goldshare/SPELLS/en-US/spells.dat
+
+//TS
+// MONSTERS	./	./REALMS/Goldshare/MONSTERS	./REALMS/Druantia/	./REALMS/Chamber/	./REALMS/Typhon/	./REALMS/Temple/
+// ITEMS	./	./REALMS/URGold/MONSTERS	./REALMS/Goldshare/ 
+// SPELLS	./	./REALMS/URGold/MONSTERS	./REALMS/Goldshare/ 
+
+//TODO warn if the number of files doesnt match what i think is the default?
+//TODO help hint hover
+//TODO mark the wrong things?
+function preRun(ev)
+{
+	let errMsgs = [];
+
+	if (!ffdSelector.files.length)
+		errMsgs.push("No FFD file selected.");
+	else
+		parseFFD(ffdSelector.files[0]);
+
+	if (!monstersSelector.files.length)
+		errMsgs.push("No monster.dat selected.");
+	else
+		for (const monstersDat in monstersSelector.files)
+			parseMonstersDat(monsterDat, m);
+
+	if (!itemsSelector.files.length)
+		errMsgs.push("No items.dat selected.");
+	else
+		for (const itemsDat in itemsSelector.files)
+			parseItemsDat(itemsDat, m);
+
+	if (!spellsSelector.files.length)
+		errMsgs.push("No spells.dat selected.");
+	else
+		for (const spellsDat in spellsSelector.files)
+			parseSpellsDat(spellsDat, m);
+
+	if (errMsgs.length)
+	{
+		alert(["Failed to run for these reasons (no changes made):", ...errMsgs].join('\n - '))
+		return;
+	}
+
+	run();
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // PARSING
@@ -59,29 +121,28 @@ const robj =
 	cardList: undefined          //UR steam
 };
 
-const ffdSelector = document.getElementById("ffdSelector");
-ffdSelector.addEventListener("input", parseFile);
+// ffdSelector.addEventListener("input", parseFile);
 
-function parseFile(inputEvent) {
-	if (!inputEvent.target.files.length)
-		return;
-	const reader = new FileReader();
-	reader.onload = function(loadEvent) {
-		robj.i = 0;
-		robj.view = new DataView(loadEvent.target.result);
-		parse();
+// function parseFile(inputEvent) {
+// 	if (!inputEvent.target.files.length)
+// 		return;
+// 	const reader = new FileReader();
+// 	reader.onload = function(loadEvent) {
+// 		robj.i = 0;
+// 		robj.view = new DataView(loadEvent.target.result);
+// 		parse();
 
-		//TODO add button for download once parse() has finished
-		const downloadButton = document.createElement("button");
-		downloadButton.innerHTML = "Download";
-		downloadButton.addEventListener("click", downloadFile);
-		document.body.appendChild(downloadButton);
-	}
-	reader.onerror = function(errorEvent) {
-		alert(`Error reading ${inputEvent.target.files[0].name}! Try again.`)
-	};
-	reader.readAsArrayBuffer(inputEvent.target.files[0]);
-}
+// 		//TODO add button for download once parse() has finished
+// 		const downloadButton = document.createElement("button");
+// 		downloadButton.innerHTML = "Download";
+// 		downloadButton.addEventListener("click", downloadFile);
+// 		document.body.appendChild(downloadButton);
+// 	}
+// 	reader.onerror = function(errorEvent) {
+// 		alert(`Error reading ${inputEvent.target.files[0].name}! Try again.`)
+// 	};
+// 	reader.readAsArrayBuffer(inputEvent.target.files[0]);
+// }
 
 function parseString(bits) {
 	const n = (bits == 16) ? parseUint16() : parseUint32();
