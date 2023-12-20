@@ -1266,12 +1266,15 @@ function parseSpellsDat(spellsDat)
 	reader.readAsArrayBuffer(spellsDat);
 }
 
+//TODO uploads reset whats there, so you cant upload A/spells.dat and then cd into B then B/spells.dat
+// or at least not easily, so override that behavior. but then that means you will need to have a clear button
+//TODO also if there are multiple occurrences of same name, then what does game do?
+//TODO still have to test nesting
 //TODO are attack defense charm values in dat case insensitive?
 const K_MAGIC_CHARM = 2;
 function doParseSpellsDat(dv)
 {
 	let i = 0;
-    let hasSpell = false;
     let depth = 0, inSpell = false;
     let theName = "", lookingForName = true;
     let theSphere = K_MAGIC_CHARM, lookingForSphere = true;
@@ -1289,9 +1292,9 @@ function doParseSpellsDat(dv)
             if (tokens.length == 1)
                 return `The line up to but not including ${i} has too few tokens.`;
             if (lookingForName && tokens[0].slice(1, -1) == "NAME")
-                theName = tokens[0].slice(1, -1), lookingForName = false;
+                theName = tokens[1], lookingForName = false;
             else if (lookingForSphere && tokens[0].slice(1, -1) == "SPHERE")
-                theSphere = tokens[0].slice(1, -1), lookingForSphere = false;
+                theSphere = tokens[1], lookingForSphere = false;
         }
         else if (tokens[0][0] == '[' && tokens[0][1] == '/' && tokens[0].at(-1) == ']')
         {
@@ -1299,7 +1302,7 @@ function doParseSpellsDat(dv)
                 return `The line up to but not including ${i} has an end tag which closes nothing.`;
             if (depth == 1 && inSpell)
             {
-                m.set(theName, theSphere); //TODO validation etc
+            SPELLS_INFO.set(theName, theSphere); //TODO validation etc
                 inSpell = false;
                 theName = "", lookingForName = true;
                 theSphere = K_MAGIC_CHARM, lookingForSphere = true;
@@ -1309,13 +1312,13 @@ function doParseSpellsDat(dv)
         else if (tokens[0][0] == '[' && tokens[0].at(-1) == ']')
         {
             if (depth == 0 && tokens[0].slice(1, -1) == "SPELL")
-                hasSpell = inSpell = true;
+                inSpell = true;
             ++depth;
         }
     }
 
-    if (hasSpell)
-        m.set(theName, theSphere);
+    if (inSpell)
+        SPELLS_INFO.set(theName, theSphere);
     return "";
 }
 
