@@ -47,7 +47,12 @@ const itemsSelector = document.getElementById("datSelect-items");
 const spellsSelector = document.getElementById("datSelect-spells");
 
 const runButton = document.getElementById("runButton");	
-runButton.addEventListener("click", run);
+runButton.addEventListener("click", preRun);
+
+
+MONSTERS_INFO = new Map();
+ITEMS_INFO = new Map();
+SPELLS_INFO = new Map();
 
 //OG
 // MONSTERS	./MONSTERS/en-US/monsters.dat
@@ -74,25 +79,25 @@ function preRun(ev)
 	if (!ffdSelector.files.length)
 		errMsgs.push("No FFD file selected.");
 	else
-		parseFFD(ffdSelector.files[0]);
+		;//parseFFD(ffdSelector.files[0]);
 
 	if (!monstersSelector.files.length)
 		errMsgs.push("No monster.dat selected.");
 	else
 		for (const monstersDat in monstersSelector.files)
-			parseMonstersDat(monsterDat, m);
+			;//parseMonstersDat(monsterDat, m);
 
 	if (!itemsSelector.files.length)
 		errMsgs.push("No items.dat selected.");
 	else
 		for (const itemsDat in itemsSelector.files)
-			parseItemsDat(itemsDat, m);
+			;//parseItemsDat(itemsDat, m);
 
 	if (!spellsSelector.files.length)
 		errMsgs.push("No spells.dat selected.");
 	else
-		for (const spellsDat in spellsSelector.files)
-			parseSpellsDat(spellsDat, m);
+		for (let i = 0; i < spellsSelector.files.length; ++i)
+			parseSpellsDat(spellsSelector.files[i], SPELLS_INFO);
 
 	if (errMsgs.length)
 	{
@@ -100,7 +105,7 @@ function preRun(ev)
 		return;
 	}
 
-	run();
+	//run();
 }
 
 
@@ -1204,3 +1209,157 @@ function write() {
 		//writeBool(robj.disabledAchievements); //TODO however it seems nothing has this?
 	}
 }
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// dat Parsing
+
+//TODO you can try to optimize within tokenizeNextLine() where if the first token cannot get you anything
+// ie is not [SPELL], <NAME>, <SPHERE>, [something], [/.*]
+// then you know not to continue tokenizing, just go to next line
+// similarly, if you found [SPELL] or [something] or [/.*] then you can also go til next line
+
+//also can optimize by ignoring everything until back in depth 0
+//also can optimize by beelining til end of a nested subgroup
+//also can optimize by ignoring line if the first token.size() < 3
+
+U16HASHTAG = '#'.charCodeAt(0);
+U16NEWLINE = '\n'.charCodeAt(0);
+U16COLON = ':'.charCodeAt(0);
+U16TAB = '\t'.charCodeAt(0);
+U16CARRIAGERETURN = '\r'.charCodeAt(0);
+
+function tokenizeNextLine(dv, i, tokens)
+{
+    let delim0_token1 = false;
+    let tokenStart = i;
+    while (true)
+    {
+        if (dv.getUint8(i) == U16HASHTAG || i == dv.byteLength || dv.getUint8(i) == U16NEWLINE)
+        {
+            if (delim0_token1)  tokens.push(String.fromCharCode.apply(null, new Uint8Array(dv.buffer, tokenStart, i - tokenStart)));
+            if (dv.getUint8(i) == U16HASHTAG)   for (; i < dv.byteLength && dv.getUint8(i) != U16NEWLINE; ++i);
+            return i + 1;   
+        }
+
+        const isDelim = (dv.getUint8(i) == U16COLON || dv.getUint8(i) == U16TAB || dv.getUint8(i) == U16CARRIAGERETURN); 
+        i += (isDelim ^ delim0_token1);
+        if      (isDelim && delim0_token1)      tokens.push(String.fromCharCode.apply(null, new Uint8Array(dv.buffer, tokenStart, i - tokenStart)));
+        else if (!isDelim && !delim0_token1)    tokenStart = i;
+        if      (isDelim == delim0_token1)      delim0_token1 = !delim0_token1;
+    }
+}
+
+//TODO error if empty NAME?
+// also for sphere, stays default charm if the value doesnt match anything
+function parseSpellsDat(spellsDat)
+{
+	//TODO actually the flow must be sequential, because we need to know if this thing produces an error. so how can you force to wait on readsArrayBuffer()?
+	const reader = new FileReader();
+	reader.onload = function(ev) {
+		doParseSpellsDat(new DataView(ev.target.result));
+	};
+	//TODO probably make errMsgs global, and if this fails then return immediately
+	reader.onerror = function(ev) {
+		alert(`Could not open a spells.dat (Which? For your security I can't know).`);
+	};
+	reader.readAsArrayBuffer(spellsDat);
+}
+
+//TODO are attack defense charm values in dat case insensitive?
+const K_MAGIC_CHARM = 2;
+function doParseSpellsDat(dv)
+{
+	let i = 0;
+    let hasSpell = false;
+    let depth = 0, inSpell = false;
+    let theName = "", lookingForName = true;
+    let theSphere = K_MAGIC_CHARM, lookingForSphere = true;
+
+    while (true)
+    {
+        let tokens = [];
+        if ((i = tokenizeNextLine(dv, i, tokens)) >= dv.byteLength)
+            break;
+        if (!tokens.length || tokens[0].length < 3)
+            continue;
+        
+        if (inSpell && depth == 1 && tokens[0][0] == '<' && tokens[0].at(-1) == '>')
+        {
+            if (tokens.length == 1)
+                return `The line up to but not including ${i} has too few tokens.`;
+            if (lookingForName && tokens[0].slice(1, -1) == "NAME")
+                theName = tokens[0].slice(1, -1), lookingForName = false;
+            else if (lookingForSphere && tokens[0].slice(1, -1) == "SPHERE")
+                theSphere = tokens[0].slice(1, -1), lookingForSphere = false;
+        }
+        else if (tokens[0][0] == '[' && tokens[0][1] == '/' && tokens[0].at(-1) == ']')
+        {
+            if (depth == 0)
+                return `The line up to but not including ${i} has an end tag which closes nothing.`;
+            if (depth == 1 && inSpell)
+            {
+                m.set(theName, theSphere); //TODO validation etc
+                inSpell = false;
+                theName = "", lookingForName = true;
+                theSphere = K_MAGIC_CHARM, lookingForSphere = true;
+            }
+            --depth;
+        }
+        else if (tokens[0][0] == '[' && tokens[0].at(-1) == ']')
+        {
+            if (depth == 0 && tokens[0].slice(1, -1) == "SPELL")
+                hasSpell = inSpell = true;
+            ++depth;
+        }
+    }
+
+    if (hasSpell)
+        m.set(theName, theSphere);
+    return "";
+}
+
+//ITEMS
+
+// EGrade				m_Grade;
+// std::string			m_Name;
+// std::string			m_EnterableName;
+// std::string			m_UseDescription;
+// bool				m_IsUnique;
+// bool				m_IsArtifact;
+// bool				m_Collideable;
+// bool				m_Useable;
+// bool				m_Purchaseable;
+// float32				m_ScaleVariation;
+// EItemType			m_Type;
+// EItemCategory		m_Category;
+// int32				m_ToHitBonus;
+// int32				m_Value;
+// int32				m_Uses;
+// uint32				m_MinimumArmorBonus;
+// uint32				m_MaximumArmorBonus;
+// uint32				m_MinimumDamage;
+// uint32				m_MaximumDamage;
+// int32				m_MerchantMinimum;
+// int32				m_MerchantMaximum;
+// bool				m_Takeable;
+// bool				m_Destructible;
+// bool				m_Identified;
+// ETarget				m_Target;
+// EAttackSpeed		m_Speed;
+// std::vector< CEffect* >			m_pEffects;
+// std::vector< EStatistic >		m_RequirementStatistic;
+// std::vector< uint32 >			m_RequirementValue;
+// std::string			m_IconPath;
+// std::string			m_IconAlphaPath;
+// uint32				m_IconWidth;
+// uint32				m_IconHeight;
+// std::vector< EDamageType >		m_DamageBonus;
+// std::vector< int32 >			m_DamageBonusValue;
+// int32				m_Rarity;
+// int32				m_FishingRarity;
+// int32				m_MinimumDepth;
+// int32				m_MaximumDepth;
+// int32				m_MinimumFishingDepth;
+// int32				m_MaximumFishingDepth;
+// uint32				m_Sockets;
