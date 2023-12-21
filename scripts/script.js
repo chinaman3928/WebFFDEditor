@@ -40,11 +40,58 @@ function changeDistribution(ev)
 	DISTRIBUTION = ev.target.value;
 }	
 
+MONSTERS_DATS = [];
+ITEMS_DATS = [];
+SPELLS_DATS = [];
 
 const ffdSelector = document.getElementById("ffdSelector");
 const monstersSelector = document.getElementById("datSelect-monsters");
+const clearMonstersDats = document.getElementById("clearMonstersDats");
 const itemsSelector = document.getElementById("datSelect-items");
+const clearItemsDats = document.getElementById("clearItemsDats");
 const spellsSelector = document.getElementById("datSelect-spells");
+const clearSpellsDats = document.getElementById("clearSpellsDats");
+
+monstersSelector.addEventListener("input", accumulateFiles);
+itemsSelector.addEventListener("input", accumulateFiles);
+spellsSelector.addEventListener("input", accumulateFiles);
+function accumulateFiles(ev)
+{
+	const pushTo = ev.target.id == "datSelect-monsters" ? MONSTERS_DATS :
+		(ev.target.id == "datSelect-items" ? ITEMS_DATS : SPELLS_DATS);
+	for (let i = 0; i < ev.target.files.length; ++i)
+		pushTo.push(ev.target.files[i]);
+
+	(ev.target.id == "datSelect-monsters" ?	clearMonstersDats :
+		(ev.target.id == "datSelect-items" ? clearItemsDats : clearSpellsDats)).innerHTML = `Clear ${pushTo.length} file(s)`;
+}
+
+//TODO each runButton should clear any globals to an empty state
+clearMonstersDats.addEventListener("click", clearFiles);
+clearItemsDats.addEventListener("click", clearFiles);
+clearSpellsDats.addEventListener("click", clearFiles);
+function clearFiles(ev)
+{
+	if (ev.target.id == "clearMonstersDats")
+	{
+		MONSTERS_DATS = [];
+		clearMonstersDats.innerHTML = "Clear 0 file(s)";
+		monstersSelector.value = null;
+	}
+	else if (ev.target.id == "clearItemsDats")
+	{
+		ITEMS_DATS = [];
+		clearItemsDats.innerHTML = "Clear 0 file(s)";
+		itemsSelector.value = null;
+	}
+	else
+	{
+		SPELLS_DATS = [];
+		clearSpellsDats.innerHTML = "Clear 0 file(s)";
+		spellsSelector.value = null;
+	}
+}
+
 
 const runButton = document.getElementById("runButton");	
 runButton.addEventListener("click", preRun);
@@ -66,42 +113,40 @@ SPELLS_INFO = new Map();
 
 //TS
 // MONSTERS	./	./REALMS/Goldshare/MONSTERS	./REALMS/Druantia/	./REALMS/Chamber/	./REALMS/Typhon/	./REALMS/Temple/
-// ITEMS	./	./REALMS/URGold/MONSTERS	./REALMS/Goldshare/ 
-// SPELLS	./	./REALMS/URGold/MONSTERS	./REALMS/Goldshare/ 
+// ITEMS	./	./REALMS/URGold/ITEMS		./REALMS/Goldshare/ 
+// SPELLS	./	./REALMS/URGold/SPELLS		./REALMS/Goldshare/ 
 
 //TODO warn if the number of files doesnt match what i think is the default?
 //TODO help hint hover
 //TODO mark the wrong things?
+
+let ERR_MSGS = [];
 function preRun(ev)
 {
-	let errMsgs = [];
-
 	if (!ffdSelector.files.length)
-		errMsgs.push("No FFD file selected.");
+		ERR_MSGS.push("No FFD file selected.");
 	else
 		;//parseFFD(ffdSelector.files[0]);
 
-	if (!monstersSelector.files.length)
-		errMsgs.push("No monster.dat selected.");
+	if (!MONSTERS_DATS.length)
+		ERR_MSGS.push("No monster.dat selected.");
 	else
-		for (const monstersDat in monstersSelector.files)
-			;//parseMonstersDat(monsterDat, m);
+		;
 
-	if (!itemsSelector.files.length)
-		errMsgs.push("No items.dat selected.");
+	if (!ITEMS_DATS.length)
+		ERR_MSGS.push("No items.dat selected.");
 	else
-		for (const itemsDat in itemsSelector.files)
-			;//parseItemsDat(itemsDat, m);
+		;
 
-	if (!spellsSelector.files.length)
-		errMsgs.push("No spells.dat selected.");
+	if (!SPELLS_DATS.length)
+		ERR_MSGS.push("No spells.dat selected.");
 	else
-		for (let i = 0; i < spellsSelector.files.length; ++i)
-			parseSpellsDat(spellsSelector.files[i], SPELLS_INFO);
+		for (let i = 0; i < SPELLS_DATS.length; ++i)
+			parseSpellsDat(SPELLS_DATS[i]);
 
-	if (errMsgs.length)
+	if (ERR_MSGS.length)
 	{
-		alert(["Failed to run for these reasons (no changes made):", ...errMsgs].join('\n - '))
+		alert(["Failed to run for these reasons (no changes made):", ...ERR_MSGS].join('\n - '))
 		return;
 	}
 
@@ -1261,7 +1306,8 @@ function parseSpellsDat(spellsDat)
 	};
 	//TODO probably make errMsgs global, and if this fails then return immediately
 	reader.onerror = function(ev) {
-		alert(`Could not open a spells.dat (Which? For your security I can't know).`);
+		ERR_MSGS.push("Could not open a spells.dat (Which? For your security I can't know).");
+		return;
 	};
 	reader.readAsArrayBuffer(spellsDat);
 }
@@ -1290,7 +1336,10 @@ function doParseSpellsDat(dv)
         if (inSpell && depth == 1 && tokens[0][0] == '<' && tokens[0].at(-1) == '>')
         {
             if (tokens.length == 1)
-                return `The line up to but not including ${i} has too few tokens.`;
+			{
+				ERR_MSGS.push(`spells.dat: The line before ${i} has too few tokens (Which? For your security I can't know).`);
+				return;
+			}
             if (lookingForName && tokens[0].slice(1, -1) == "NAME")
                 theName = tokens[1], lookingForName = false;
             else if (lookingForSphere && tokens[0].slice(1, -1) == "SPHERE")
@@ -1299,7 +1348,10 @@ function doParseSpellsDat(dv)
         else if (tokens[0][0] == '[' && tokens[0][1] == '/' && tokens[0].at(-1) == ']')
         {
             if (depth == 0)
-                return `The line up to but not including ${i} has an end tag which closes nothing.`;
+			{
+                ERR_MSGS.push(`spells.dat: The line before ${i} has a bad end tag (Which? For your security I can't know).`);
+				return;
+			}
             if (depth == 1 && inSpell)
             {
             SPELLS_INFO.set(theName, theSphere); //TODO validation etc
