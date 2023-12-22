@@ -3,6 +3,55 @@
 // but for now i will assume little endian
 //TODO uint32 and int32 confusions?
 
+//exclusively for player
+//  difficulty
+//  respec
+//  unretire
+
+//for any character
+//  enchants and resists
+//  name
+//  gold
+//  stats
+//  skills
+//  resists
+//  why not enchants?
+//  damage
+//  items
+//    names
+//    enchants
+//    bonuses
+//    grade
+//    sockets
+
+//pets
+//  display pets
+//  add pets
+//  remove pets but not pet0
+//  edit pets
+//how does this interact with histories?
+
+//quests
+//  display quests
+//  complete?
+//  remove? but you can do that in game
+//  add? how would you do that?
+//  edit a quest
+//    change level
+//    change what else...
+//    ...?
+//  fast unretire?
+//  statues?
+//how does this interact with histories?
+
+//histories
+//  remove histories
+//  see whats in a history
+//  ascend/descend x but can you only do that for the realm youre in?
+//interact with pets and quests?
+
+
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -121,29 +170,21 @@ SPELLS_INFO = new Map();
 //TODO mark the wrong things?
 
 let ERR_MSGS = [];
-function preRun(ev)
+async function preRun(ev)
 {
-	if (!ffdSelector.files.length)
-		ERR_MSGS.push("No FFD file selected.");
-	else
-		;//parseFFD(ffdSelector.files[0]);
+	if (!ffdSelector.files.length)	ERR_MSGS.push("No FFD file selected.");
+	else						  	;//parseFFD(ffdSelector.files[0]);
 
-	if (!MONSTERS_DATS.length)
-		ERR_MSGS.push("No monster.dat selected.");
-	else
-		;
+	if (!MONSTERS_DATS.length)		ERR_MSGS.push("No monsters.dat selected.");
+	else					   		;
 
-	if (!ITEMS_DATS.length)
-		ERR_MSGS.push("No items.dat selected.");
-	else
-		;
+	if (!ITEMS_DATS.length) 		ERR_MSGS.push("No items.dat selected.");
+	else                    		;
 
-	if (!SPELLS_DATS.length)
-		ERR_MSGS.push("No spells.dat selected.");
-	else
-		for (let i = 0; i < SPELLS_DATS.length; ++i)
-			parseSpellsDat(SPELLS_DATS[i]);
+	if (!SPELLS_DATS.length) 		ERR_MSGS.push("No spells.dat selected.");
+	else					 		for (let i = 0; i < SPELLS_DATS.length; parseSpellsDat(SPELLS_DATS[i++]));
 
+	console.log("bruh moment");
 	if (ERR_MSGS.length)
 	{
 		alert(["Failed to run for these reasons (no changes made):", ...ERR_MSGS].join('\n - '))
@@ -1256,6 +1297,22 @@ function write() {
 }
 
 
+function promiseReadDat(datFile, name)
+{
+	return new Promise((res, rej) => {
+		const reader = new FileReader();
+		reader.onload = () => {
+			res(reader.result);
+		}
+		reader.onerror = () => {
+			ERR_MSGS.push(`Could not open a ${name} (Which? For your security I can't know).`);
+			rej(); //TODO code cover this onerror part
+		}
+		reader.readAsText(datFile);
+	});
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // dat Parsing
 
@@ -1268,58 +1325,44 @@ function write() {
 //also can optimize by beelining til end of a nested subgroup
 //also can optimize by ignoring line if the first token.size() < 3
 
-U16HASHTAG = '#'.charCodeAt(0);
-U16NEWLINE = '\n'.charCodeAt(0);
-U16COLON = ':'.charCodeAt(0);
-U16TAB = '\t'.charCodeAt(0);
-U16CARRIAGERETURN = '\r'.charCodeAt(0);
-
-function tokenizeNextLine(dv, i, tokens)
+function tokenizeNextLine(dat, i, tokens)
 {
     let delim0_token1 = false;
     let tokenStart = i;
     while (true)
     {
-        if (dv.getUint8(i) == U16HASHTAG || i == dv.byteLength || dv.getUint8(i) == U16NEWLINE)
+        if (dat[i] == '#' || i == dat.length || dat[i] == '\n')
         {
-            if (delim0_token1)  tokens.push(String.fromCharCode.apply(null, new Uint8Array(dv.buffer, tokenStart, i - tokenStart)));
-            if (dv.getUint8(i) == U16HASHTAG)   for (; i < dv.byteLength && dv.getUint8(i) != U16NEWLINE; ++i);
+            if (delim0_token1) tokens.push(dat.slice(tokenStart, i));
+            if (dat[i] == '#') for (; i < dat.length && dat[i] != '\n'; ++i);
             return i + 1;   
         }
 
-        const isDelim = (dv.getUint8(i) == U16COLON || dv.getUint8(i) == U16TAB || dv.getUint8(i) == U16CARRIAGERETURN); 
+        const isDelim = (dat[i] == ':' || dat[i] == '\t' || dat[i] == '\r'); 
         i += (isDelim ^ delim0_token1);
-        if      (isDelim && delim0_token1)      tokens.push(String.fromCharCode.apply(null, new Uint8Array(dv.buffer, tokenStart, i - tokenStart)));
-        else if (!isDelim && !delim0_token1)    tokenStart = i;
+        if      (isDelim && delim0_token1)      tokens.push(dat.slice(tokenStart, i));
+        else if (!isDelim && !delim0_token1)	tokenStart = i;
         if      (isDelim == delim0_token1)      delim0_token1 = !delim0_token1;
     }
 }
 
 //TODO error if empty NAME?
 // also for sphere, stays default charm if the value doesnt match anything
-function parseSpellsDat(spellsDat)
-{
-	//TODO actually the flow must be sequential, because we need to know if this thing produces an error. so how can you force to wait on readsArrayBuffer()?
-	const reader = new FileReader();
-	reader.onload = function(ev) {
-		doParseSpellsDat(new DataView(ev.target.result));
-	};
-	//TODO probably make errMsgs global, and if this fails then return immediately
-	reader.onerror = function(ev) {
-		ERR_MSGS.push("Could not open a spells.dat (Which? For your security I can't know).");
-		return;
-	};
-	reader.readAsArrayBuffer(spellsDat);
-}
-
 //TODO uploads reset whats there, so you cant upload A/spells.dat and then cd into B then B/spells.dat
 // or at least not easily, so override that behavior. but then that means you will need to have a clear button
 //TODO also if there are multiple occurrences of same name, then what does game do?
 //TODO still have to test nesting
-//TODO are attack defense charm values in dat case insensitive?
+//TODO are attack defense charm values in dat case insensitive? for that matter, anything else?
 const K_MAGIC_CHARM = 2;
-function doParseSpellsDat(dv)
+async function parseSpellsDat(datFile)
 {
+	let dat = null;
+	try {
+		dat = await promiseReadDat(datFile);
+	} catch (e) {
+		return;
+	}
+
 	let i = 0;
     let depth = 0, inSpell = false;
     let theName = "", lookingForName = true;
@@ -1328,7 +1371,7 @@ function doParseSpellsDat(dv)
     while (true)
     {
         let tokens = [];
-        if ((i = tokenizeNextLine(dv, i, tokens)) >= dv.byteLength)
+        if ((i = tokenizeNextLine(dat, i, tokens)) >= dat.length)
             break;
         if (!tokens.length || tokens[0].length < 3)
             continue;
@@ -1369,9 +1412,7 @@ function doParseSpellsDat(dv)
         }
     }
 
-    if (inSpell)
-        SPELLS_INFO.set(theName, theSphere);
-    return "";
+    if (inSpell) SPELLS_INFO.set(theName, theSphere);
 }
 
 //ITEMS
