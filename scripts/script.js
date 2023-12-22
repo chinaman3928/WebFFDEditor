@@ -182,7 +182,8 @@ async function preRun(ev)
 	else                    		;
 
 	if (!SPELLS_DATS.length) 		ERR_MSGS.push("No spells.dat selected.");
-	else					 		for (let i = 0; i < SPELLS_DATS.length; parseSpellsDat(SPELLS_DATS[i++]));
+	else					 		{let i = 0; let _ = await promiseParseSpellsDat(SPELLS_DATS[i++]); _ = await promiseParseSpellsDat(SPELLS_DATS[i++]); _ = await promiseParseSpellsDat(SPELLS_DATS[i++]);}
+	//for (let i = 0; i < SPELLS_DATS.length; await promiseParseSpellsDat(SPELLS_DATS[i++]));
 
 	console.log("bruh moment");
 	if (ERR_MSGS.length)
@@ -1344,6 +1345,13 @@ function tokenizeNextLine(dat, i, tokens)
         else if (!isDelim && !delim0_token1)	tokenStart = i;
         if      (isDelim == delim0_token1)      delim0_token1 = !delim0_token1;
     }
+}
+
+async function promiseParseSpellsDat(datFile)
+{
+	return new Promise((res, rej) => {
+		res(parseSpellsDat(datFile));
+	});
 }
 
 //TODO error if empty NAME?
