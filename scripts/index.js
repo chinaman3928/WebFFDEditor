@@ -47,46 +47,46 @@ lightDarkToggleElem.addEventListener("click",
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-window.addEventListener("scroll", reveal);
-//window.addEventListener("resize", reveal);
+// window.addEventListener("scroll", reveal);
+// //window.addEventListener("resize", reveal);
 
-let animation = {
-  revealDistance: 150,
-  initialOpacity: 0,
-  transitionDelay: 0,
-  transitionDuration: '2s',
-  transitionProperty: 'all',
-  transitionTimingFunction: 'ease'
-}
+// let animation = {
+//   revealDistance: 150,
+//   initialOpacity: 0,
+//   transitionDelay: 0,
+//   transitionDuration: '2s',
+//   transitionProperty: 'all',
+//   transitionTimingFunction: 'ease'
+// }
 
-const revealableContainers = document.querySelectorAll(".revealable");
+// const revealableContainers = document.querySelectorAll(".revealable");
 
-function reveal()
-{
-  for (let i = 0; i < revealableContainers.length; ++i)
-  {
-    let windowHeight = window.innerHeight;
-    let topOfRevealableContainer = revealableContainers[i].getBoundingClientRect().top;
+// function reveal()
+// {
+//   for (let i = 0; i < revealableContainers.length; ++i)
+//   {
+//     let windowHeight = window.innerHeight;
+//     let topOfRevealableContainer = revealableContainers[i].getBoundingClientRect().top;
     
-    if (topOfRevealableContainer < windowHeight - animation.revealDistance)
-      revealableContainers[i].classList.add("active");
-    else
-      revealableContainers[i].classList.remove("active");
-  }
-}
+//     if (topOfRevealableContainer < windowHeight - animation.revealDistance)
+//       revealableContainers[i].classList.add("active");
+//     else
+//       revealableContainers[i].classList.remove("active");
+//   }
+// }
 
-let animationOn = true;
-document.getElementById("toggleAnimation").addEventListener("click", toggleAnimation);
+// let animationOn = true;
+// document.getElementById("toggleAnimation").addEventListener("click", toggleAnimation);
 
-function toggleAnimation() {
-  if (animationOn = !animationOn) {
-    for (let i = 0; i < revealableContainers.length; ++i)
-      revealableContainers[i].classList.remove("revealable");
-    document.getElementById("toggleAnimation").innerHTML = "Resume<br>Motion";
-  }
-  else {
-    for (let i = 0; i < revealableContainers.length; ++i)
-      revealableContainers[i].classList.add("revealable");
-    document.getElementById("toggleAnimation").innerHTML = "Reduce<br>Motion";
-  }
-}
+// function toggleAnimation() {
+//   if (animationOn = !animationOn) {
+//     for (let i = 0; i < revealableContainers.length; ++i)
+//       revealableContainers[i].classList.remove("revealable");
+//     document.getElementById("toggleAnimation").innerHTML = "Resume<br>Motion";
+//   }
+//   else {
+//     for (let i = 0; i < revealableContainers.length; ++i)
+//       revealableContainers[i].classList.add("revealable");
+//     document.getElementById("toggleAnimation").innerHTML = "Reduce<br>Motion";
+//   }
+// }

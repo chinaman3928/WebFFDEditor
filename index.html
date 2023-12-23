@@ -42,67 +42,67 @@
 		</div> 
 	</div>
 
-	<div id="gameSelect">
-		<img id="OG" class="gameSelect-img" src="./img/og.png">
-		<img id="UR" class="gameSelect-img" src="./img/ur.png">
-		<img id="TS" class="gameSelect-img" src="./img/ts.png">
+	<div id="selectionScreen" hidden="false">
+		<div id="gameSelect">
+			<img id="OG" class="gameSelect-img" src="./img/og.png">
+			<img id="UR" class="gameSelect-img" src="./img/ur.png">
+			<img id="TS" class="gameSelect-img" src="./img/ts.png">
+		</div>
+
+		<p>Select your .FFD file.</p>
+		<input type="file" style="display:block">
+		
+		<p style="display:inline-block">On what distribution?</p>
+		<select id="distributionSelect" style="display:block">
+			<option value="SG">Steam/GOG.com</option>
+			<option value="WT">WildTangent</option>
+		</select>
+
+		<div id="datSelect"> 
+			<div>
+				<p>Your monsters.dat files:</p>
+				<input id="datSelect-monsters" type="file" multiple="multiple" style="display:block">
+				<button id="clearMonstersDats">Clear 0 file(s)</button>
+			</div>
+
+			<div>
+				<p>Your items.dat files:</p>
+				<input id="datSelect-items" type="file" multiple="multiple" style="display:block">
+				<button id="clearItemsDats">Clear 0 files(s)</button>
+			</div>
+
+			<div>
+				<p>Your spells.dat files:</p>
+				<input id="datSelect-spells" type="file" multiple="multiple" style="display:block">
+				<button id="clearSpellsDats">Clear 0 file(s)</button>
+			</div>
+		</div>
+
+		<!---->
+		<input id="ffdSelector" type="file">
+		<!---->
+
+		<button id="runButton">PRESS THIS BUTTON FOR WIZARDRY</button>
 	</div>
 
-	<p>Select your .FFD file.</p>
-	<input type="file" style="display:block">
-	
-	<p style="display:inline-block">On what distribution?</p>
-	<select id="distributionSelect" style="display:block">
-		<option value="SG">Steam/GOG.com</option>
-		<option value="WT">WildTangent</option>
-	</select>
-
-	<div id="datSelect"> 
-		<div>
-			<p>Your monsters.dat files:</p>
-			<input id="datSelect-monsters" type="file" multiple="multiple" style="display:block">
-			<button id="clearMonstersDats">Clear 0 file(s)</button>
-		</div>
-
-		<div>
-			<p>Your items.dat files:</p>
-			<input id="datSelect-items" type="file" multiple="multiple" style="display:block">
-			<button id="clearItemsDats">Clear 0 files(s)</button>
-		</div>
-
-		<div>
-			<p>Your spells.dat files:</p>
-			<input id="datSelect-spells" type="file" multiple="multiple" style="display:block">
-			<button id="clearSpellsDats">Clear 0 file(s)</button>
-		</div>
-	</div>
-
-
-	<!---->
-	<input id="ffdSelector" type="file">
-	<!---->
-
-	<button id="runButton">PRESS THIS BUTTON FOR WIZARDRY</button>
-
-
-	<div id="section-player" class="revealable">
+	<div id="playerTab" hidden="false">
 		<p>section-player</p>
 	</div> 
 
-	<div id="section-pets" class="revealable">
+	<div id="petsTab" hidden="false">
 		<p>section-pets</p>
 	</div>
 
-	<div id="section-quests" class="revealable">
-		 <p>section-quests</p>
+	<div id="questsTab" hidden="false">
+		<p>section-quests</p>
 	</div>
 
-	<div id="section-histories" class="revealable">
-		 <p>section-histories</p>
+	<div id="historiesTab" hidden="false">
+		<p>section-histories</p>
 	</div>
 
-	<div id="section-misc" class="revealable">
-		 <p>section-misc</p>
+	<div id="miscTab" hidden="false">
+		<p>section-misc</p>
 	</div>
 
 	

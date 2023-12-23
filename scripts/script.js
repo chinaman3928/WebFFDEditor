@@ -3,10 +3,6 @@
 // but for now i will assume little endian
 //TODO uint32 and int32 confusions?
 
-//exclusively for player
-//  difficulty
-//  respec
-//  unretire
 
 //for any character
 //  enchants and resists
@@ -40,7 +36,7 @@
 //    change level
 //    change what else...
 //    ...?
-//  fast unretire?
+//  ...fast unretire?
 //  statues?
 //how does this interact with histories?
 
@@ -50,7 +46,10 @@
 //  ascend/descend x but can you only do that for the realm youre in?
 //interact with pets and quests?
 
-
+//misc
+//  difficulty; consider hash
+//  respec; can also edit stats and skills but let them, however max once respec, option to undo respec? ability in stats/skills to allocate unused points?
+//  unretire; interacts with fast retire?
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -168,31 +167,52 @@ SPELLS_INFO = new Map();
 //TODO warn if the number of files doesnt match what i think is the default?
 //TODO help hint hover
 //TODO mark the wrong things?
+//TODO futher validation like if not a text file?
 
 let ERR_MSGS = [];
 async function preRun(ev)
 {
-	if (!ffdSelector.files.length)	ERR_MSGS.push("No FFD file selected.");
-	else						  	;//parseFFD(ffdSelector.files[0]);
+	//TODO in the correct places you need to redefault relevant globals
+	if (ffdSelector.files.length)	await promiseParseFFD(ffdSelector.files[0]);
+	else						  	ERR_MSGS.push("No FFD file selected.");
 
-	if (!MONSTERS_DATS.length)		ERR_MSGS.push("No monsters.dat selected.");
-	else					   		;
+	if (MONSTERS_DATS.length)		for (let i = 0; i < MONSTERS_DATS.length; await promiseParseMonstersDat(MONSTERS_DATS[i++]));
+	else					   		ERR_MSGS.push("No monsters.dat selected.");
 
-	if (!ITEMS_DATS.length) 		ERR_MSGS.push("No items.dat selected.");
-	else                    		;
+	if (ITEMS_DATS.length)	 		for (let i = 0; i < ITEMS_DATS.length; await promiseParseItemsDat(ITEMS_DATS[i++]));
+	else                    		ERR_MSGS.push("No items.dat selected.");
 
-	if (!SPELLS_DATS.length) 		ERR_MSGS.push("No spells.dat selected.");
-	else					 		{let i = 0; let _ = await promiseParseSpellsDat(SPELLS_DATS[i++]); _ = await promiseParseSpellsDat(SPELLS_DATS[i++]); _ = await promiseParseSpellsDat(SPELLS_DATS[i++]);}
-	//for (let i = 0; i < SPELLS_DATS.length; await promiseParseSpellsDat(SPELLS_DATS[i++]));
+	if (SPELLS_DATS.length) 		for (let i = 0; i < SPELLS_DATS.length; await promiseParseSpellsDat(SPELLS_DATS[i++]));
+	else					 		ERR_MSGS.push("No spells.dat selected.");
 
-	console.log("bruh moment");
 	if (ERR_MSGS.length)
 	{
-		alert(["Failed to run for these reasons (no changes made):", ...ERR_MSGS].join('\n - '))
-		return;
+		alert(["Failed to run for these reasons (no changes made):", ...ERR_MSGS].join('\n - '));
+		//reset the relevant globals;
+	}
+	else
+	{
+		run();
+	}
+}
+
+function run()
+{
+	for (each of the tab links)
+	{
+		make it interactable;
 	}
 
-	//run();
+	hide the selectionScreen;
+
+	populate playerTab;
+	populate petsTab;
+	populate questsTab;
+	populate historiesTab;
+	populate miscTab;
+
+	unhide the playerTab;
+	//eventually need to reset relevant globals too...
 }
 
 
