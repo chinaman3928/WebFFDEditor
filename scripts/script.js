@@ -5,14 +5,14 @@
 
 
 //for any character
-//  enchants and resists
+//  display enchants and resists
+//  enchants
+//  resists
 //  name
 //  gold
+//  damage
 //  stats
 //  skills
-//  resists
-//  why not enchants?
-//  damage
 //  items
 //    names
 //    enchants
@@ -192,9 +192,16 @@ async function preRun(ev)
 	}
 	else
 	{
-		run();
+		//run();
 	}
 }
+
+const PLAYER_TAB =
+{
+	opened: false,
+	elem: document.getElementById("playerTab"),
+	stack: []
+};
 
 function run()
 {
@@ -203,16 +210,22 @@ function run()
 		make it interactable;
 	}
 
-	hide the selectionScreen;
+	hide the uploadScreen;
 
-	populate playerTab;
-	populate petsTab;
-	populate questsTab;
-	populate historiesTab;
-	populate miscTab;
-
-	unhide the playerTab;
+	switchPlayerTab();
 	//eventually need to reset relevant globals too...
+	// and unhide the uploadScreen...
+}
+
+function switchPlayerTab()
+{
+	make PLAYER_TAB the active tab;
+
+
+
+	unhide the player tab;
+
+
 }
 
 
@@ -1341,6 +1354,7 @@ function promiseReadDat(datFile, name)
 // ie is not [SPELL], <NAME>, <SPHERE>, [something], [/.*]
 // then you know not to continue tokenizing, just go to next line
 // similarly, if you found [SPELL] or [something] or [/.*] then you can also go til next line
+//TODO would you want to warn about name collisions?
 
 //also can optimize by ignoring everything until back in depth 0
 //also can optimize by beelining til end of a nested subgroup
