@@ -44,6 +44,7 @@
 //  remove histories
 //  see whats in a history
 //  ascend/descend x but can you only do that for the realm youre in?
+//  force go to a floor? how does it work for games that eg dont have access to grove?
 //interact with pets and quests?
 
 //misc
