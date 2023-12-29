@@ -1,47 +1,47 @@
-let LIGHT_DARK = false;
+//let LIGHT_DARK = false;
 
 const HEADER_CSS = [document.getElementById("header-title").style,
                     document.getElementById("header-sectionNav").style,
                     document.getElementById("header-externalNav").style]
 
-const SECTION_CSS = [document.getElementById("section-player").style,
-                     document.getElementById("section-pets").style,
-                     document.getElementById("section-quests").style,
-                     document.getElementById("section-histories").style,
-                     document.getElementById("section-misc").style]
+// const SECTION_CSS = [document.getElementById("section-player").style,
+//                      document.getElementById("section-pets").style,
+//                      document.getElementById("section-quests").style,
+//                      document.getElementById("section-histories").style,
+//                      document.getElementById("section-misc").style]
 
-function toggleLightDark(light_dark)
-{
-  const p = light_dark ? 3 : 0;
-  for (let i = 0; i < HEADER_CSS.length; ++i)
-  {
-    const rg = Math.floor((3 - i) / (4.0 + p) * 255).toString(16);
-    HEADER_CSS[i].backgroundColor = `#${rg}${rg}ff`;
-  }
-  for (let i = 0; i < SECTION_CSS.length; ++i)
-  {
-    const gb = Math.floor((5 - i) / (6.0 + p) * 255).toString(16);
-    SECTION_CSS[i].backgroundColor = `#ff${gb}${gb}`;
-  }
-}
-toggleLightDark(false);
+// function toggleLightDark(light_dark)
+// {
+//   const p = light_dark ? 3 : 0;
+//   for (let i = 0; i < HEADER_CSS.length; ++i)
+//   {
+//     const rg = Math.floor((3 - i) / (4.0 + p) * 255).toString(16);
+//     HEADER_CSS[i].backgroundColor = `#${rg}${rg}ff`;
+//   }
+//   for (let i = 0; i < SECTION_CSS.length; ++i)
+//   {
+//     const gb = Math.floor((5 - i) / (6.0 + p) * 255).toString(16);
+//     SECTION_CSS[i].backgroundColor = `#ff${gb}${gb}`;
+//   }
+// }
+// toggleLightDark(false);
 
-const lightDarkToggleElem = document.getElementById("lightDarkToggle");
-lightDarkToggleElem.addEventListener("click",
-                                     function(ev) {
-                                       LIGHT_DARK = !LIGHT_DARK;
-                                       if (LIGHT_DARK)
-                                       {
-                                         lightDarkToggleElem.title = "Toggle Light";
-                                         lightDarkToggleElem.querySelector("img").src = "./img/leftBlack.png";
-                                       }
-                                       else
-                                       {
-                                         lightDarkToggleElem.title = "Toggle Dark";
-                                         lightDarkToggleElem.querySelector("img").src = "./img/leftWhite.png";
-                                       }
-                                       toggleLightDark(LIGHT_DARK);
-});
+// const lightDarkToggleElem = document.getElementById("lightDarkToggle");
+// lightDarkToggleElem.addEventListener("click",
+//                                      function(ev) {
+//                                        LIGHT_DARK = !LIGHT_DARK;
+//                                        if (LIGHT_DARK)
+//                                        {
+//                                          lightDarkToggleElem.title = "Toggle Light";
+//                                          lightDarkToggleElem.querySelector("img").src = "./img/leftBlack.png";
+//                                        }
+//                                        else
+//                                        {
+//                                          lightDarkToggleElem.title = "Toggle Dark";
+//                                          lightDarkToggleElem.querySelector("img").src = "./img/leftWhite.png";
+//                                        }
+//                                        toggleLightDark(LIGHT_DARK);
+// });
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////

@@ -204,30 +204,30 @@ const PLAYER_TAB =
 	stack: []
 };
 
-function run()
-{
-	for (each of the tab links)
-	{
-		make it interactable;
-	}
+// function run()
+// {
+// 	for (each of the tab links)
+// 	{
+// 		make it interactable;
+// 	}
 
-	hide the uploadScreen;
+// 	hide the uploadScreen;
 
-	switchPlayerTab();
-	//eventually need to reset relevant globals too...
-	// and unhide the uploadScreen...
-}
+// 	switchPlayerTab();
+// 	//eventually need to reset relevant globals too...
+// 	// and unhide the uploadScreen...
+// }
 
-function switchPlayerTab()
-{
-	make PLAYER_TAB the active tab;
-
-
-
-	unhide the player tab;
+// function switchPlayerTab()
+// {
+// 	make PLAYER_TAB the active tab;
 
 
-}
+
+// 	unhide the player tab;
+
+
+// }
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -249,26 +249,109 @@ const robj =
 
 // ffdSelector.addEventListener("input", parseFile);
 
-// function parseFile(inputEvent) {
-// 	if (!inputEvent.target.files.length)
-// 		return;
-// 	const reader = new FileReader();
-// 	reader.onload = function(loadEvent) {
-// 		robj.i = 0;
-// 		robj.view = new DataView(loadEvent.target.result);
-// 		parse();
+function promiseParseFFD(ffdFile)
+{
+	return new Promise((res, rej) => { res(parseFFD(ffdFile)); });
+}
 
-// 		//TODO add button for download once parse() has finished
-// 		const downloadButton = document.createElement("button");
-// 		downloadButton.innerHTML = "Download";
-// 		downloadButton.addEventListener("click", downloadFile);
-// 		document.body.appendChild(downloadButton);
-// 	}
-// 	reader.onerror = function(errorEvent) {
-// 		alert(`Error reading ${inputEvent.target.files[0].name}! Try again.`)
-// 	};
-// 	reader.readAsArrayBuffer(inputEvent.target.files[0]);
-// }
+function promiseReadFFD(ffdFile)
+{
+	return new Promise((res, rej) => {
+		const reader = new FileReader();
+		reader.onload = () => { res(reader.result); };
+		reader.onerror = (ev) => { rej(ev); };
+		reader.readAsArrayBuffer(ffdFile);
+	});
+}
+
+async function parseFFD(ffdFile)
+{
+	let ab = null;
+	try {
+		ab = await promiseReadFFD(ffdFile);
+	} catch (e) {
+		ERR_MSGS.push(`Could not open FFD (${ffdFile.name}; for your security I don't know full path).`);
+		return;
+	}
+	robj.i = 0;
+	robj.view = new DataView(ab);
+
+	if (GAME == "UR") {
+		robj.sentinel = parseInt32();
+		if (robj.sentinel != -1)
+			parsingError(`UR main sentinel not -1, instead ${sentinel} (int32 @ ${robj.i - 4})`);
+
+		robj.version = parseUint32();
+		if (robj.version != 2)
+			console.log(`${DISTRIBUTION == "SG" ? 'steam_gog' : 'wt'}UR file version not 2, instead ${version} (uint32 @ ${robj.i - 4})`);
+	}
+
+	robj.mapVisible = parseBool();
+	robj.mapDolly = parseInt32();
+	robj.running = parseBool();
+	robj.showingItems = parseBool();
+
+	robj.hotkeySpellAssignment = [];
+	for (let i = 0; i < 12; ++i)
+		robj.hotkeySpellAssignment.push(parseString(16));
+
+	//NOTE stand-in
+	robj.tipSeen = [];
+	for (let i = 0; i < 19; ++i) //TODO og steam 19 kcontexttips
+		robj.tipSeen.push(parseBool());
+
+	robj.player = parseCharacter();
+
+	let n = parseUint32();
+	robj.petList = [];
+	for (let i = 0; i < n; ++i)
+		robj.petList.push(parseCharacter());
+
+	n = parseUint32();
+	robj.discoveryHistory = [];
+	for (let i = 0; i < n; ++i)
+		robj.discoveryHistory.push(parseHistory());
+
+	if (DISTRIBUTION == "SG" && GAME == "OG") {
+		robj.gemsCollected = parseString(16);
+		robj.fishCaught = parseString(16);
+		//robj.disabledAchievements = parseBool(); //TODO however it seems nothing has this?
+	}
+
+	if (GAME == "UR") {
+		if (robj.version >= 0) {
+			//TODO is all this code covered?
+			const n = parseUint32();
+			robj.wardDescriptions = [];
+			for (let i = 0; i < n; ++i)
+				robj.wardDescriptions.push(parseCharacter());
+		}
+		if (robj.version >= 1) {
+			const n = parseUint32();
+			robj.tipSeen = [];
+			for (let i = 0; i < n; ++i)
+				robj.tipSeen.push(parseBool());
+		}
+		if (robj.version >= 2)
+			robj.hash = parseString(16);
+
+		//TODO TODO TODO angela hardcore check. what to do?
+
+		if (DISTRIBUTION == "SG") {
+			robj.fishList = parseString(16);
+			robj.cardList = parseString(16);
+			//robj.disabledAchievements = parseBool(); //TODO however it seems nothing has this?
+		}
+	}
+
+	//TODO add button for download once has finished
+	const downloadButton = document.createElement("button");
+	downloadButton.innerHTML = "Download";
+	downloadButton.addEventListener("click", downloadFile);
+	document.body.appendChild(downloadButton);
+}
+
+
 
 function parseString(bits) {
 	const n = (bits == 16) ? parseUint16() : parseUint32();
@@ -749,76 +832,6 @@ function parseHistory() {
 	}
 
 	return ret;
-}
-
-function parse() {
-	if (GAME == "UR") {
-		robj.sentinel = parseInt32();
-		if (robj.sentinel != -1)
-			parsingError(`UR main sentinel not -1, instead ${sentinel} (int32 @ ${robj.i - 4})`);
-
-		robj.version = parseUint32();
-		if (robj.version != 2)
-			console.log(`${DISTRIBUTION == "SG" ? 'steam_gog' : 'wt'}UR file version not 2, instead ${version} (uint32 @ ${robj.i - 4})`);
-	}
-
-	robj.mapVisible = parseBool();
-	robj.mapDolly = parseInt32();
-	robj.running = parseBool();
-	robj.showingItems = parseBool();
-
-	robj.hotkeySpellAssignment = [];
-	for (let i = 0; i < 12; ++i)
-		robj.hotkeySpellAssignment.push(parseString(16));
-
-	//NOTE stand-in
-	robj.tipSeen = [];
-	for (let i = 0; i < 19; ++i) //TODO og steam 19 kcontexttips
-		robj.tipSeen.push(parseBool());
-
-	robj.player = parseCharacter();
-
-	let n = parseUint32();
-	robj.petList = [];
-	for (let i = 0; i < n; ++i)
-		robj.petList.push(parseCharacter());
-
-	n = parseUint32();
-	robj.discoveryHistory = [];
-	for (let i = 0; i < n; ++i)
-		robj.discoveryHistory.push(parseHistory());
-
-	if (DISTRIBUTION == "SG" && GAME == "OG") {
-		robj.gemsCollected = parseString(16);
-		robj.fishCaught = parseString(16);
-		//robj.disabledAchievements = parseBool(); //TODO however it seems nothing has this?
-	}
-
-	if (GAME == "UR") {
-		if (robj.version >= 0) {
-			//TODO is all this code covered?
-			const n = parseUint32();
-			robj.wardDescriptions = [];
-			for (let i = 0; i < n; ++i)
-				robj.wardDescriptions.push(parseCharacter());
-		}
-		if (robj.version >= 1) {
-			const n = parseUint32();
-			robj.tipSeen = [];
-			for (let i = 0; i < n; ++i)
-				robj.tipSeen.push(parseBool());
-		}
-		if (robj.version >= 2)
-			robj.hash = parseString(16);
-
-		//TODO TODO TODO angela hardcore check. what to do?
-
-		if (DISTRIBUTION == "SG") {
-			robj.fishList = parseString(16);
-			robj.cardList = parseString(16);
-			//robj.disabledAchievements = parseBool(); //TODO however it seems nothing has this?
-		}
-	}
 }
 
 
@@ -1332,7 +1345,7 @@ function write() {
 }
 
 
-function promiseReadDat(datFile, name)
+function promiseReadDat(datFile, datType)
 {
 	return new Promise((res, rej) => {
 		const reader = new FileReader();
@@ -1340,7 +1353,7 @@ function promiseReadDat(datFile, name)
 			res(reader.result);
 		}
 		reader.onerror = () => {
-			ERR_MSGS.push(`Could not open a ${name} (Which? For your security I can't know).`);
+			ERR_MSGS.push(`Could not open a ${datType} (${datFile.name}; for your security I don't know full path).`);
 			rej(); //TODO code cover this onerror part
 		}
 		reader.readAsText(datFile);
@@ -1401,7 +1414,7 @@ async function parseSpellsDat(datFile)
 {
 	let dat = null;
 	try {
-		dat = await promiseReadDat(datFile);
+		dat = await promiseReadDat(datFile, "spells.dat");
 	} catch (e) {
 		return;
 	}
