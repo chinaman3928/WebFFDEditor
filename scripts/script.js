@@ -1373,9 +1373,10 @@ function promiseReadDat(datFile, datType)
 // ie is not [SPELL], <NAME>, <SPHERE>, [something], [/.*]
 // then you know not to continue tokenizing, just go to next line
 // similarly, if you found [SPELL] or [something] or [/.*] then you can also go til next line
-//TODO would you want to warn about name collisions?
-//TODO does casing for MONSTER/ITEM/SPELL matter?
+//TODO name collisions
+//TODO does casing for MONSTER/ITEM/SPELL matter? or anywhere?
 //TODO if fail, then reset the relevant globals eg _INFO's (there are a lot of globals to reset, good luck)
+//TODO constructors ie CItemDescription, CItem, CItemSaveInstance, CItemInstance, CItemTemplate, etc
 
 //also can optimize by ignoring everything until back in depth 0
 //also can optimize by beelining til end of a nested subgroup
@@ -1402,6 +1403,106 @@ function tokenizeNextLine(dat, i, tokens)
     }
 }
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// TODO monsters
+
+async function promiseParseMonstersDat(datFile)
+{
+	return new Promise((res, rej) => {
+		res(parseMonstersDat(datFile));
+	});
+}
+
+function defaultizeMonsterTemplate(mo)
+{
+}
+function undefineMonsterTemplate(mo)
+{
+}
+
+
+//dont forget the eliting
+async function parseMonstersDat(datFile)
+{
+	let dat = null;
+	try {
+		dat = await promiseReadDat(datFile, "monsters.dat"); //TODO for all three: might be useful to also do "monsters.dat (n)"
+	} catch (e) { //TODO OUTPUT ERROR
+		return;
+	}
+
+	let i = 0;
+    let depth = 0, inMonster = false;
+
+	//TODO how many do you need?
+	const mo = {
+	};
+
+    while (true)
+    {
+        let tokens = [];
+        if ((i = tokenizeNextLine(dat, i, tokens)) >= dat.length)
+            break;
+        if (!tokens.length || tokens[0].length < 3)
+            continue;
+        
+        if (inMonster && depth == 1 && tokens[0][0] == '<' && tokens[0].at(-1) == '>')
+        {
+            if (tokens.length == 1)
+			{
+				//TODO error for any type of tag, if that tag needs many attributes
+				ERR_MSGS.push(`monsters.dat: The line before ${i} has too few tokens (Which? For your security I can't know).`);
+				return;
+			}
+
+			//TODO
+			// if (it.merchantMaximum === undefined && tokens[0].slice(1, -1) == "MERCHANT_MAXIMUM")
+			// 	it.merchantMaximum = RANK == KRankNormal ? parseInt(tokens[1], 10) + KRANKLEVELOFFSET : 32000;
+        }
+        else if (tokens[0][0] == '[' && tokens[0][1] == '/' && tokens[0].at(-1) == ']')
+        {
+            if (depth == 0)
+			{
+                ERR_MSGS.push(`monsters.dat: The line before ${i} has a bad end tag (Which? For your security I can't know).`);
+				return;
+			}
+            if (depth == 1 && inMonster)
+            {
+				defaultizeMonsterTemplate(mo);
+				if (false /*validation*/)
+				{
+					ERR_MSGS.push(`monsters.dat: The monster before ${i} BRUHBRUHBRUH`);
+					return;
+				}
+            	MONSTERS_INFO.set(mo.name, mo); //TODO what to do with duplicate names?
+				undefineMonsterTemplate(mo);
+				//TODO in CCharacterDescription() there is some stuff
+				inMonster = false;
+            }
+            --depth;
+        }
+        else if (tokens[0][0] == '[' && tokens[0].at(-1) == ']')
+        {
+            if (depth == 0 && tokens[0].slice(1, -1) == "MONSTER")
+                inMonster = true;
+            ++depth;
+        }
+    }
+
+    if (inMonster)
+	{
+		defaultizeMonsterTemplate(mo);
+		if (false /*validation*/)
+		{
+			ERR_MSGS.push(`monsters.dat: The monster before ${i} BRUHBRUHBRUH`);
+			return;
+		}
+		MONSTERS_INFO.set(mo.name, mo); //TODO what to do with duplicate names?
+		//TODO in CCharacterDescription() there is some stuff
+	}
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 async function promiseParseItemsDat(datFile)
 {
@@ -1669,12 +1770,9 @@ async function promiseParseSpellsDat(datFile)
 	});
 }
 
-//TODO error if empty NAME?
-//TODO consider defaults everywhere
 //TODO uploads reset whats there, so you cant upload A/spells.dat and then cd into B then B/spells.dat
 // or at least not easily, so override that behavior. but then that means you will need to have a clear button
-//TODO also if there are multiple occurrences of same name, then what does game do?
-//TODO still have to test nesting
+//TODO name collisions
 //TODO are attack defense charm values in dat case insensitive? for that matter, anything else?
 const K_MAGIC_CHARM = 2;
 async function parseSpellsDat(datFile)
@@ -1688,8 +1786,7 @@ async function parseSpellsDat(datFile)
 
 	let i = 0;
     let depth = 0, inSpell = false;
-    let theName = "", lookingForName = true;
-    let theSphere = K_MAGIC_CHARM, lookingForSphere = true;
+    let name = undefined, sphere = undefined;
 
     while (true)
     {
@@ -1706,10 +1803,10 @@ async function parseSpellsDat(datFile)
 				ERR_MSGS.push(`spells.dat: The line before ${i} has too few tokens (Which? For your security I can't know).`);
 				return;
 			}
-            if (lookingForName && tokens[0].slice(1, -1) == "NAME")
-                theName = tokens[1], lookingForName = false;
-            else if (lookingForSphere && tokens[0].slice(1, -1) == "SPHERE")
-                theSphere = tokens[1], lookingForSphere = false;
+            if (name === undefined && tokens[0].slice(1, -1) == "NAME")
+                name = tokens[1];
+            else if (sphere === undefined && tokens[0].slice(1, -1) == "SPHERE")
+                sphere = tokens[1];
         }
         else if (tokens[0][0] == '[' && tokens[0][1] == '/' && tokens[0].at(-1) == ']')
         {
@@ -1720,10 +1817,14 @@ async function parseSpellsDat(datFile)
 			}
             if (depth == 1 && inSpell)
             {
-            SPELLS_INFO.set(theName, theSphere); //TODO validation etc; what if still looking for either?
+				if (name === undefined)
+				{
+					ERR_MSGS.push(`spells.dat: The spell before ${i} has no name.`);
+					return;
+				}
+            	SPELLS_INFO.set(name, sphere);
                 inSpell = false;
-                theName = "", lookingForName = true;
-                theSphere = K_MAGIC_CHARM, lookingForSphere = true;
+                name = undefined, sphere = undefined;
             }
             --depth;
         }
@@ -1735,7 +1836,15 @@ async function parseSpellsDat(datFile)
         }
     }
 
-    if (inSpell) SPELLS_INFO.set(theName, theSphere);
+    if (inSpell)
+	{
+		if (name === undefined)
+		{
+			ERR_MSGS.push(`spells.dat: The spell before ${i} has no name.`);
+			return;
+		}
+		SPELLS_INFO.set(name, sphere);
+	}
 }
 
 //ITEMS-not sure if this is exhaustive
