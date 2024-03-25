@@ -13,7 +13,7 @@
 //  damage
 //  stats
 //  skills
-//  items
+//  inventory/items
 //    names
 //    enchants
 //    bonuses
@@ -51,6 +51,9 @@
 //  difficulty; consider hash
 //  respec; can also edit stats and skills but let them, however max once respec, option to undo respec? ability in stats/skills to allocate unused points?
 //  unretire; interacts with fast retire?
+//  WT <-> SG transfer
+//  physically obstructed
+//  cannot get quest item
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -142,6 +145,8 @@ function clearFiles(ev)
 }
 
 
+const uploadScreen = document.getElementById("uploadScreen");
+
 const runButton = document.getElementById("runButton");	
 runButton.addEventListener("click", preRun);
 
@@ -204,19 +209,19 @@ const PLAYER_TAB =
 	stack: []
 };
 
-// function run()
-// {
-// 	for (each of the tab links)
-// 	{
-// 		make it interactable;
-// 	}
+function run()
+{
+	// for (each of the tab links)
+	// {
+	// 	make it interactable;
+	// }
 
-// 	hide the uploadScreen;
+	// uploadScreen.hidden = true;
 
-// 	switchPlayerTab();
-// 	//eventually need to reset relevant globals too...
-// 	// and unhide the uploadScreen...
-// }
+	// switchPlayerTab();
+	// //eventually need to reset relevant globals too...
+	// // and unhide the uploadScreen...
+}
 
 // function switchPlayerTab()
 // {
@@ -1369,6 +1374,8 @@ function promiseReadDat(datFile, datType)
 // then you know not to continue tokenizing, just go to next line
 // similarly, if you found [SPELL] or [something] or [/.*] then you can also go til next line
 //TODO would you want to warn about name collisions?
+//TODO does casing for MONSTER/ITEM/SPELL matter?
+//TODO if fail, then reset the relevant globals eg _INFO's (there are a lot of globals to reset, good luck)
 
 //also can optimize by ignoring everything until back in depth 0
 //also can optimize by beelining til end of a nested subgroup
@@ -1395,6 +1402,266 @@ function tokenizeNextLine(dat, i, tokens)
     }
 }
 
+
+async function promiseParseItemsDat(datFile)
+{
+	return new Promise((res, rej) => {
+		res(parseItemsDat(datFile));
+	});
+}
+
+function defaultizeItemTemplate(it)
+{
+	if (it.type === undefined)				it.type = KItemGeneric;
+	if (it.name === undefined)				it.name = "";
+	if (it.effects === undefined)			it.effects = [];
+	if (it.bonuses === undefined)			it.bonuses = [];
+	if (it.armor === undefined)				it.armor = [0, 0];
+	if (it.damage === undefined)			it.damage = [0, 0];
+	if (it.toHitBonus === undefined)		it.toHitBonus = 0;
+	if (it.sockets === undefined)			it.sockets = 0;
+	if (it.speed === undefined)				it.speed = KAttackNormal;
+	if (it.requires === undefined)			it.requires = [];
+	if (it.grade === undefined)				it.grade = KGradeNormal;
+	if (it.icon === undefined)				it.icon = "";
+	if (it.unique === undefined)			it.unique = false;
+	if (it.identified === undefined)		it.identified = false;
+	if (it.rarity === undefined)			it.rarity = 1;
+	if (it.fishingRarity === undefined)		it.fishingRarity = 1000;
+	if (it.minimumDepth === undefined)		it.minimumDepth = 1;
+	if (it.maximumDepth === undefined)		it.maximumDepth = 32000;
+	if (it.minimumFishingDepth === undefined) it.minimumFishingDepth = 1
+	if (it.maximumFishingDepth === undefined) it.maximumFishingDepth = 32000
+	if (it.merchantMinimum === undefined)	it.merchantMinimum = 0;
+	if (it.merchantMaximum === undefined)	it.merchantMaximum = 100;
+}
+function undefineItemTemplate(it)
+{
+	it.type = undefined;				
+	it.name = undefined;				
+	it.effects = undefined;
+	it.bonuses = undefined;
+	it.armor = undefined;				
+	it.damage = undefined;				
+	it.toHitBonus = undefined;			
+	it.sockets = undefined;				
+	it.speed = undefined;				
+	it.requires = undefined;
+	it.grade = undefined;				
+	it.icon = undefined;				
+	it.unique = undefined;				
+	it.identified = undefined;			
+	it.rarity = undefined;				
+	it.fishingRarity = undefined;		
+	it.minimumDepth = undefined;		
+	it.maximumDepth = undefined;		
+	it.minimumFishingDepth = undefined;	
+	it.maximumFishingDepth = undefined;	
+	it.merchantMinimum = undefined;		
+	it.merchantMaximum = undefined;		
+}
+
+//TODO for force spawning, remember that Item() has stuff inside it too. what is ItemInstance?
+//TODO vars, updates, sets
+//dont forget the eliting
+async function parseItemsDat(datFile)
+{
+	let dat = null;
+	try {
+		dat = await promiseReadDat(datFile, "items.dat");
+	} catch (e) { //TODO OUTPUT ERROR
+		return;
+	}
+
+	let i = 0;
+    let depth = 0, inItem = false;
+
+	//TODO if you want to be able to spawn things in then you might need everything...
+	const it = {
+		type: undefined,				//KItemGeneric
+		name: undefined,				//""
+		effects: undefined,
+		bonuses: undefined,
+		armor: undefined,				//[0,0]
+		damage: undefined,				//[0,0]
+		toHitBonus: undefined,			//0
+		sockets: undefined,				//0
+		speed: undefined,				//KAttackNormal
+		requires: undefined,
+		grade: undefined,				//KGradeNormal
+		icon: undefined,				//""
+		unique: undefined,				//false
+		identified: undefined,			//false
+		rarity: undefined,				//1
+		fishingRarity: undefined,		//1000
+		minimumDepth: undefined,		//1
+		maximumDepth: undefined,		//32000
+		minimumFishingDepth: undefined,	//1
+		maximumFishingDepth: undefined,	//32000
+		merchantMinimum: undefined,		//0
+		merchantMaximum: undefined		//100
+	};
+
+    while (true)
+    {
+        let tokens = [];
+        if ((i = tokenizeNextLine(dat, i, tokens)) >= dat.length)
+            break;
+        if (!tokens.length || tokens[0].length < 3)
+            continue;
+        
+        if (inItem && depth == 1 && tokens[0][0] == '<' && tokens[0].at(-1) == '>')
+        {
+            if (tokens.length == 1)
+			{
+				//TODO error for any type of tag, if that tag needs many attributes
+				ERR_MSGS.push(`items.dat: The line before ${i} has too few tokens (Which? For your security I can't know).`);
+				return;
+			}
+            if (it.type === undefined && tokens[0].slice(1, -1) == "TYPE")
+				it.type = ITEMTYPE_NAME_INT.get(tokens[1].toUpperCase());
+			else if (it.type === undefined && tokens[0].slice(1, -1) == "NAME")
+				it.name = tokens[1]; //todo eliting
+			//TODO effects...
+			//TODO bonuses...
+			else if (it.armor === undefined && tokens[0].slice(1, -1) == "ARMOR")
+			{
+				if (tokens.length < 3)
+				{
+					ERR_MSGS.push(`items.dat: The line before ${i} has too few tokens (Which? For your security I can't know).`);
+					return;	
+				}
+				it.armor = [parseInt(tokens[1], 10), pareInt(tokens[2], 10)];
+				//TODO eliting
+			}
+			else if (it.damage === undefined && tokens[0].slice(1, -1) == "DAMAGE")
+			{
+				if (tokens.length < 3)
+				{
+					ERR_MSGS.push(`items.dat: The line before ${i} has too few tokens (Which? For your security I can't know).`);
+					return;	
+				}
+				it.damage = [parseInt(tokens[1], 10), parseInt(tokens[2], 10)];
+				//TODO eliting
+			}
+			else if (it.toHitBonus === undefined && tokens[0].slice(1, -1) == "TOHITBONUS")
+				it.toHitBonus = parseInt(tokens[1], 10) //TODO eliting
+			else if (it.sockets === undefined && tokens[0].slice(1, -1) == "SOCKETS")
+				it.sockets = parseInt(tokens[1], 10) //TODO eliting, but also capped?
+				// int32 Sockets = pItem.Sockets();
+				// if( Sockets > m_SlotsTall )
+				// {
+				// 	Sockets = m_SlotsTall;
+				// }
+				// SetSockets( Sockets );
+			else if (it.speed === undefined && tokens[0].slice(1, -1) == "SPEED")	
+			{
+				const upper = tokens[1].toUpperCase();
+				it.speed = ATTACKSPEED_STRING_INT.contains(upper) ? ATTACKSPEED_STRING_INT.get(upper) : KAttackNormal;
+			}
+			//TODO requires...
+			else if (it.grade === undefined && tokens[0].slice(1, -1) == "GRADE")
+			{
+				const upper = tokens[1].toUpperCase();
+				it.grade = GRADES_NAME_TYPE ? GRADES_NAME_TYPE.get(upper) : KGradeNormal;
+			}
+			else if (it.icon === undefined && tokens[0].slice(1, -1) == "ICON")
+				it.icon = tokens[1];
+			else if (it.unique === undefined && tokens[0].slice(1, -1) == "UNIQUE")
+				it.unique = (tokens[1] == "1")
+			else if (it.identified === undefined && tokens[0].slice(1, -1) == "IDENTIFIED")
+				it.identified = (tokens[1] == "1")
+				// if( !IsArtifact() &&
+				// 	!IsUnique() )
+				// {
+				// 	SetIdentified( kTrue );
+				// }
+			else if (it.rarity === undefined && tokens[0].slice(1, -1) == "RARITY")
+			{
+				//TODO ranking
+				let rarity = parseInt(tokens[1], 10);
+				it.rarity = rarity < 1000 ? max(999, rarity * KRANKITEMRARITYMULTIPLIER) : rarity;
+			}
+			else if (it.fishingRarity === undefined && tokens[0].slice(1, -1) == "FISHING_RARITY")
+			{
+				//TODO ranking
+				let rarity = parseInt(tokens[1], 10);
+				it.fishingRarity = rarity < 1000 ? max(999, rarity * KRANKPOWERMULTIPLIER * 0.985) : rarity;
+			}
+			else if (it.minimumDepth === undefined && tokens[0].slice(1, -1) == "MINIMUM_DEPTH")
+			{
+				//TODO eliting
+				let depth = parseInt(tokens[1], 10) + KRANKLEVELOFFSET;
+				it.minimumDepth = depth;
+				it.minimumFishingDepth = depth;
+
+				if (RANK == KRankLegendary)
+				{
+					let renown = max(0, min(10, trunc((depth + 15) / 7))) + 9;
+					//TODO add renown req
+				}
+				else if (RANK = KRankElite)
+				{
+					let renown = max(0, min(10, trunc((depth - 3) / 10)) + 4);
+					//TODO add renown req
+				}
+			}
+			//TODO for all these, eliting
+			else if (it.maximumDepth === undefined && tokens[0].slice(1, -1) == "MAXIMUM_DEPTH")
+				it.maximumFishingDepth = it.merchantMaximum = (RANK == KRankNormal ? parseInt(token[1], 10) + KRANKLEVELOFFSET : 32000);
+			else if (it.minimumFishingDepth === undefined && tokens[0].slice(1, -1) == "MINIMUM_FISHING_DEPTH")
+				it.minimumFishingDepth = parseInt(token[1], 10) + KRANKLEVELOFFSET;
+			else if (it.maximumFishingDepth === undefined && tokens[0].slice(1, -1) == "MAXIMUM_FISHING_DEPTH")
+				it.maximumFishingDepth = RANK == KRankNormal ? parseInt(token[1], 10) + KRANKLEVELOFFSET : 32000;
+			else if (it.merchantMinimum === undefined && tokens[0].slice(1, -1) == "MERCHANT_MINIMUM")
+				it.merchantMinimum = parseInt(token[1], 10) + KRANKLEVELOFFSET;
+			else if (it.merchantMaximum === undefined && tokens[0].slice(1, -1) == "MERCHANT_MAXIMUM")
+				it.merchantMaximum = RANK == KRankNormal ? parseInt(tokens[1], 10) + KRANKLEVELOFFSET : 32000;
+        }
+        else if (tokens[0][0] == '[' && tokens[0][1] == '/' && tokens[0].at(-1) == ']')
+        {
+            if (depth == 0)
+			{
+                ERR_MSGS.push(`items.dat: The line before ${i} has a bad end tag (Which? For your security I can't know).`);
+				return;
+			}
+            if (depth == 1 && inItem)
+            {
+				defaultizeItemTemplate(it);
+				if (it.name == "" || it.icon == "")
+				{
+					ERR_MSGS.push(`items.dat: The item before ${i} has no name or no icon`);
+					return;
+				}
+            	ITEMS_INFO.set(it.name, it); //TODO what to do with duplicate names?
+				undefineItemTemplate(it);
+				//TODO in CItemDescription() there is some name stuff
+				inItem = false;
+            }
+            --depth;
+        }
+        else if (tokens[0][0] == '[' && tokens[0].at(-1) == ']')
+        {
+            if (depth == 0 && tokens[0].slice(1, -1) == "ITEM")
+                inItem = true;
+            ++depth;
+        }
+    }
+
+    if (inItem)
+	{
+		defaultizeItemTemplate(it);
+		if (it.name == "" || it.icon == "")
+		{
+			ERR_MSGS.push(`items.dat: The item before ${i} has no name or no icon`);
+			return;
+		}
+		ITEMS_INFO.set(it.name, it); //TODO what to do with duplicate names?
+		//TODO in CItemDescription() there is some name stuff	
+	}
+}
+
+
 async function promiseParseSpellsDat(datFile)
 {
 	return new Promise((res, rej) => {
@@ -1403,7 +1670,7 @@ async function promiseParseSpellsDat(datFile)
 }
 
 //TODO error if empty NAME?
-// also for sphere, stays default charm if the value doesnt match anything
+//TODO consider defaults everywhere
 //TODO uploads reset whats there, so you cant upload A/spells.dat and then cd into B then B/spells.dat
 // or at least not easily, so override that behavior. but then that means you will need to have a clear button
 //TODO also if there are multiple occurrences of same name, then what does game do?
@@ -1415,7 +1682,7 @@ async function parseSpellsDat(datFile)
 	let dat = null;
 	try {
 		dat = await promiseReadDat(datFile, "spells.dat");
-	} catch (e) {
+	} catch (e) { //TODO OUTPUT ERROR
 		return;
 	}
 
@@ -1453,7 +1720,7 @@ async function parseSpellsDat(datFile)
 			}
             if (depth == 1 && inSpell)
             {
-            SPELLS_INFO.set(theName, theSphere); //TODO validation etc
+            SPELLS_INFO.set(theName, theSphere); //TODO validation etc; what if still looking for either?
                 inSpell = false;
                 theName = "", lookingForName = true;
                 theSphere = K_MAGIC_CHARM, lookingForSphere = true;
@@ -1471,7 +1738,7 @@ async function parseSpellsDat(datFile)
     if (inSpell) SPELLS_INFO.set(theName, theSphere);
 }
 
-//ITEMS
+//ITEMS-not sure if this is exhaustive
 
 // EGrade				m_Grade;
 // std::string			m_Name;
