@@ -1381,6 +1381,7 @@ function promiseReadDat(datFile, datType)
 //also can optimize by ignoring everything until back in depth 0
 //also can optimize by beelining til end of a nested subgroup
 //also can optimize by ignoring line if the first token.size() < 3
+//TODO easy: token[0].slice(1, -1) once and reuse!
 
 function tokenizeNextLine(dat, i, tokens)
 {
@@ -1504,7 +1505,23 @@ async function parseMonstersDat(datFile)
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+const ITEMTYPE_STR_INT = new Map([["NONE", 0], ["STAIRSUP", 1], ["STAIRSDOWN", 2], ["TOWNPORTAL", 3], ["DUNGEONPORTAL", 4],
+	["FISHINGHOLE", 5], ["GOLD", 6], ["GENERIC", 7], ["POTION", 8], ["WEAPONRACK", 9], ["CONTAINER", 10], ["CHESTSMALL", 11], ["CHESTMEDIUM", 12],
+	["CHESTLARGE", 13], ["SWORD", 14], ["CLUB", 15], ["HELMET", 16], ["SHIELD", 17], ["SPEAR", 18], ["BOW", 19], ["BELT", 20], ["NECKLACE", 21], ["RING", 22],
+	["GLOVES", 23], ["BOOTS", 24], ["SHIRT", 25], ["POLEARM", 26], ["SCROLL", 27], ["BOOK", 28], ["SPELL", 29], ["AXE", 30], ["HAMMER", 31], ["STAFF", 32],
+	["CROSSBOW", 33], ["GEM", 34], ["PETFOOD", 35], ["FISHINGPOLE", 36], ["MAGICANVIL", 37], ["SHRINE", 38], ["FOUNTAIN", 39], ["THRONE", 40], ["STATUE", 41],
+	["HEALFOUNTAIN", 42], ["MANAFOUNTAIN", 43], ["STAMINAFOUNTAIN", 44], ["WELLNESSFOUNTAIN", 45]]);
+
+const ATTACKSPEED_STR_INT = new Map([["SLOWEST", 0], ["SLOW", 1], ["NORMAL", 2], ["FAST", 3], ["FASTEST", 4]]);
+
+const GRADE_STR_INT = new Map([["", 0], ["SUPERIOR", 1], ["EXCEPTIONAL", 2], ["FLAWLESS", 3]]);
+
+const RANK_ITEM_RARITY_MULTIPLIER = [1.0, 5.0, 10.0];
+const RANK_POWER_MULTIPLIER = [1.0, 2.0, 4.0];
+const RANK_LEVEL_OFFSET = [0, 12, 30];
+
 async function promiseParseItemsDat(datFile)
+
 {
 	return new Promise((res, rej) => {
 		res(parseItemsDat(datFile));
@@ -1565,6 +1582,7 @@ function undefineItemTemplate(it)
 //TODO for force spawning, remember that Item() has stuff inside it too. what is ItemInstance?
 //TODO vars, updates, sets
 //dont forget the eliting
+	//TODO if i index into tokens does that shit actually give me a string?
 async function parseItemsDat(datFile)
 {
 	let dat = null;
@@ -1620,9 +1638,12 @@ async function parseItemsDat(datFile)
 				return;
 			}
             if (it.type === undefined && tokens[0].slice(1, -1) == "TYPE")
-				it.type = ITEMTYPE_NAME_INT.get(tokens[1].toUpperCase());
+			{
+				const upper = tokens[1].toUpperCase();
+				it.type = ITEMTYPE_STR_INT.has(upper) ? ITEMTYPE_STR_INT[upper] : undefined;
+			}
 			else if (it.type === undefined && tokens[0].slice(1, -1) == "NAME")
-				it.name = tokens[1]; //todo eliting
+				it.name = tokens[1];
 			//TODO effects...
 			//TODO bonuses...
 			else if (it.armor === undefined && tokens[0].slice(1, -1) == "ARMOR")
@@ -1633,7 +1654,6 @@ async function parseItemsDat(datFile)
 					return;	
 				}
 				it.armor = [parseInt(tokens[1], 10), pareInt(tokens[2], 10)];
-				//TODO eliting
 			}
 			else if (it.damage === undefined && tokens[0].slice(1, -1) == "DAMAGE")
 			{
@@ -1643,7 +1663,6 @@ async function parseItemsDat(datFile)
 					return;	
 				}
 				it.damage = [parseInt(tokens[1], 10), parseInt(tokens[2], 10)];
-				//TODO eliting
 			}
 			else if (it.toHitBonus === undefined && tokens[0].slice(1, -1) == "TOHITBONUS")
 				it.toHitBonus = parseInt(tokens[1], 10) //TODO eliting
@@ -1658,13 +1677,13 @@ async function parseItemsDat(datFile)
 			else if (it.speed === undefined && tokens[0].slice(1, -1) == "SPEED")	
 			{
 				const upper = tokens[1].toUpperCase();
-				it.speed = ATTACKSPEED_STRING_INT.contains(upper) ? ATTACKSPEED_STRING_INT.get(upper) : KAttackNormal;
+				it.speed = ATTACKSPEED_STR_INT.has(upper) ? ATTACKSPEED_STR_INT.get(upper) : ATTACKSPEED_STR_INT["NORMAL"];
 			}
 			//TODO requires...
 			else if (it.grade === undefined && tokens[0].slice(1, -1) == "GRADE")
 			{
 				const upper = tokens[1].toUpperCase();
-				it.grade = GRADES_NAME_TYPE ? GRADES_NAME_TYPE.get(upper) : KGradeNormal;
+				it.grade = GRADE_STR_INT.has(upper) ? GRADE_STR_INT.get(upper) : GRADE_STR_INT[""];
 			}
 			else if (it.icon === undefined && tokens[0].slice(1, -1) == "ICON")
 				it.icon = tokens[1];
@@ -1676,48 +1695,23 @@ async function parseItemsDat(datFile)
 				// 	!IsUnique() )
 				// {
 				// 	SetIdentified( kTrue );
-				// }
+				// } TODO
 			else if (it.rarity === undefined && tokens[0].slice(1, -1) == "RARITY")
-			{
-				//TODO ranking
-				let rarity = parseInt(tokens[1], 10);
-				it.rarity = rarity < 1000 ? max(999, rarity * KRANKITEMRARITYMULTIPLIER) : rarity;
-			}
+				it.rarity = parseInt(tokens[1], 10);
 			else if (it.fishingRarity === undefined && tokens[0].slice(1, -1) == "FISHING_RARITY")
-			{
-				//TODO ranking
-				let rarity = parseInt(tokens[1], 10);
-				it.fishingRarity = rarity < 1000 ? max(999, rarity * KRANKPOWERMULTIPLIER * 0.985) : rarity;
-			}
+				it.fishingRarity = parseInt(tokens[1], 10);
 			else if (it.minimumDepth === undefined && tokens[0].slice(1, -1) == "MINIMUM_DEPTH")
-			{
-				//TODO eliting
-				let depth = parseInt(tokens[1], 10) + KRANKLEVELOFFSET;
-				it.minimumDepth = depth;
-				it.minimumFishingDepth = depth;
-
-				if (RANK == KRankLegendary)
-				{
-					let renown = max(0, min(10, trunc((depth + 15) / 7))) + 9;
-					//TODO add renown req
-				}
-				else if (RANK = KRankElite)
-				{
-					let renown = max(0, min(10, trunc((depth - 3) / 10)) + 4);
-					//TODO add renown req
-				}
-			}
-			//TODO for all these, eliting
+				it.minimumDepth = parseInt(tokens[1], 10);
 			else if (it.maximumDepth === undefined && tokens[0].slice(1, -1) == "MAXIMUM_DEPTH")
-				it.maximumFishingDepth = it.merchantMaximum = (RANK == KRankNormal ? parseInt(token[1], 10) + KRANKLEVELOFFSET : 32000);
+				it.maximumDepth = parseInt(token[1], 10);
 			else if (it.minimumFishingDepth === undefined && tokens[0].slice(1, -1) == "MINIMUM_FISHING_DEPTH")
-				it.minimumFishingDepth = parseInt(token[1], 10) + KRANKLEVELOFFSET;
+				it.minimumFishingDepth = parseInt(token[1], 10);
 			else if (it.maximumFishingDepth === undefined && tokens[0].slice(1, -1) == "MAXIMUM_FISHING_DEPTH")
-				it.maximumFishingDepth = RANK == KRankNormal ? parseInt(token[1], 10) + KRANKLEVELOFFSET : 32000;
+				it.maximumFishingDepth = parseInt(token[1], 10);
 			else if (it.merchantMinimum === undefined && tokens[0].slice(1, -1) == "MERCHANT_MINIMUM")
-				it.merchantMinimum = parseInt(token[1], 10) + KRANKLEVELOFFSET;
+				it.merchantMinimum = parseInt(token[1], 10);
 			else if (it.merchantMaximum === undefined && tokens[0].slice(1, -1) == "MERCHANT_MAXIMUM")
-				it.merchantMaximum = RANK == KRankNormal ? parseInt(tokens[1], 10) + KRANKLEVELOFFSET : 32000;
+				it.merchantMaximum = parseInt(tokens[1], 10);
         }
         else if (tokens[0][0] == '[' && tokens[0][1] == '/' && tokens[0].at(-1) == ']')
         {
@@ -1728,15 +1722,81 @@ async function parseItemsDat(datFile)
 			}
             if (depth == 1 && inItem)
             {
-				defaultizeItemTemplate(it);
 				if (it.name == "" || it.icon == "")
 				{
 					ERR_MSGS.push(`items.dat: The item before ${i} has no name or no icon`);
 					return;
 				}
-            	ITEMS_INFO.set(it.name, it); //TODO what to do with duplicate names?
+
+				for (rank in [0, 1, 2])
+				{
+					if (rank == 1 && nonWeaponNonArmor && it.maximumDepth !== undefined && it.maximumDepth < 12)
+						break;
+
+					const it2 = structuredClone(it);
+					if (rank >= 1)
+						it2.name = `${RANK_INT_STR} ${it2.name}`;
+
+					//TODO bonuses...
+
+					if (it2.armor !== undefined)
+					{
+						it2.armor[0] = it2.armor[0] * RANK_POWER_MULTIPLIER[rank];
+						it2.armor[1] = it2.armor[1] * RANK_POWER_MULTIPLIER[rank];
+					}
+					if (it2.damage !== undefined)
+					{
+						it2.damage[0] = it2.damage[0] * RANK_POWER_MULTIPLIER[rank];
+						it2.damage[1] = it2.damage[1] * RANK_POWER_MULTIPLIER[rank];
+					}
+
+					if (it2.rarity !== undefined)
+						it2.rarity = it2.rarity < 1000 ? Math.max(999, it2.rarity * RANK_ITEM_RARITY_MULTIPLIER[rank]) : it2.rarity;
+					if (it2.fishingRarity !== undefined)
+						it2.fishingRarity = it2.fishingRarity < 1000 ? Math.max(999, it2.fishingRarity * RANK_POWER_MULTIPLIER[rank] * 0.985) : it2.fishingRarity;
+
+					if (it2.minimumFishingDepth !== undefined)
+						it2.minimumFishingDepth += RANK_LEVEL_OFFSET[rank];
+					if (it2.maximumFishingDepth !== undefined)
+						it2.maximumFishingDepth = rank == 0 ? it2.maximumFishingDepth + RANK_LEVEL_OFFSET[rank] : 32000;
+
+					//TODO min depth, remember nuance of double update
+					if (it2.minimumDepth !== undefined)
+					{
+						it.minimumDepth += RANK_LEVEL_OFFSET[rank];
+						if (it.minimumFishingDepth === undefined)
+							it.minimumFishingDepth = depth;
+		
+						if (rank == 2)
+						{
+							const renown = Math.max(0, min(10, Math.trunc((it.minimumDepth + 15) / 7))) + 9;
+							//TODO add renown req
+						}
+						else if (rank == 1)
+						{
+							const renown = Math.max(0, min(10, Math.trunc((it.minimumDepth - 3) / 10)) + 4);
+							//TODO add renown req
+						}
+					}
+
+					if (it2.maximumDepth !== undefined)
+					{
+						it2.maximumDepth = (rank == 0 ? it2.maximumDepth + RANK_LEVEL_OFFSE[rank] : 32000);
+						if (it2.maximumFishingDepth === undefined)
+							it2.maximumFishingDepth = it2.maximumDepth;
+					}
+
+					if (it2.merchantMinimum !== undefined)
+						it2.merchantMinimum += RANK_LEVEL_OFFSET[rank];
+					if (it2.merchantMaximum !== undefined)
+						it2.merchantMaximum = rank == 0 ? it2.merchantMaximum + RANK_LEVEL_OFFSET[rank] : 32000;
+	
+					defaultizeItemTemplate(it);
+					ITEMS_INFO.set(it.name, it); //TODO what to do with duplicate names?
+				}
+
 				undefineItemTemplate(it);
-				//TODO in CItemDescription() there is some name stuff
+				//TODO in CItemDescription() there is some name stuff...from whence was the sockets stuff?
 				inItem = false;
             }
             --depth;
@@ -1749,14 +1809,15 @@ async function parseItemsDat(datFile)
         }
     }
 
+	//TODO TODO TODO ANGELA left off with the eliting above, need to pull out into a function and put here
     if (inItem)
 	{
-		defaultizeItemTemplate(it);
 		if (it.name == "" || it.icon == "")
 		{
 			ERR_MSGS.push(`items.dat: The item before ${i} has no name or no icon`);
 			return;
 		}
+		defaultizeItemTemplate(it);
 		ITEMS_INFO.set(it.name, it); //TODO what to do with duplicate names?
 		//TODO in CItemDescription() there is some name stuff	
 	}
