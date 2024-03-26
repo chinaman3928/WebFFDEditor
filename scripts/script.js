@@ -1586,7 +1586,7 @@ function addTemplateItem(it)
 {
 	for (rank in [0, 1, 2])
 	{
-		if (rank == 1 && (it.type !== undefined || !ITEMTYPES_ARMS.contains(ITEMTYPE_STR_INT[it.type.toUpperCase()]) ||
+		if (rank == 1 && (it.type === undefined || !ITEMTYPES_ARMS.contains(ITEMTYPE_STR_INT[it.type.toUpperCase()]) ||
 			it.maximumDepth !== undefined && it.maximumDepth < 12))
 			break;
 
