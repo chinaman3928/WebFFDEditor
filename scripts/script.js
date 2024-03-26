@@ -1579,6 +1579,75 @@ function undefineItemTemplate(it)
 	it.merchantMaximum = undefined;		
 }
 
+function addTemplateItem(it)
+{
+	for (rank in [0, 1, 2])
+	{
+		if (rank == 1 && nonWeaponNonArmor && it.maximumDepth !== undefined && it.maximumDepth < 12)
+			break;
+
+		const it2 = structuredClone(it);
+		if (rank >= 1)
+			it2.name = `${RANK_INT_STR} ${it2.name}`;
+
+		//TODO bonuses...
+
+		if (it2.armor !== undefined)
+		{
+			it2.armor[0] = it2.armor[0] * RANK_POWER_MULTIPLIER[rank];
+			it2.armor[1] = it2.armor[1] * RANK_POWER_MULTIPLIER[rank];
+		}
+		if (it2.damage !== undefined)
+		{
+			it2.damage[0] = it2.damage[0] * RANK_POWER_MULTIPLIER[rank];
+			it2.damage[1] = it2.damage[1] * RANK_POWER_MULTIPLIER[rank];
+		}
+
+		if (it2.rarity !== undefined)
+			it2.rarity = it2.rarity < 1000 ? Math.max(999, it2.rarity * RANK_ITEM_RARITY_MULTIPLIER[rank]) : it2.rarity;
+		if (it2.fishingRarity !== undefined)
+			it2.fishingRarity = it2.fishingRarity < 1000 ? Math.max(999, it2.fishingRarity * RANK_POWER_MULTIPLIER[rank] * 0.985) : it2.fishingRarity;
+
+		if (it2.minimumFishingDepth !== undefined)
+			it2.minimumFishingDepth += RANK_LEVEL_OFFSET[rank];
+		if (it2.maximumFishingDepth !== undefined)
+			it2.maximumFishingDepth = rank == 0 ? it2.maximumFishingDepth + RANK_LEVEL_OFFSET[rank] : 32000;
+
+		if (it2.minimumDepth !== undefined)
+		{
+			it.minimumDepth += RANK_LEVEL_OFFSET[rank];
+			if (it.minimumFishingDepth === undefined)
+				it.minimumFishingDepth = depth;
+
+			if (rank == 2)
+			{
+				const renown = Math.max(0, min(10, Math.trunc((it.minimumDepth + 15) / 7))) + 9;
+				//TODO add renown req
+			}
+			else if (rank == 1)
+			{
+				const renown = Math.max(0, min(10, Math.trunc((it.minimumDepth - 3) / 10)) + 4);
+				//TODO add renown req
+			}
+		}
+
+		if (it2.maximumDepth !== undefined)
+		{
+			it2.maximumDepth = (rank == 0 ? it2.maximumDepth + RANK_LEVEL_OFFSE[rank] : 32000);
+			if (it2.maximumFishingDepth === undefined)
+				it2.maximumFishingDepth = it2.maximumDepth;
+		}
+
+		if (it2.merchantMinimum !== undefined)
+			it2.merchantMinimum += RANK_LEVEL_OFFSET[rank];
+		if (it2.merchantMaximum !== undefined)
+			it2.merchantMaximum = rank == 0 ? it2.merchantMaximum + RANK_LEVEL_OFFSET[rank] : 32000;
+
+		defaultizeItemTemplate(it2);
+		ITEMS_INFO.set(it2.name, it2); //TODO what to do with duplicate names?
+	}
+}
+
 //TODO for force spawning, remember that Item() has stuff inside it too. what is ItemInstance?
 //TODO vars, updates, sets
 //dont forget the eliting
@@ -1653,7 +1722,7 @@ async function parseItemsDat(datFile)
 					ERR_MSGS.push(`items.dat: The line before ${i} has too few tokens (Which? For your security I can't know).`);
 					return;	
 				}
-				it.armor = [parseInt(tokens[1], 10), pareInt(tokens[2], 10)];
+				it.armor = [parseInt(tokens[1], 10), parseInt(tokens[2], 10)];
 			}
 			else if (it.damage === undefined && tokens[0].slice(1, -1) == "DAMAGE")
 			{
@@ -1728,73 +1797,7 @@ async function parseItemsDat(datFile)
 					return;
 				}
 
-				for (rank in [0, 1, 2])
-				{
-					if (rank == 1 && nonWeaponNonArmor && it.maximumDepth !== undefined && it.maximumDepth < 12)
-						break;
-
-					const it2 = structuredClone(it);
-					if (rank >= 1)
-						it2.name = `${RANK_INT_STR} ${it2.name}`;
-
-					//TODO bonuses...
-
-					if (it2.armor !== undefined)
-					{
-						it2.armor[0] = it2.armor[0] * RANK_POWER_MULTIPLIER[rank];
-						it2.armor[1] = it2.armor[1] * RANK_POWER_MULTIPLIER[rank];
-					}
-					if (it2.damage !== undefined)
-					{
-						it2.damage[0] = it2.damage[0] * RANK_POWER_MULTIPLIER[rank];
-						it2.damage[1] = it2.damage[1] * RANK_POWER_MULTIPLIER[rank];
-					}
-
-					if (it2.rarity !== undefined)
-						it2.rarity = it2.rarity < 1000 ? Math.max(999, it2.rarity * RANK_ITEM_RARITY_MULTIPLIER[rank]) : it2.rarity;
-					if (it2.fishingRarity !== undefined)
-						it2.fishingRarity = it2.fishingRarity < 1000 ? Math.max(999, it2.fishingRarity * RANK_POWER_MULTIPLIER[rank] * 0.985) : it2.fishingRarity;
-
-					if (it2.minimumFishingDepth !== undefined)
-						it2.minimumFishingDepth += RANK_LEVEL_OFFSET[rank];
-					if (it2.maximumFishingDepth !== undefined)
-						it2.maximumFishingDepth = rank == 0 ? it2.maximumFishingDepth + RANK_LEVEL_OFFSET[rank] : 32000;
-
-					//TODO min depth, remember nuance of double update
-					if (it2.minimumDepth !== undefined)
-					{
-						it.minimumDepth += RANK_LEVEL_OFFSET[rank];
-						if (it.minimumFishingDepth === undefined)
-							it.minimumFishingDepth = depth;
-		
-						if (rank == 2)
-						{
-							const renown = Math.max(0, min(10, Math.trunc((it.minimumDepth + 15) / 7))) + 9;
-							//TODO add renown req
-						}
-						else if (rank == 1)
-						{
-							const renown = Math.max(0, min(10, Math.trunc((it.minimumDepth - 3) / 10)) + 4);
-							//TODO add renown req
-						}
-					}
-
-					if (it2.maximumDepth !== undefined)
-					{
-						it2.maximumDepth = (rank == 0 ? it2.maximumDepth + RANK_LEVEL_OFFSE[rank] : 32000);
-						if (it2.maximumFishingDepth === undefined)
-							it2.maximumFishingDepth = it2.maximumDepth;
-					}
-
-					if (it2.merchantMinimum !== undefined)
-						it2.merchantMinimum += RANK_LEVEL_OFFSET[rank];
-					if (it2.merchantMaximum !== undefined)
-						it2.merchantMaximum = rank == 0 ? it2.merchantMaximum + RANK_LEVEL_OFFSET[rank] : 32000;
-	
-					defaultizeItemTemplate(it);
-					ITEMS_INFO.set(it.name, it); //TODO what to do with duplicate names?
-				}
-
+				addTemplateItem(it);				
 				undefineItemTemplate(it);
 				//TODO in CItemDescription() there is some name stuff...from whence was the sockets stuff?
 				inItem = false;
@@ -1809,7 +1812,6 @@ async function parseItemsDat(datFile)
         }
     }
 
-	//TODO TODO TODO ANGELA left off with the eliting above, need to pull out into a function and put here
     if (inItem)
 	{
 		if (it.name == "" || it.icon == "")
@@ -1817,8 +1819,7 @@ async function parseItemsDat(datFile)
 			ERR_MSGS.push(`items.dat: The item before ${i} has no name or no icon`);
 			return;
 		}
-		defaultizeItemTemplate(it);
-		ITEMS_INFO.set(it.name, it); //TODO what to do with duplicate names?
+		addTemplateItem(it);
 		//TODO in CItemDescription() there is some name stuff	
 	}
 }
