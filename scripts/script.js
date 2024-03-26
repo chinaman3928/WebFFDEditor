@@ -1776,13 +1776,13 @@ async function parseItemsDat(datFile)
 			else if (it.minimumDepth === undefined && tokens[0].slice(1, -1) == "MINIMUM_DEPTH")
 				it.minimumDepth = parseInt(tokens[1], 10);
 			else if (it.maximumDepth === undefined && tokens[0].slice(1, -1) == "MAXIMUM_DEPTH")
-				it.maximumDepth = parseInt(token[1], 10);
+				it.maximumDepth = parseInt(tokens[1], 10);
 			else if (it.minimumFishingDepth === undefined && tokens[0].slice(1, -1) == "MINIMUM_FISHING_DEPTH")
-				it.minimumFishingDepth = parseInt(token[1], 10);
+				it.minimumFishingDepth = parseInt(tokens[1], 10);
 			else if (it.maximumFishingDepth === undefined && tokens[0].slice(1, -1) == "MAXIMUM_FISHING_DEPTH")
-				it.maximumFishingDepth = parseInt(token[1], 10);
+				it.maximumFishingDepth = parseInt(tokens[1], 10);
 			else if (it.merchantMinimum === undefined && tokens[0].slice(1, -1) == "MERCHANT_MINIMUM")
-				it.merchantMinimum = parseInt(token[1], 10);
+				it.merchantMinimum = parseInt(tokens[1], 10);
 			else if (it.merchantMaximum === undefined && tokens[0].slice(1, -1) == "MERCHANT_MAXIMUM")
 				it.merchantMaximum = parseInt(tokens[1], 10);
         }
