@@ -1512,6 +1512,8 @@ const ITEMTYPE_STR_INT = new Map([["NONE", 0], ["STAIRSUP", 1], ["STAIRSDOWN", 2
 	["CROSSBOW", 33], ["GEM", 34], ["PETFOOD", 35], ["FISHINGPOLE", 36], ["MAGICANVIL", 37], ["SHRINE", 38], ["FOUNTAIN", 39], ["THRONE", 40], ["STATUE", 41],
 	["HEALFOUNTAIN", 42], ["MANAFOUNTAIN", 43], ["STAMINAFOUNTAIN", 44], ["WELLNESSFOUNTAIN", 45]]);
 
+const ITEMTYPES_ARMS = new Set([14, 15, 16, 17, 18, 19, 20, 23, 24, 25, 26, 30, 31, 32, 33]);
+
 const ATTACKSPEED_STR_INT = new Map([["SLOWEST", 0], ["SLOW", 1], ["NORMAL", 2], ["FAST", 3], ["FASTEST", 4]]);
 
 const GRADE_STR_INT = new Map([["", 0], ["SUPERIOR", 1], ["EXCEPTIONAL", 2], ["FLAWLESS", 3]]);
@@ -1530,7 +1532,7 @@ async function promiseParseItemsDat(datFile)
 
 function defaultizeItemTemplate(it)
 {
-	if (it.type === undefined)				it.type = KItemGeneric;
+	if (it.type === undefined)				it.type = ITEMTYPE_STR_INT["GENERIC"];
 	if (it.name === undefined)				it.name = "";
 	if (it.effects === undefined)			it.effects = [];
 	if (it.bonuses === undefined)			it.bonuses = [];
@@ -1538,9 +1540,9 @@ function defaultizeItemTemplate(it)
 	if (it.damage === undefined)			it.damage = [0, 0];
 	if (it.toHitBonus === undefined)		it.toHitBonus = 0;
 	if (it.sockets === undefined)			it.sockets = 0;
-	if (it.speed === undefined)				it.speed = KAttackNormal;
+	if (it.speed === undefined)				it.speed = ATTACKSPEED_STR_INT["NORMAL"];
 	if (it.requires === undefined)			it.requires = [];
-	if (it.grade === undefined)				it.grade = KGradeNormal;
+	if (it.grade === undefined)				it.grade = GRADE_STR_INT[""];
 	if (it.icon === undefined)				it.icon = "";
 	if (it.unique === undefined)			it.unique = false;
 	if (it.identified === undefined)		it.identified = false;
@@ -1579,11 +1581,13 @@ function undefineItemTemplate(it)
 	it.merchantMaximum = undefined;		
 }
 
+//TODO everywhere, considerf case sensitivity particularly for input values and equality in-code eg Map
 function addTemplateItem(it)
 {
 	for (rank in [0, 1, 2])
 	{
-		if (rank == 1 && nonWeaponNonArmor && it.maximumDepth !== undefined && it.maximumDepth < 12)
+		if (rank == 1 && (it.type !== undefined || !ITEMTYPES_ARMS.contains(ITEMTYPE_STR_INT[it.type.toUpperCase()]) ||
+			it.maximumDepth !== undefined && it.maximumDepth < 12))
 			break;
 
 		const it2 = structuredClone(it);
@@ -1617,7 +1621,7 @@ function addTemplateItem(it)
 		{
 			it.minimumDepth += RANK_LEVEL_OFFSET[rank];
 			if (it.minimumFishingDepth === undefined)
-				it.minimumFishingDepth = depth;
+				it.minimumFishingDepth = it.minimumDepth;
 
 			if (rank == 2)
 			{
