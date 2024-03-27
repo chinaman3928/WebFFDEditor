@@ -1373,7 +1373,7 @@ function promiseReadDat(datFile, datType)
 // ie is not [SPELL], <NAME>, <SPHERE>, [something], [/.*]
 // then you know not to continue tokenizing, just go to next line
 // similarly, if you found [SPELL] or [something] or [/.*] then you can also go til next line
-//TODO name collisions
+//TODO name collisions; sometimes there are intentional rewrites, then what? how do they do it?
 //TODO does casing for MONSTER/ITEM/SPELL matter? or anywhere?
 //TODO if fail, then reset the relevant globals eg _INFO's (there are a lot of globals to reset, good luck)
 //TODO constructors ie CItemDescription, CItem, CItemSaveInstance, CItemInstance, CItemTemplate, etc
@@ -1521,6 +1521,7 @@ const GRADE_STR_INT = new Map([["", 0], ["SUPERIOR", 1], ["EXCEPTIONAL", 2], ["F
 const RANK_ITEM_RARITY_MULTIPLIER = [1.0, 5.0, 10.0];
 const RANK_POWER_MULTIPLIER = [1.0, 2.0, 4.0];
 const RANK_LEVEL_OFFSET = [0, 12, 30];
+const RANK_INT_STR = ["", "Elite", "Legendary"]
 
 async function promiseParseItemsDat(datFile)
 
@@ -1532,7 +1533,7 @@ async function promiseParseItemsDat(datFile)
 
 function defaultizeItemTemplate(it)
 {
-	if (it.type === undefined)				it.type = ITEMTYPE_STR_INT["GENERIC"];
+	if (it.type === undefined)				it.type = ITEMTYPE_STR_INT.get("GENERIC");
 	if (it.name === undefined)				it.name = "";
 	if (it.effects === undefined)			it.effects = [];
 	if (it.bonuses === undefined)			it.bonuses = [];
@@ -1540,9 +1541,9 @@ function defaultizeItemTemplate(it)
 	if (it.damage === undefined)			it.damage = [0, 0];
 	if (it.toHitBonus === undefined)		it.toHitBonus = 0;
 	if (it.sockets === undefined)			it.sockets = 0;
-	if (it.speed === undefined)				it.speed = ATTACKSPEED_STR_INT["NORMAL"];
+	if (it.speed === undefined)				it.speed = ATTACKSPEED_STR_INT.get("NORMAL");
 	if (it.requires === undefined)			it.requires = [];
-	if (it.grade === undefined)				it.grade = GRADE_STR_INT[""];
+	if (it.grade === undefined)				it.grade = GRADE_STR_INT.get("");
 	if (it.icon === undefined)				it.icon = "";
 	if (it.unique === undefined)			it.unique = false;
 	if (it.identified === undefined)		it.identified = false;
@@ -1586,13 +1587,13 @@ function addTemplateItem(it)
 {
 	for (rank in [0, 1, 2])
 	{
-		if (rank == 1 && (it.type === undefined || !ITEMTYPES_ARMS.contains(ITEMTYPE_STR_INT[it.type.toUpperCase()]) ||
+		if (rank == 1 && (it.type === undefined || !ITEMTYPES_ARMS.has(it.type) ||
 			it.maximumDepth !== undefined && it.maximumDepth < 12))
 			break;
 
 		const it2 = structuredClone(it);
 		if (rank >= 1)
-			it2.name = `${RANK_INT_STR} ${it2.name}`;
+			it2.name = `${RANK_INT_STR[rank]} ${it2.name}`;
 
 		//TODO bonuses...
 
@@ -1608,9 +1609,9 @@ function addTemplateItem(it)
 		}
 
 		if (it2.rarity !== undefined)
-			it2.rarity = it2.rarity < 1000 ? Math.max(999, it2.rarity * RANK_ITEM_RARITY_MULTIPLIER[rank]) : it2.rarity;
+			it2.rarity = it2.rarity < 1000 ? Math.min(999, it2.rarity * RANK_ITEM_RARITY_MULTIPLIER[rank]) : it2.rarity;
 		if (it2.fishingRarity !== undefined)
-			it2.fishingRarity = it2.fishingRarity < 1000 ? Math.max(999, it2.fishingRarity * RANK_POWER_MULTIPLIER[rank] * 0.985) : it2.fishingRarity;
+			it2.fishingRarity = it2.fishingRarity < 1000 ? Math.min(999, Math.trunc(it2.fishingRarity * RANK_POWER_MULTIPLIER[rank] * 0.985)) : it2.fishingRarity;
 
 		if (it2.minimumFishingDepth !== undefined)
 			it2.minimumFishingDepth += RANK_LEVEL_OFFSET[rank];
@@ -1619,25 +1620,25 @@ function addTemplateItem(it)
 
 		if (it2.minimumDepth !== undefined)
 		{
-			it.minimumDepth += RANK_LEVEL_OFFSET[rank];
-			if (it.minimumFishingDepth === undefined)
-				it.minimumFishingDepth = it.minimumDepth;
+			it2.minimumDepth += RANK_LEVEL_OFFSET[rank];
+			if (it2.minimumFishingDepth === undefined)
+				it2.minimumFishingDepth = it2.minimumDepth;
 
 			if (rank == 2)
 			{
-				const renown = Math.max(0, min(10, Math.trunc((it.minimumDepth + 15) / 7))) + 9;
+				const renown = Math.max(0, Math.min(10, Math.trunc((it2.minimumDepth + 15) / 7))) + 9;
 				//TODO add renown req
 			}
 			else if (rank == 1)
 			{
-				const renown = Math.max(0, min(10, Math.trunc((it.minimumDepth - 3) / 10)) + 4);
+				const renown = Math.max(0, Math.min(10, Math.trunc((it2.minimumDepth - 3) / 10)) + 4);
 				//TODO add renown req
 			}
 		}
 
 		if (it2.maximumDepth !== undefined)
 		{
-			it2.maximumDepth = (rank == 0 ? it2.maximumDepth + RANK_LEVEL_OFFSE[rank] : 32000);
+			it2.maximumDepth = (rank == 0 ? it2.maximumDepth + RANK_LEVEL_OFFSET[rank] : 32000);
 			if (it2.maximumFishingDepth === undefined)
 				it2.maximumFishingDepth = it2.maximumDepth;
 		}
@@ -1713,9 +1714,9 @@ async function parseItemsDat(datFile)
             if (it.type === undefined && tokens[0].slice(1, -1) == "TYPE")
 			{
 				const upper = tokens[1].toUpperCase();
-				it.type = ITEMTYPE_STR_INT.has(upper) ? ITEMTYPE_STR_INT[upper] : undefined;
+				it.type = ITEMTYPE_STR_INT.has(upper) ? ITEMTYPE_STR_INT.get(upper) : undefined;
 			}
-			else if (it.type === undefined && tokens[0].slice(1, -1) == "NAME")
+			else if (it.name === undefined && tokens[0].slice(1, -1) == "NAME")
 				it.name = tokens[1];
 			//TODO effects...
 			//TODO bonuses...
@@ -1750,13 +1751,13 @@ async function parseItemsDat(datFile)
 			else if (it.speed === undefined && tokens[0].slice(1, -1) == "SPEED")	
 			{
 				const upper = tokens[1].toUpperCase();
-				it.speed = ATTACKSPEED_STR_INT.has(upper) ? ATTACKSPEED_STR_INT.get(upper) : ATTACKSPEED_STR_INT["NORMAL"];
+				it.speed = ATTACKSPEED_STR_INT.has(upper) ? ATTACKSPEED_STR_INT.get(upper) : ATTACKSPEED_STR_INT.get("NORMAL");
 			}
 			//TODO requires...
 			else if (it.grade === undefined && tokens[0].slice(1, -1) == "GRADE")
 			{
 				const upper = tokens[1].toUpperCase();
-				it.grade = GRADE_STR_INT.has(upper) ? GRADE_STR_INT.get(upper) : GRADE_STR_INT[""];
+				it.grade = GRADE_STR_INT.has(upper) ? GRADE_STR_INT.get(upper) : GRADE_STR_INT.get("");
 			}
 			else if (it.icon === undefined && tokens[0].slice(1, -1) == "ICON")
 				it.icon = tokens[1];
@@ -1764,6 +1765,7 @@ async function parseItemsDat(datFile)
 				it.unique = (tokens[1] == "1")
 			else if (it.identified === undefined && tokens[0].slice(1, -1) == "IDENTIFIED")
 				it.identified = (tokens[1] == "1")
+			//TODO TODO TODO ANGELA artifact
 				// if( !IsArtifact() &&
 				// 	!IsUnique() )
 				// {
@@ -1795,7 +1797,7 @@ async function parseItemsDat(datFile)
 			}
             if (depth == 1 && inItem)
             {
-				if (it.name == "" || it.icon == "")
+				if (it.name === undefined/* || it.icon === undefined*/) //TODO items like barrels; what can[t] you force spawn/inventory?
 				{
 					ERR_MSGS.push(`items.dat: The item before ${i} has no name or no icon`);
 					return;
@@ -1818,7 +1820,7 @@ async function parseItemsDat(datFile)
 
     if (inItem)
 	{
-		if (it.name == "" || it.icon == "")
+		if (it.name === undefined/* || it.icon === undefined*/)
 		{
 			ERR_MSGS.push(`items.dat: The item before ${i} has no name or no icon`);
 			return;
@@ -1838,7 +1840,7 @@ async function promiseParseSpellsDat(datFile)
 
 //TODO uploads reset whats there, so you cant upload A/spells.dat and then cd into B then B/spells.dat
 // or at least not easily, so override that behavior. but then that means you will need to have a clear button
-//TODO name collisions
+//TODO name collisions; sometimes there are intentional rewrites, then what? how do they do it?
 //TODO are attack defense charm values in dat case insensitive? for that matter, anything else?
 const K_MAGIC_CHARM = 2;
 async function parseSpellsDat(datFile)
