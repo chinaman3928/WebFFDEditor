@@ -194,11 +194,11 @@ async function preRun(ev)
 	if (ERR_MSGS.length)
 	{
 		alert(["Failed to run for these reasons (no changes made):", ...ERR_MSGS].join('\n - '));
-		//reset the relevant globals;
+		//TODO TODO TODO reset the relevant globals; there are a lot
 	}
 	else
 	{
-		//run();
+		run();
 	}
 }
 
@@ -216,23 +216,18 @@ function run()
 	// 	make it interactable;
 	// }
 
-	// uploadScreen.hidden = true;
+	uploadScreen.hidden = true;
 
-	// switchPlayerTab();
+	switchPlayerTab();
+
 	// //eventually need to reset relevant globals too...
 	// // and unhide the uploadScreen...
 }
 
-// function switchPlayerTab()
-// {
-// 	make PLAYER_TAB the active tab;
-
-
-
-// 	unhide the player tab;
-
-
-// }
+function switchPlayerTab()
+{
+	PLAYER_TAB.elem.hidden = false;
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
