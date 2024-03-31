@@ -64,6 +64,10 @@ html {
   padding-bottom: 150px;
 }
 
+#player-statsInvSkillGold-div {
+  position: relative;
+}
+
 #section-pets {
   display: flex;
   padding-top: 150px;

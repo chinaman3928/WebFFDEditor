@@ -191,7 +191,7 @@ async function preRun(ev)
 	if (SPELLS_DATS.length) 		for (let i = 0; i < SPELLS_DATS.length; await promiseParseSpellsDat(SPELLS_DATS[i++]));
 	else					 		ERR_MSGS.push("No spells.dat selected.");
 
-	if (ERR_MSGS.length)
+	if (false && ERR_MSGS.length) //TODO TODO TODO while developing player, forcing false
 	{
 		alert(["Failed to run for these reasons (no changes made):", ...ERR_MSGS].join('\n - '));
 		//TODO TODO TODO reset the relevant globals; there are a lot
@@ -206,7 +206,10 @@ const PLAYER_TAB =
 {
 	opened: false,
 	elem: document.getElementById("playerTab"),
-	stack: []
+	stack: [],
+	statsDivs: new Map(),
+	invDivs: new Map(),
+	skillsGoldDivs: new Map()
 };
 
 function run()
@@ -222,6 +225,62 @@ function run()
 
 	// //eventually need to reset relevant globals too...
 	// // and unhide the uploadScreen...
+}
+
+function initStatsInvSkillsGold()
+{
+	//left top right bottom
+	const statsDivs = new Map([["NAME", [94, 56, 414, 92]], ["LEVEL", [55, 123, 139, 158]], ["EXPERIENCE", [158, 123, 298, 158]],
+	["NEXT_LEVEL", [317, 123, 455, 158]], ["RENOWN", [55, 189, 139, 224]], ["FAME", [158, 189, 298, 224]], ["NEXT_RENOWN", [317, 189, 455, 224]],
+	["STRENGTH_STR", [39, 255, 136, 286]], ["STRENGTH", [140, 255, 228, 286]], ["DAMAGE_STR", [291, 255, 382, 286]], ["DAMAGE", [387, 255, 472, 286]],
+	["DXTERITY_STR", [39, 334, 136, 366]], ["DEXTERITY", [140, 334, 228, 366]], ["ATTACK_STR", [291, 334, 382, 366]], ["ATTACK", [387, 334, 472, 366]],
+	["DEFENSE_STR", [291, 370, 382, 401]], ["DEFENSE", [387, 370, 474, 401]], ["VITALITY_STR", [39, 415, 136, 447]], ["VITALITY", [140, 415, 228, 447]],
+	["STAMINA_STR", [291, 415, 382, 447]], ["STAMINA", [387, 415, 472, 447]], ["LIFE_STR", [291, 452, 382, 483]], ["LIFE", [387, 452, 474, 483]],
+	["MAGIC_STR", [39, 494, 136, 525]], ["MAGIC", [140, 494, 228, 525]], ["MANA_STR", [291, 494, 382, 525]], ["MANA", [387, 494, 472, 525]],
+	["POINTS_STR", [151, 546, 264, 583]], ["POINTS", [267, 547, 352, 582]]]);
+
+	const invDivs = new Map([["RHAND", [552, 54, 641, 239]], ["HELM", [727, 54, 816, 144]], ["EAR", [835, 54, 882, 100]],
+	["LHAND", [903, 54, 992, 239]], ["CHEST", [727, 156, 816, 289]], ["HANDS", [552, 252, 641, 342]], ["RRING", [661, 300, 708, 346]],
+	["BELT", [727, 300, 816, 346]], ["LRING", [835, 300, 882, 346]], ["NAME", [903, 252, 992, 342]],
+	["00", [532, 383, 573, 423]], ["10", [532, 427, 573, 470]], ["20", [532, 475, 573, 519]], ["30", [532, 523, 573, 564]],
+	["01", [577, 383, 621, 423]], ["11", [577, 427, 621, 470]], ["21", [577, 475, 621, 519]], ["31", [577, 523, 621, 564]],
+	["02", [625, 383, 669, 423]], ["12", [625, 427, 669, 470]], ["22", [625, 475, 669, 519]], ["32", [625, 523, 669, 564]],
+	["03", [673, 383, 717, 423]], ["13", [673, 427, 717, 470]], ["23", [673, 475, 717, 519]], ["33", [673, 523, 717, 564]],
+	["04", [721, 383, 765, 423]], ["14", [721, 427, 765, 470]], ["24", [721, 475, 765, 519]], ["34", [721, 523, 765, 564]],
+	["05", [769, 383, 813, 423]], ["15", [769, 427, 813, 470]], ["25", [769, 475, 813, 519]], ["35", [769, 523, 813, 564]],
+	["06", [817, 383, 861, 423]], ["16", [817, 427, 861, 470]], ["26", [817, 475, 861, 519]], ["36", [817, 523, 861, 564]],
+	["07", [885, 383, 909, 423]], ["17", [885, 427, 909, 470]], ["27", [885, 475, 909, 519]], ["37", [885, 523, 909, 564]],
+	["08", [913, 383, 957, 423]], ["18", [913, 427, 957, 470]], ["28", [913, 475, 957, 519]], ["38", [913, 523, 957, 564]],
+	["09", [961, 383, 1002, 423]], ["19", [961, 427, 1002, 470]], ["29", [961, 475, 1002, 519]], ["39", [961, 523, 1002, 564]]]);
+
+	const skillsGoldDivs = new Map([["SWORD", [1165, 83, 1251, 107]], ["SWORD_STR", [1256, 83, 1454, 107]], ["CLUB", [1165, 115, 1251, 139]], ["CLUB_STR", [1256, 115, 1454, 139]],
+	["HAMMER", [1165, 148, 1251, 172]], ["HAMMER_STR", [1256, 148, 1454, 172]], ["AXE", [1165, 182, 1251, 206]], ["AXE_STR", [1256, 182, 1454, 206]],
+	["SPEAR", [1165, 213, 1251, 237]], ["SPEAR_STR", [1256, 213, 1454, 237]], ["STAFF", [1165, 244, 1251, 268]], ["STAFF_STR", [1256, 244, 1454, 268]],
+	["POLEARM", [1165, 276, 1251, 300]], ["POLEARM_STR", [1256, 276, 1454, 300]], ["BOW", [1165, 308, 1251, 332]], ["BOW_STR", [1256, 308, 1454, 322]],
+	["CRIT", [1165, 340, 1251, 364]], ["CRIT_STR", [1256, 340, 1454, 364]], ["SPELL", [1165, 371, 1251, 395]], ["SPELL_STR", [1256, 371, 1454, 395]],
+	["DUAL", [1165, 403, 1251, 427]], ["DUAL_STR", [1256, 403, 1454, 427]], ["SHELD", [1165, 435, 1251, 459]], ["SHIELD_STR", [1256, 435, 1454, 459]],
+	["ATTMAG", [1165, 466, 1251, 490]], ["ATTMAG_STR", [1256, 466, 1454, 490]], ["DEFMAG", [1165, 499, 1251, 523]], ["DEFMAG_STR", [1256, 499, 1454, 523]],
+	["CHAMAG", [1165, 532, 1251, 556]], ["CHAMAG_STR", [1256, 532, 1454, 556]], ["POINTS_STR", [1186, 570, 1299, 598]], ["POINTS", [1302, 570, 1387, 598]],
+	["GOLD", [1446, 537, 1509, 600]]]);
+
+	const player_statsInvSkillGold_div = document.getElementById("player-statsInvSkillGold-div");
+	for ([playerTabMap, map] of [[PLAYER_TAB.statsDivs, statsDivs], [PLAYER_TAB.invDivs, invDivs], [PLAYER_TAB.skillsGoldDivs, skillsGoldDivs]])
+	{
+		for ([what, [l, t, r, b]] of map)
+		{
+			const div = document.createElement("div");
+			div.style.position = "absolute";
+			div.style.left = `calc(${l}% / 1536)`;
+			div.style.top = `calc(${t}% / 640)`;
+			div.style.width = `calc((${r}% - ${l} + 1) / 1536)`;
+			div.style.height = `calc((${b}% - ${t} + 1) / 640)`;
+			
+			//TODO any special behavior here...
+
+			player_statsInvSkillGold_div.appendChild(div);
+			playerTabMap[what] = div;
+		}
+	}
 }
 
 function switchPlayerTab()
