@@ -275,6 +275,8 @@ function initStatsInvSkillsGold()
 			div.style.width = `calc((${r}% - ${l}% + 1%) * 100 / 1536)`;
 			div.style.height = `calc((${b}% - ${t}% + 1%) * 100 / 640)`;
 			//TODO any special behavior here...
+
+			div.style.backgroundColor = "white";
 			player_statsInvSkillGold_div.appendChild(div);
 			playerTabMap[what] = div;
 		}
