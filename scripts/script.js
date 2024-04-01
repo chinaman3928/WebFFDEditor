@@ -155,6 +155,95 @@ MONSTERS_INFO = new Map();
 ITEMS_INFO = new Map();
 SPELLS_INFO = new Map();
 
+//TODO this is og only
+const EFFECT_STRENGTH = 0;
+const EFFECT_DEXTERITY = 1;
+const EFFECT_VITALITY = 2;
+const EFFECT_MAGIC = 3;
+const EFFECT_MAX_MANA = 4;
+const EFFECT_MAX_HP = 5;
+const EFFECT_MAX_STAMINA = 6;
+const EFFECT_MANA = 7;
+const EFFECT_HP = 8;
+const EFFECT_STAMINA = 9;
+const EFFECT_ARMOR_BONUS = 10;
+const EFFECT_TO_HIT_BONUS = 11;
+const EFFECT_DAMAGE_BONUS = 12;
+const EFFECT_DAMAGE_TAKEN = 13;
+const EFFECT_KNOCKBACK = 14;
+const EFFECT_SKILL_SWORD = 15;
+const EFFECT_SKILL_CLUB = 16;
+const EFFECT_SKILL_HAMMER = 17;
+const EFFECT_SKILL_AXE = 18;
+const EFFECT_SKILL_SPEAR = 19;
+const EFFECT_SKILL_STAFF = 20;
+const EFFECT_SKILL_POLEARM = 21;
+const EFFECT_SKILL_BOW = 22;
+const EFFECT_SKILL_CROSSBOW = 23;
+const EFFECT_SKILL_THROWN = 24;
+const EFFECT_SKILL_DUAL_WIELD = 25;
+const EFFECT_SKILL_SHIELD = 26;
+const EFFECT_SKILL_ATTACK_MAGIC = 27;
+const EFFECT_SKILL_DEFENSE_MAGIC = 28;
+const EFFECT_SKILL_CHARM_MAGIC = 29;
+const EFFECT_PERCENT_STRENGTH = 30;
+const EFFECT_PERCENT_DEXTERITY = 31;
+const EFFECT_PERCENT_VITALITY = 32;
+const EFFECT_PERCENT_MAGIC = 33;
+const EFFECT_PERCENT_MANA = 34;
+const EFFECT_PERCENT_H_P = 35;
+const EFFECT_PERCENT_STAMINA = 36;
+const EFFECT_PERCENT_SPEED = 37;
+const EFFECT_PERCENT_ATTACK_SPEED = 38;
+const EFFECT_PERCENT_ARMOR_BONUS = 39;
+const EFFECT_PERCENT_TO_HIT_BONUS = 40;
+const EFFECT_PERCENT_DAMAGE_BONUS = 41;
+const EFFECT_PERCENT_DAMAGE_TAKEN = 42;
+const EFFECT_PERCENT_MAGICAL_DROP = 43;
+const EFFECT_PERCENT_GOLD_DROP = 44;
+const EFFECT_PERCENT_CAST_SPEED = 45;
+const EFFECT_PERCENT_LIFE_STOLEN = 46;
+const EFFECT_PERCENT_MANA_STOLEN = 47;
+const EFFECT_PERCENT_DAMAGE_REFLECTED = 48;
+const EFFECT_PERCENT_BLOCK_CHANCE = 49;
+const EFFECT_PERCENT_ITEM_REQUIREMENTS = 50;
+const EFFECT_PERCENT_PIERCING_RESISTANCE = 51;
+const EFFECT_PERCENT_SLASHING_RESISTANCE = 52;
+const EFFECT_PERCENT_CRUSHING_RESISTANCE = 53;
+const EFFECT_PERCENT_MAGICAL_RESISTANCE = 54;
+const EFFECT_PERCENT_FIRE_RESISTANCE = 55;
+const EFFECT_PERCENT_ICE_RESISTANCE = 56;
+const EFFECT_PERCENT_ELECTRIC_RESISTANCE = 57;
+const EFFECT_TYPES = 58;
+const EFFECT_REMOVE = 59;
+const EFFECT_KNOCKBACK_EFFECT = 60;
+const EFFECT_IDENTIFY = 61;
+const EFFECT_WRITE_SPELL = 62;
+const EFFECT_SUMMON = 63;
+const EFFECT_ADD_DAMAGE_TYPE = 64;
+const EFFECT_TRANSFORM = 65;
+const EFFECT_REVERT_TRANSFORM = 66;
+const EFFECT_OPEN_PORTAL = 67;
+const EFFECT_DISCOVER = 68;
+const EFFECT_FLEE = 69;
+const EFFECT_TURN_ALIGNMENT = 70;
+const EFFECT_DISPEL = 71;
+const EFFECT_DISPEL_ENEMY = 72;
+const EFFECT_ALL_TYPES = 73;
+
+const SKILLS_INT_STR = ["Sword", "Club & Mace", "Hammer", "Axe",
+	"Spear", "Staff", "Polearm", "Bow & Crossbow",
+	"Critical Strike", "Spell Casting", "Dual-Wielding", "Shield Battle",
+	"Attack Magic", "Defense Magic", "Charm Magic"];
+
+const OG_EQUIP_SLOTS = 10;
+
+const ACTIVATION_PASSIVE = 0;
+const ACTIVATION_USAGE = 1;
+
+const OG_SKILLS = 15;
+
+
 //OG
 // MONSTERS	./MONSTERS/en-US/monsters.dat
 // ITEMS	./ITEMS/en-US/items.dat
@@ -202,6 +291,7 @@ async function preRun(ev)
 	}
 }
 
+//TODO like all glboals, reset when applicable
 const PLAYER_TAB =
 {
 	opened: false,
@@ -209,8 +299,40 @@ const PLAYER_TAB =
 	stack: [],
 	statsDivs: new Map(),
 	invDivs: new Map(),
-	skillsGoldDivs: new Map()
+	skillsGoldDivs: new Map(),
+	equippedEffects: new Array(EFFECT_ALL_TYPES),
+	characterEffects: new Array(EFFECT_ALL_TYPES)
 };
+
+//TODO resists may not appear here ... so when you consider resists, consider the resists attribute
+
+//TODO can do something if slotindex or type are out of expected range
+//TODO what if non equipped but in such a slot? vice versa?
+//TODO right now hard coded for player, but you must generalize
+function computeEquippedEffects()
+{
+	PLAYER_TAB.equippedEffects.fill(0);
+
+	for (it of robj.player.itemInstances)
+		if (it.equipped && 0 <= it.slotIndex && it.slotIndex <= OG_EQUIP_SLOTS)
+			for (ef of it.effects[ACTIVATION_PASSIVE])
+				if (0 <= ef.type && ef.type <= EFFECT_ALL_TYPES)
+				PLAYER_TAB.equippedEffects[ef.type] += ef.value;
+}
+
+//TODO right now hard coded for player, but you must generalize
+//naturaleffects also appears; i think this might be the dat effects. are these not included in ffd effects? gasp
+//TODO susceptible to magical resistance, but applied to net
+//TODO equippedeffect + charactereffect might be float, but in case of skills: baseskill + trunc(equippedeffect + charactereffect)
+function computeCharacterEffects()
+{
+	PLAYER_TAB.characterEffects.fill(0);
+
+	for (effects of robj.player.effects)
+		for (ef of effects)
+			if (0 <= ef.type && ef.type <= OG_ALL_EFFECT_TYPES)
+			PLAYER_TAB.characterEffects[ef.type] += ef.value;
+}
 
 function run()
 {
@@ -277,10 +399,32 @@ function initStatsInvSkillsGold()
 			//TODO any special behavior here...
 
 			//div.style.backgroundColor = "white";
+			div.style.color = "white";
 			player_statsInvSkillGold_div.appendChild(div);
-			playerTabMap[what] = div;
+			playerTabMap.set(what, div);
 		}
 	}
+
+	computeEquippedEffects();
+	computeCharacterEffects();
+	
+	let i = 0;
+	for (div of PLAYER_TAB.skillsGoldDivs.values())
+	{
+		if (i == 2 * OG_SKILLS)
+			break;
+		
+		const skill = i >> 1;
+		if (i % 2 == 0)
+			div.innerText = robj.player.skills[skill] + Math.trunc(
+				PLAYER_TAB.equippedEffects[EFFECT_SKILL_SWORD + skill] + PLAYER_TAB.characterEffects[EFFECT_SKILL_SWORD + skill]);
+		else 
+			div.innerText = `${SKILLS_INT_STR[skill]} Skill`;
+		++i;
+	}
+
+	PLAYER_TAB.skillsGoldDivs.get("POINTS_STR").innerText = "Points Remaining";
+	PLAYER_TAB.skillsGoldDivs.get("POINTS").innerText = robj.player.unusedSkillPoints;
 }
 
 function switchPlayerTab()
