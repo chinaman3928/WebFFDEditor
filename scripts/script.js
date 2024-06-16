@@ -156,6 +156,25 @@ ITEMS_INFO = new Map();
 SPELLS_INFO = new Map();
 
 //TODO this is og only
+const EXPERIENCE_GATE =
+[
+	0, 847, 1424, 2379, 3946, 6498, 10623, 17241, 27779, 44432, 70546, 111183, 173930, 251775, 263013,
+	294761, 337798, 380835, 423872, 466909, 509946, 552984, 596021, 659538, 725587, 791636, 857685,
+	923734, 989782, 1055831, 1121880, 1208774, 1300717, 1392659, 1484602, 1576545, 1668488, 1760431,
+	1871890, 1999642, 2127395, 2255147, 2382899, 2510652, 2638404, 2766156, 2893909, 3027737, 3198893,
+	3370048, 3541204, 3712359, 3883514, 4054670, 4225825, 4396980, 4602433, 4834834, 5067234, 5299635,
+	5532035, 5764436, 5996836, 6229237, 6487487, 6752000, 7016513, 7281026, 7545538, 7810051, 8074564,
+	8339077, 8637166, 9050909, 9464652, 9878396, 10292139, 10705882, 11119625, 11533368, 11972685, 12412931,
+	12853176, 13293421, 13733666, 14210761, 14754810, 15298858, 15842906, 16386955, 16966785, 17573608,
+	18180431,18787255, 19462627, 20181825, 20901024, 21693940, 22528322, 24137891
+];
+const FAME_GATE = 
+[
+	0, 500, 1000, 2000, 4000, 8000, 12000, 20000, 36000, 68000, 100000, 164000,
+	292000, 548000, 1188000, 3236000,7332000, 15524000, 23716000, 40100000, 40100000
+];
+
+//TODO this is og only
 const EFFECT_STRENGTH = 0;
 const EFFECT_DEXTERITY = 1;
 const EFFECT_VITALITY = 2;
@@ -230,6 +249,15 @@ const EFFECT_TURN_ALIGNMENT = 70;
 const EFFECT_DISPEL = 71;
 const EFFECT_DISPEL_ENEMY = 72;
 const EFFECT_ALL_TYPES = 73;
+
+const IS_MAGIC = 
+[
+	true, true, true, true, true, true, true, true, true, true, true, true, true, true, false, false,
+	false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+	true, true, true, true, true, true, true, true, true, true, true, true, true, false, false, true, 
+	false, false, false, true, false, false, false, false, false, false, false, false, false, false,
+	false, false, false, false, false, false, false, false, false, false, false, false, false
+];
 
 const SKILLS_INT_STR = ["Sword", "Club & Mace", "Hammer", "Axe",
 	"Spear", "Staff", "Polearm", "Bow & Crossbow",
@@ -317,12 +345,10 @@ function computeEquippedEffects()
 		if (it.equipped && 0 <= it.slotIndex && it.slotIndex <= OG_EQUIP_SLOTS)
 			for (ef of it.effects[ACTIVATION_PASSIVE])
 				if (0 <= ef.type && ef.type <= EFFECT_ALL_TYPES)
-				PLAYER_TAB.equippedEffects[ef.type] += ef.value;
+					PLAYER_TAB.equippedEffects[ef.type] += ef.value;
 }
 
 //TODO right now hard coded for player, but you must generalize
-//naturaleffects also appears; i think this might be the dat effects. are these not included in ffd effects? gasp
-//TODO susceptible to magical resistance, but applied to net
 //TODO equippedeffect + charactereffect might be float, but in case of skills: baseskill + trunc(equippedeffect + charactereffect)
 function computeCharacterEffects()
 {
@@ -331,8 +357,117 @@ function computeCharacterEffects()
 	for (effects of robj.player.effects)
 		for (ef of effects)
 			if (0 <= ef.type && ef.type <= OG_ALL_EFFECT_TYPES)
-			PLAYER_TAB.characterEffects[ef.type] += ef.value;
+				PLAYER_TAB.characterEffects[ef.type] += ef.value;
+
+	//TODO TODO TODO same for natural effects
+	//i think this might be the dat effects. are these not included in ffd effects? gasp
 }
+
+function charNetResistance(c, e)
+{
+	// there are no modifiers for undead 'resistance'
+	if (e == DAMAGE_UNDEAD)
+	{
+		return c.damageResistance[e];
+	}
+	resist = c.damageResistance[e] + charNetEffect(c, DAMAGE_TO_EFFECT)
+	return Math.max(-100, Math.min(resist, 100));
+}
+
+//TODO and everywhere, need to not hardcode PLAYER_TAB 
+function charNetEffect(c, e)
+{
+	ret = PLAYER_TAB.characterEffects + PLAYER_TAB.equippedEffects;
+	if (IS_MAGIC[e] && sgn(ret) != sgn(EFFECT_MAXIMUM[e]))
+	{
+		ret -= int(charNetResistance( KDamageMagical ) * 0.01 * ret);
+	}
+	return ret;
+}
+
+function charStrength(c)
+{
+	return c.strength + ceil(charNetEffect(c, EFFECT_PERCENT_STRENGTH) * 0.01 * c.strength) + int(charNetEffect(c, EFFECT_STRENGTH));
+}
+
+function charDexterity(c)
+{
+	return c.dexterity + ceil(charNetEffect(c, EFFECT_PERCENT_DEXTERITY ) * 0.01 * c.dexterity) + int(charNetEffect(c, EFFECT_DEXTERITY));
+}
+
+function charVitality(c)
+{
+	return c.vitality + ceil(charNetEffect(c, EFFECT_PERCENT_VITALITY) * 0.01 * c.vitality) + int(charNetEffect(c, EFFECT_VITALITY));
+}
+
+function charMagic(c)
+{
+	return c.magic + ceil(charNetEffect(c, EFFECT_PERCENT_MAGIC) * 0.01 * c.magic) + int(charNetEffect(c, EFFECT_MAGIC));
+}
+
+function charExperienceGate(c)
+{
+	if (c.level)
+		return EXPERIENCE_GATE[c.level > 99 ? 99 : c.level]
+	return 0;
+}
+
+function charFameGate(c)
+{
+	return FAME_GATE[c.level];
+}
+
+function charDamageStr(c)
+{
+
+}
+
+//TODO for all EffectValue, pretty sure i didnt divide by 100
+function charAttack(c)
+{
+	/*
+	int32 CCharacter::ToHitBonus( void )
+	{
+		int32 ToHitBonus = m_ToHitBonus;
+		if( m_pActiveWeapon != NULL )
+		{
+			ToHitBonus += SkillPoints( KSkillModifier[m_pActiveWeapon->Type()] ) * 1;
+		}
+		if( m_pCurrentAttack != NULL )
+		{
+			ToHitBonus += m_pCurrentAttack->ToHitBonus();
+		}
+		return ToHitBonus;
+	} // CCharacter::ToHitBonus( void );
+	*/
+	attack = 50 + charDexterity(c) / 2 + ToHitBonus() + c.level;
+	return attack + ceil( attack * charNetEffect(c, EFFECT_PERCENT_TO_HIT_BONUS) / 100 ) + int(charNetEffect(c, EFFECT_TO_HIT_BONUS));
+}
+
+function charDefense(c)
+{
+	armor = 0
+	//TODO TODO TODO loop through equipment CInventory::m_pEquippedItems and accumulate item.ArmorBonus()
+	armor += c.naturalArmor + c.level * 3 * (HasMaster() && Master().isPlayer() && !IsSummoned());
+	return armor + ceil(charNetEffect(c,  EFFECT_PERCENT_ARMOR_BONUS) * armor) + int(charNetEffect(c, EFFECT_ARMOR_BONUS))
+		+ Math.trunc(charDexterity(c) / 5); //dexterity bonus
+}
+
+function charMaxHP(c)
+{
+	return c.maxHp + ceil(charNetEffect(c, EFFECT_PERCENT_H_P) * 0.01 * c.maxHp) + int(charNetEffect(c, EFFECT_MAX_HP));
+}
+
+function charMaxStamina(c)
+{
+	return c.maxStamina + ceil(charNetEffect(c, EFFECT_PERCENT_STAMINA) * 0.01 * c.maxStamina) + int(charNetEffect(c, EFFECT_MAX_STAMINA));
+}
+
+function charMaxMana(c)
+{
+	return c.maxMana + ceil(charNetEffect(c, EFFECT_PERCENT_MANA) * 0.01 * c.maxMana) + int(charNetEffect(c, EFFECT_MAX_MANA));
+}
+
 
 function run()
 {
@@ -349,6 +484,7 @@ function run()
 	// // and unhide the uploadScreen...
 }
 
+//TODO text might be too large
 function initStatsInvSkillsGold()
 {
 	//left top right bottom
@@ -405,9 +541,51 @@ function initStatsInvSkillsGold()
 		}
 	}
 
+	//TODO but consider that the displayed number might not be whats used in game
+
 	computeEquippedEffects();
 	computeCharacterEffects();
 	
+	//TODO but consider that the displayed number might not be whats used in game
+	//TODO there is a petstatsmenu.cpp, how is that different? how about other monsters?
+	//TODO TODO TODO Invenctory::EffectValue is probably different from Character::EffectValue?
+	//stats
+	const p = robj.player;
+	PLAYER_TAB.statsDivs.get("NAME").innerText = robj.player.lineage > 0 ?	`${p.name} the ${FAME_NAMES[p.fameRank]}` :
+																			`${p.name} the ${FAME_NAMES[p.fameRank]} (${romanNumeral(p.lineage)})`;
+	PLAYER_TAB.statsDivs.get("LEVEL").innerText = p.level;
+	PLAYER_TAB.statsDivs.get("STRENGTH_STR").innerText = "Strength";
+	PLAYER_TAB.statsDivs.get("STRENGTH").innerText = charStrength(p);
+	PLAYER_TAB.statsDivs.get("DXTERITY_STR").innerText = "Dexterity";
+	PLAYER_TAB.statsDivs.get("DEXTERITY").innerText = charDexterity(p);
+	PLAYER_TAB.statsDivs.get("VITALITY_STR").innerText = "Vitality";
+	PLAYER_TAB.statsDivs.get("VITALITY").innerText = charVitality(p);
+	PLAYER_TAB.statsDivs.get("MAGIC_STR").innerText = "Magic";
+	PLAYER_TAB.statsDivs.get("MAGIC").innerText = charMagic(p);
+	PLAYER_TAB.statsDivs.get("EXPERIENCE").innerText = p.experience;
+	PLAYER_TAB.statsDivs.get("NEXT_LEVEL").innerText = charExperienceGate(p);
+	PLAYER_TAB.statsDivs.get("RENOWN").innerText = p.fameRank;
+	PLAYER_TAB.statsDivs.get("FAME").innerText = p.fame;
+	PLAYER_TAB.statsDivs.get("NEXT_RENOWN").innerText = charFameGate(p);
+	PLAYER_TAB.statsDivs.get("DAMAGE_STR").innerText = "Damage";
+	PLAYER_TAB.statsDivs.get("DAMAGE").innerText = charDamageStr(p);
+	PLAYER_TAB.statsDivs.get("ATTACK_STR").innerText = "Attack";
+	PLAYER_TAB.statsDivs.get("ATTACK").innerText = charAttack(p);
+	PLAYER_TAB.statsDivs.get("DEFENSE_STR").innerText = "Defense";
+	PLAYER_TAB.statsDivs.get("DEFENSE").innerText = charDefense(p);
+	PLAYER_TAB.statsDivs.get("LIFE_STR").innerText = "Life";
+	PLAYER_TAB.statsDivs.get("LIFE").innerText = charMaxHP(p);
+	PLAYER_TAB.statsDivs.get("STAMINA_STR").innerText = "Stamina";
+	PLAYER_TAB.statsDivs.get("STAMINA").innerText = charMaxStamina(p);
+	PLAYER_TAB.statsDivs.get("MANA_STR").innerText = "Mana";
+	PLAYER_TAB.statsDivs.get("MANA").innerText = charMaxMana(p);
+	PLAYER_TAB.statsDivs.get("POINTS_STR").innerText = "Points Remaining";
+	PLAYER_TAB.statsDivs.get("POINTS").innerText = p.unusedStatPoints;
+
+	//inv
+
+
+	//skills gold (TODO gold)
 	let i = 0;
 	for (div of PLAYER_TAB.skillsGoldDivs.values())
 	{
@@ -415,14 +593,12 @@ function initStatsInvSkillsGold()
 			break;
 		
 		const skill = i >> 1;
-		if (i % 2 == 0)
+		if (i++ % 2 == 0)
 			div.innerText = robj.player.skills[skill] + Math.trunc(
 				PLAYER_TAB.equippedEffects[EFFECT_SKILL_SWORD + skill] + PLAYER_TAB.characterEffects[EFFECT_SKILL_SWORD + skill]);
 		else 
 			div.innerText = `${SKILLS_INT_STR[skill]} Skill`;
-		++i;
 	}
-
 	PLAYER_TAB.skillsGoldDivs.get("POINTS_STR").innerText = "Points Remaining";
 	PLAYER_TAB.skillsGoldDivs.get("POINTS").innerText = robj.player.unusedSkillPoints;
 }
@@ -1581,6 +1757,8 @@ function promiseReadDat(datFile, datType)
 //also can optimize by beelining til end of a nested subgroup
 //also can optimize by ignoring line if the first token.size() < 3
 //TODO easy: token[0].slice(1, -1) once and reuse!
+
+//TODO how are you reading the data? force int invert? what does the game do? what if theres a float?
 
 function tokenizeNextLine(dat, i, tokens)
 {
