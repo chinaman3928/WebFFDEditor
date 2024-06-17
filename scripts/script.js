@@ -174,7 +174,7 @@ const FAME_GATE =
 	292000, 548000, 1188000, 3236000,7332000, 15524000, 23716000, 40100000, 40100000
 ];
 
-//TODO this is og only
+//TODO all thisi is og only
 const EFFECT_STRENGTH = 0;
 const EFFECT_DEXTERITY = 1;
 const EFFECT_VITALITY = 2;
@@ -259,10 +259,60 @@ const IS_MAGIC =
 	false, false, false, false, false, false, false, false, false, false, false, false, false
 ];
 
-const SKILLS_INT_STR = ["Sword", "Club & Mace", "Hammer", "Axe",
+const EFFECT_MAXIMUM =
+[
+	30, 30, 30, 30, 30, 30, 10, 10, 10, 30, 30, 30, 30, -10, 10, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20,
+	20, 50, 50, 50, 50, 50, 50, 50, 30, 30, 50, 50, 50, -30, 30, 100, 20, 8, 10, 10, 10, 10, 30, 30, 30, 30, 30, 30, 30
+];
+
+const DAMAGE_PIERCING = 0;
+const DAMAGE_SLASHING = 1;
+const DAMAGE_CRUSHING = 2;
+const DAMAGE_MAGICAL = 3;
+const DAMAGE_FIRE = 4;
+const DAMAGE_ICE = 5;
+const DAMAGE_ELECTRIC = 6;
+const DAMAGE_UNDEAD = 7;
+const DAMAGE_TYPES = 8;
+
+//TODO undead maps to fire; is this ever an issue?
+const DAMAGE_TO_EFFECT = 
+[
+	EFFECT_PERCENT_PIERCING_RESISTANCE, EFFECT_PERCENT_SLASHING_RESISTANCE, EFFECT_PERCENT_CRUSHING_RESISTANCE, EFFECT_PERCENT_MAGICAL_RESISTANCE,
+	EFFECT_PERCENT_FIRE_RESISTANCE, EFFECT_PERCENT_ICE_RESISTANCE, EFFECT_PERCENT_ELECTRIC_RESISTANCE, EFFECT_PERCENT_FIRE_RESISTANCE
+];
+
+const SKILLS_INT_STR = 
+[
+	"Sword", "Club & Mace", "Hammer", "Axe",
 	"Spear", "Staff", "Polearm", "Bow & Crossbow",
 	"Critical Strike", "Spell Casting", "Dual-Wielding", "Shield Battle",
-	"Attack Magic", "Defense Magic", "Charm Magic"];
+	"Attack Magic", "Defense Magic", "Charm Magic"
+];
+
+const FAME_NAMES = [
+	"Unknown",
+	"Unknown",
+	"Tolerated",
+	"Unremarkable",
+	"Respected",
+	"Local Hero",
+	"Local Legend",
+	"Well Known",
+	"Folk Hero",
+	"Rising Star",
+	"Distinguished",
+	"Prestigious",
+	"Famous",
+	"Renowned",
+	"Glorious",
+	"Legendary",
+	"Fabled",
+	"Mythic",
+	"Immortal",
+	"Demigod",
+	"Unattainable"
+];
 
 const OG_EQUIP_SLOTS = 10;
 
@@ -270,6 +320,23 @@ const ACTIVATION_PASSIVE = 0;
 const ACTIVATION_USAGE = 1;
 
 const OG_SKILLS = 15;
+
+
+const ROMAN_VALUE =  [1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1];
+const ROMAN_SYMBOL = ['M', 'CM', 'D', 'CD', 'C', 'XC', 'L', 'XL', 'X', 'IX', 'V', 'IV', 'I'];
+function romanNumeral(n)
+{
+	let roman = "";
+	for (let i = 0; i < ROMAN_VALUE.length; i++)
+	{
+		while (n >= ROMAN_VALUE[i])
+		{
+			roman += ROMAN_SYMBOL[i];
+			n -= ROMAN_VALUE[i];
+		}
+	}
+	return roman;
+}
 
 
 //OG
@@ -356,53 +423,53 @@ function computeCharacterEffects()
 
 	for (effects of robj.player.effects)
 		for (ef of effects)
-			if (0 <= ef.type && ef.type <= OG_ALL_EFFECT_TYPES)
+			if (0 <= ef.type && ef.type <= EFFECT_ALL_TYPES)
 				PLAYER_TAB.characterEffects[ef.type] += ef.value;
 
 	//TODO TODO TODO same for natural effects
 	//i think this might be the dat effects. are these not included in ffd effects? gasp
 }
 
-function charNetResistance(c, e)
+function charNetResistance(c, d)
 {
 	// there are no modifiers for undead 'resistance'
-	if (e == DAMAGE_UNDEAD)
+	if (d == DAMAGE_UNDEAD)
 	{
-		return c.damageResistance[e];
+		return c.damageResistance[d];
 	}
-	resist = c.damageResistance[e] + charNetEffect(c, DAMAGE_TO_EFFECT)
+	resist = c.damageResistance[d] + charNetEffect(c, DAMAGE_TO_EFFECT[d])
 	return Math.max(-100, Math.min(resist, 100));
 }
 
 //TODO and everywhere, need to not hardcode PLAYER_TAB 
 function charNetEffect(c, e)
 {
-	ret = PLAYER_TAB.characterEffects + PLAYER_TAB.equippedEffects;
-	if (IS_MAGIC[e] && sgn(ret) != sgn(EFFECT_MAXIMUM[e]))
+	ret = PLAYER_TAB.characterEffects[e] + PLAYER_TAB.equippedEffects[e];
+	if (ret && IS_MAGIC[e] && Math.sign(ret) != Math.sign(EFFECT_MAXIMUM[e]))
 	{
-		ret -= int(charNetResistance( KDamageMagical ) * 0.01 * ret);
+		ret -= Math.trunc(charNetResistance(c, DAMAGE_MAGICAL) * 0.01 * ret);
 	}
 	return ret;
 }
 
 function charStrength(c)
 {
-	return c.strength + ceil(charNetEffect(c, EFFECT_PERCENT_STRENGTH) * 0.01 * c.strength) + int(charNetEffect(c, EFFECT_STRENGTH));
+	return c.strength + Math.ceil(charNetEffect(c, EFFECT_PERCENT_STRENGTH) * 0.01 * c.strength) + Math.trunc(charNetEffect(c, EFFECT_STRENGTH));
 }
 
 function charDexterity(c)
 {
-	return c.dexterity + ceil(charNetEffect(c, EFFECT_PERCENT_DEXTERITY ) * 0.01 * c.dexterity) + int(charNetEffect(c, EFFECT_DEXTERITY));
+	return c.dexterity + Math.ceil(charNetEffect(c, EFFECT_PERCENT_DEXTERITY ) * 0.01 * c.dexterity) + Math.trunc(charNetEffect(c, EFFECT_DEXTERITY));
 }
 
 function charVitality(c)
 {
-	return c.vitality + ceil(charNetEffect(c, EFFECT_PERCENT_VITALITY) * 0.01 * c.vitality) + int(charNetEffect(c, EFFECT_VITALITY));
+	return c.vitality + Math.ceil(charNetEffect(c, EFFECT_PERCENT_VITALITY) * 0.01 * c.vitality) + Math.trunc(charNetEffect(c, EFFECT_VITALITY));
 }
 
 function charMagic(c)
 {
-	return c.magic + ceil(charNetEffect(c, EFFECT_PERCENT_MAGIC) * 0.01 * c.magic) + int(charNetEffect(c, EFFECT_MAGIC));
+	return c.magic + Math.ceil(charNetEffect(c, EFFECT_PERCENT_MAGIC) * 0.01 * c.magic) + Math.trunc(charNetEffect(c, EFFECT_MAGIC));
 }
 
 function charExperienceGate(c)
@@ -414,7 +481,7 @@ function charExperienceGate(c)
 
 function charFameGate(c)
 {
-	return FAME_GATE[c.level];
+	return FAME_GATE[c.fameRank];
 }
 
 function charDamageStr(c)
@@ -422,7 +489,7 @@ function charDamageStr(c)
 
 }
 
-//TODO for all EffectValue, pretty sure i didnt divide by 100
+//TODO TODO TODO WHERE LEFT OFF doing this. also, charDefense is incomplete, damage is incomplete
 function charAttack(c)
 {
 	/*
@@ -441,7 +508,7 @@ function charAttack(c)
 	} // CCharacter::ToHitBonus( void );
 	*/
 	attack = 50 + charDexterity(c) / 2 + ToHitBonus() + c.level;
-	return attack + ceil( attack * charNetEffect(c, EFFECT_PERCENT_TO_HIT_BONUS) / 100 ) + int(charNetEffect(c, EFFECT_TO_HIT_BONUS));
+	return attack + Math.ceil( attack * charNetEffect(c, EFFECT_PERCENT_TO_HIT_BONUS) / 100 ) + Math.trunc(charNetEffect(c, EFFECT_TO_HIT_BONUS));
 }
 
 function charDefense(c)
@@ -449,23 +516,23 @@ function charDefense(c)
 	armor = 0
 	//TODO TODO TODO loop through equipment CInventory::m_pEquippedItems and accumulate item.ArmorBonus()
 	armor += c.naturalArmor + c.level * 3 * (HasMaster() && Master().isPlayer() && !IsSummoned());
-	return armor + ceil(charNetEffect(c,  EFFECT_PERCENT_ARMOR_BONUS) * armor) + int(charNetEffect(c, EFFECT_ARMOR_BONUS))
+	return armor + Math.ceil(charNetEffect(c,  EFFECT_PERCENT_ARMOR_BONUS) * armor) + Math.trunc(charNetEffect(c, EFFECT_ARMOR_BONUS))
 		+ Math.trunc(charDexterity(c) / 5); //dexterity bonus
 }
 
 function charMaxHP(c)
 {
-	return c.maxHp + ceil(charNetEffect(c, EFFECT_PERCENT_H_P) * 0.01 * c.maxHp) + int(charNetEffect(c, EFFECT_MAX_HP));
+	return c.maxHp + Math.ceil(charNetEffect(c, EFFECT_PERCENT_H_P) * 0.01 * c.maxHp) + Math.trunc(charNetEffect(c, EFFECT_MAX_HP));
 }
 
 function charMaxStamina(c)
 {
-	return c.maxStamina + ceil(charNetEffect(c, EFFECT_PERCENT_STAMINA) * 0.01 * c.maxStamina) + int(charNetEffect(c, EFFECT_MAX_STAMINA));
+	return c.maxStamina + Math.ceil(charNetEffect(c, EFFECT_PERCENT_STAMINA) * 0.01 * c.maxStamina) + Math.trunc(charNetEffect(c, EFFECT_MAX_STAMINA));
 }
 
 function charMaxMana(c)
 {
-	return c.maxMana + ceil(charNetEffect(c, EFFECT_PERCENT_MANA) * 0.01 * c.maxMana) + int(charNetEffect(c, EFFECT_MAX_MANA));
+	return c.maxMana + Math.ceil(charNetEffect(c, EFFECT_PERCENT_MANA) * 0.01 * c.maxMana) + Math.trunc(charNetEffect(c, EFFECT_MAX_MANA));
 }
 
 
@@ -551,8 +618,8 @@ function initStatsInvSkillsGold()
 	//TODO TODO TODO Invenctory::EffectValue is probably different from Character::EffectValue?
 	//stats
 	const p = robj.player;
-	PLAYER_TAB.statsDivs.get("NAME").innerText = robj.player.lineage > 0 ?	`${p.name} the ${FAME_NAMES[p.fameRank]}` :
-																			`${p.name} the ${FAME_NAMES[p.fameRank]} (${romanNumeral(p.lineage)})`;
+	PLAYER_TAB.statsDivs.get("NAME").innerText = robj.player.lineage > 0 ?	`${p.name} the ${FAME_NAMES[p.fameRank]} (${romanNumeral(p.lineage)})` :
+																			`${p.name} the ${FAME_NAMES[p.fameRank]}`;
 	PLAYER_TAB.statsDivs.get("LEVEL").innerText = p.level;
 	PLAYER_TAB.statsDivs.get("STRENGTH_STR").innerText = "Strength";
 	PLAYER_TAB.statsDivs.get("STRENGTH").innerText = charStrength(p);
