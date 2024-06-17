@@ -314,7 +314,25 @@ const FAME_NAMES = [
 	"Unattainable"
 ];
 
-const OG_EQUIP_SLOTS = 10;
+// const OG_EQUIP_SLOTS = 10;
+//TODO OG only
+const SLOT_HEAD = 0;
+const SLOT_CHEST = 1;
+const SLOT_LEFTHAND = 2;
+const SLOT_RIGHTHABD = 3;
+const SLOT_LEFTARM = 4;
+const SLOT_GLOVES = 5;
+const SLOT_NECK = 6;
+const SLOT_FEET = 7;
+const SLOT_LEFTFINGER = 8;
+const SLOT_RIGHTFINGER = 9;
+const SLOT_BELT = 10;
+const SLOT_EQUIPMENT = 11;
+const SLOT_QUICK1 = 12;
+const SLOT_QUICK2 = 13;
+const SLOT_QUICK3 = 14;
+const SLOT_QUICK4 = 15;
+const SLOT_QUICK5 = 16;
 
 const ACTIVATION_PASSIVE = 0;
 const ACTIVATION_USAGE = 1;
@@ -409,7 +427,7 @@ function computeEquippedEffects()
 	PLAYER_TAB.equippedEffects.fill(0);
 
 	for (it of robj.player.itemInstances)
-		if (it.equipped && 0 <= it.slotIndex && it.slotIndex <= OG_EQUIP_SLOTS)
+		if (it.equipped && 0 <= it.slotIndex && it.slotIndex <= SLOT_EQUIPMENT)
 			for (ef of it.effects[ACTIVATION_PASSIVE])
 				if (0 <= ef.type && ef.type <= EFFECT_ALL_TYPES)
 					PLAYER_TAB.equippedEffects[ef.type] += ef.value;
@@ -490,8 +508,10 @@ function charDamageStr(c)
 }
 
 //TODO TODO TODO WHERE LEFT OFF doing this. also, charDefense is incomplete, damage is incomplete
+//TODO it seems attack increases with char level, which is probably in Character::tohitbonus
 function charAttack(c)
 {
+	//TODO AttackDescriptions have tohitbonus, which zeems 0's unless given a value in monsters.dat [UNARMDE_ATTACK]?
 	/*
 	int32 CCharacter::ToHitBonus( void )
 	{
@@ -508,15 +528,22 @@ function charAttack(c)
 	} // CCharacter::ToHitBonus( void );
 	*/
 	attack = 50 + charDexterity(c) / 2 + ToHitBonus() + c.level;
-	return attack + Math.ceil( attack * charNetEffect(c, EFFECT_PERCENT_TO_HIT_BONUS) / 100 ) + Math.trunc(charNetEffect(c, EFFECT_TO_HIT_BONUS));
+	return attack + Math.ceil(charNetEffect(c, EFFECT_PERCENT_TO_HIT_BONUS) * 0.01 * attack) + Math.trunc(charNetEffect(c, EFFECT_TO_HIT_BONUS));
 }
 
 function charDefense(c)
 {
-	armor = 0
-	//TODO TODO TODO loop through equipment CInventory::m_pEquippedItems and accumulate item.ArmorBonus()
+	let armor = 0
+	//TODO WHERE LEFT OFF still doing this loop, and equippedItems, and CATEGORY_ARMOR, and __category
+	for (let i = 0; ++i; i < SLOT_EQUIPMENT)
+	{
+		if (c.equippedItems[i] !== null && __category == CATEGORY_ARMOR)
+		{
+			armor += ArmorBonus(c.equippedItems[i])
+		}
+	}
 	armor += c.naturalArmor + c.level * 3 * (HasMaster() && Master().isPlayer() && !IsSummoned());
-	return armor + Math.ceil(charNetEffect(c,  EFFECT_PERCENT_ARMOR_BONUS) * armor) + Math.trunc(charNetEffect(c, EFFECT_ARMOR_BONUS))
+	return armor + Math.ceil(charNetEffect(c,  EFFECT_PERCENT_ARMOR_BONUS) * 0.01 * armor) + Math.trunc(charNetEffect(c, EFFECT_ARMOR_BONUS))
 		+ Math.trunc(charDexterity(c) / 5); //dexterity bonus
 }
 
@@ -552,6 +579,8 @@ function run()
 }
 
 //TODO text might be too large
+//TODO TODO TODO attack descriptions have effects and things too...
+//TODO TODO TODO also unarmed attacks
 function initStatsInvSkillsGold()
 {
 	//left top right bottom
