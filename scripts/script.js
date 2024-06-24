@@ -319,7 +319,7 @@ const FAME_NAMES = [
 const SLOT_HEAD = 0;
 const SLOT_CHEST = 1;
 const SLOT_LEFTHAND = 2;
-const SLOT_RIGHTHABD = 3;
+const SLOT_RIGHTHAND = 3;
 const SLOT_LEFTARM = 4;
 const SLOT_GLOVES = 5;
 const SLOT_NECK = 6;
@@ -333,6 +333,105 @@ const SLOT_QUICK2 = 13;
 const SLOT_QUICK3 = 14;
 const SLOT_QUICK4 = 15;
 const SLOT_QUICK5 = 16;
+const SLOT_ALL = 17;
+
+//TODO OG only
+const CATEGORY_BLANK      = 0;
+const CATEGORY_GOLD       = 1;
+const CATEGORY_ITEM       = 2;
+const CATEGORY_CONTAINER  = 3;
+const CATEGORY_WEAPON     = 4;
+const CATEGORY_ARMOR      = 5;
+const CATEGORY_JEWELRY    = 6;
+const CATEGORY_EVENT      = 7;
+const CATEGORY_ALL        = 8;
+
+//TODO OG only
+const TYPE_NONE               = 0;
+const TYPE_STAIRS_UP          = 1;
+const TYPE_STAIRS_DOWN        = 2;
+const TYPE_TOWN_PORTAL        = 3;
+const TYPE_DUNGEON_PORTAL     = 4;
+const TYPE_FISHING_HOLE       = 5;
+const TYPE_GOLD               = 6;
+const TYPE_GENERIC            = 7;
+const TYPE_POTION             = 8;
+const TYPE_WEAPON_RACK        = 9;
+const TYPE_CONTAINER          = 10;
+const TYPE_CHEST_SMALL        = 11;
+const TYPE_CHEST_MEDIUM       = 12;
+const TYPE_CHEST_LARGE        = 13;
+const TYPE_SWORD              = 14;
+const TYPE_CLUB               = 15;
+const TYPE_HELMET             = 16;
+const TYPE_SHIELD             = 17;
+const TYPE_SPEAR              = 18;
+const TYPE_BOW                = 19;
+const TYPE_BELT               = 20;
+const TYPE_NECKLACE           = 21;
+const TYPE_RING               = 22;
+const TYPE_GLOVES             = 23;
+const TYPE_BOOTS              = 24;
+const TYPE_SHIRT              = 25;
+const TYPE_POLEARM            = 26;
+const TYPE_SCROLL             = 27;
+const TYPE_BOOK               = 28;
+const TYPE_SPELL              = 29;
+const TYPE_AXE                = 30;
+const TYPE_HAMMER             = 31;
+const TYPE_STAFF              = 32;
+const TYPE_CROSSBOW           = 33;
+const TYPE_GEM                = 34;
+const TYPE_PET_FOOD           = 35;
+const TYPE_FISHING_POLE       = 36;
+const TYPE_MAGIC_ANVIL        = 37;
+const TYPE_SHRINE             = 38;
+const TYPE_FOUNTAIN           = 39;
+const TYPE_THRONE             = 40;
+const TYPE_STATUE             = 41;
+const TYPE_HEAL_FOUNTAIN      = 42;
+const TYPE_MANA_FOUNTAIN      = 43;
+const TYPE_STAMINA_FOUNTAIN   = 44;
+const TYPE_WELLNESS_FOUNTAIN  = 45;
+const TYPE_ALL                = 46;
+
+//TODO OG only
+const SKILL_SWORD            = 0;
+const SKILL_CLUB             = 1;
+const SKILL_HAMMER           = 2;
+const SKILL_AXE              = 3;
+const SKILL_SPEAR            = 4;
+const SKILL_STAFF            = 5;
+const SKILL_POLEARM          = 6;
+const SKILL_BOW              = 7;
+const SKILL_CRITICAL_STRIKE  = 8;
+const SKILL_SPELLCASTING     = 9;
+const SKILL_DUAL_WIELD       = 10;
+const SKILL_SHIELD           = 11;
+const SKILL_ATTACK_MAGIC     = 12;
+const SKILL_DEFENSE_MAGIC    = 13;
+const SKILL_CHARM_MAGIC      = 14;
+const SKILL_ALL              = 15;
+
+//TODO OG only
+const TYPE_TO_SKILL = [
+	SKILL_SWORD, SKILL_SWORD, SKILL_SWORD, SKILL_SWORD, SKILL_SWORD, SKILL_SWORD, SKILL_SWORD, SKILL_SWORD,
+	SKILL_SWORD, SKILL_SWORD, SKILL_SWORD, SKILL_SWORD, SKILL_SWORD, SKILL_SWORD, SKILL_SWORD, SKILL_CLUB,
+	SKILL_SWORD, SKILL_SWORD, SKILL_SPEAR, SKILL_BOW, SKILL_SWORD, SKILL_SWORD, SKILL_SWORD, SKILL_SWORD,
+	SKILL_SWORD, SKILL_SWORD, SKILL_POLEARM, SKILL_SWORD, SKILL_SWORD, SKILL_SWORD, SKILL_AXE, SKILL_HAMMER, 
+	SKILL_STAFF, SKILL_BOW, SKILL_SWORD, SKILL_SWORD, SKILL_SWORD, SKILL_SWORD, SKILL_SWORD, SKILL_SWORD,
+	SKILL_SWORD, SKILL_SWORD, SKILL_SWORD, SKILL_SWORD, SKILL_SWORD, SKILL_SWORD
+];
+
+
+const GRADE_NORMAL       = 0;
+const GRADE_SUPERIOR     = 1;
+const GRADE_EXCEPTIONAL  = 2;
+const GRADE_FLAWLESS     = 3;
+const GRADE_ALL          = 4;
+
+const GRADE_BONUS = [0, 20, 40, 60];
+
 
 const ACTIVATION_PASSIVE = 0;
 const ACTIVATION_USAGE = 1;
@@ -423,14 +522,28 @@ const PLAYER_TAB =
 //TODO what if non equipped but in such a slot? vice versa?
 //TODO right now hard coded for player, but you must generalize
 function computeEquippedEffects()
+//also computes equippedItems
 {
+	robj.player.equippedItems = new Array(SLOT_QUICK5)
 	PLAYER_TAB.equippedEffects.fill(0);
 
 	for (it of robj.player.itemInstances)
+	{
+		if (it.slotIndex <= SLOT_ALL)
+		{
+			robj.player.equippedItems[it.slotIndex] = it;
+		}
 		if (it.equipped && 0 <= it.slotIndex && it.slotIndex <= SLOT_EQUIPMENT)
+		{
 			for (ef of it.effects[ACTIVATION_PASSIVE])
+			{
 				if (0 <= ef.type && ef.type <= EFFECT_ALL_TYPES)
+				{
 					PLAYER_TAB.equippedEffects[ef.type] += ef.value;
+				}
+			}
+		}
+	}
 }
 
 //TODO right now hard coded for player, but you must generalize
@@ -470,6 +583,11 @@ function charNetEffect(c, e)
 	return ret;
 }
 
+function charNetSkill(c, s)
+{
+	return c.skills[s] + charNetEffect(c, EFFECT_SKILL_SWORD + s);
+}
+
 function charStrength(c)
 {
 	return c.strength + Math.ceil(charNetEffect(c, EFFECT_PERCENT_STRENGTH) * 0.01 * c.strength) + Math.trunc(charNetEffect(c, EFFECT_STRENGTH));
@@ -507,41 +625,31 @@ function charDamageStr(c)
 
 }
 
-//TODO TODO TODO WHERE LEFT OFF doing this. also, charDefense is incomplete, damage is incomplete
-//TODO it seems attack increases with char level, which is probably in Character::tohitbonus
+//TODO TODO TODO WHERE LEFT OFF. also: damage.
 function charAttack(c)
 {
-	//TODO AttackDescriptions have tohitbonus, which zeems 0's unless given a value in monsters.dat [UNARMDE_ATTACK]?
-	/*
-	int32 CCharacter::ToHitBonus( void )
-	{
-		int32 ToHitBonus = m_ToHitBonus;
-		if( m_pActiveWeapon != NULL )
-		{
-			ToHitBonus += SkillPoints( KSkillModifier[m_pActiveWeapon->Type()] ) * 1;
-		}
-		if( m_pCurrentAttack != NULL )
-		{
-			ToHitBonus += m_pCurrentAttack->ToHitBonus();
-		}
-		return ToHitBonus;
-	} // CCharacter::ToHitBonus( void );
-	*/
-	attack = 50 + charDexterity(c) / 2 + ToHitBonus() + c.level;
+	//TODO AttackDescriptions have tohitbonus, which zeems 0's unless given a value in monsters.dat [UNARMED_ATTACK] (but there can be many)
+	//TODO similarly, items have tohitbonus, which seems 0 unless given TOHITBONUS in items.dat
+	let attack = 50 + Math.trunc(charDexterity(c) / 2) + c.level +
+		(__activeWeapon ? charNetSkill(c, TYPE_TO_SKILL[__activeWeapon.type]) : 0) + (__currentAttack ? __currentAttack.toHitBonus : 0);
 	return attack + Math.ceil(charNetEffect(c, EFFECT_PERCENT_TO_HIT_BONUS) * 0.01 * attack) + Math.trunc(charNetEffect(c, EFFECT_TO_HIT_BONUS));
 }
 
 function charDefense(c)
 {
-	let armor = 0
-	//TODO WHERE LEFT OFF still doing this loop, and equippedItems, and CATEGORY_ARMOR, and __category
+	let armor = 0;
+	//inventory armor
 	for (let i = 0; ++i; i < SLOT_EQUIPMENT)
 	{
-		if (c.equippedItems[i] !== null && __category == CATEGORY_ARMOR)
+		const it = c.equippedItems[i];
+		if (it !== undefined && ITEMS_INFO[it.baseName.toUpperCase()].category == CATEGORY_ARMOR)
 		{
-			armor += ArmorBonus(c.equippedItems[i])
+			const add = it.grade > GRADE_NORMAL ? ITEMS_INFO[it.baseName.toUpperCase()].armor[1] : it.armorBonus;
+			const gradeBonus = Math.ceil(add * GRADE_BONUS[it.grade] * 0.01);
+			armor += add + (it.grade > GRADE_NORMAL ? Math.min(1, gradeBonus) : gradeBonus);
 		}
 	}
+	//natural armor
 	armor += c.naturalArmor + c.level * 3 * (HasMaster() && Master().isPlayer() && !IsSummoned());
 	return armor + Math.ceil(charNetEffect(c,  EFFECT_PERCENT_ARMOR_BONUS) * 0.01 * armor) + Math.trunc(charNetEffect(c, EFFECT_ARMOR_BONUS))
 		+ Math.trunc(charDexterity(c) / 5); //dexterity bonus
