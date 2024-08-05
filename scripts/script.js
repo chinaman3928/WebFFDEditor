@@ -333,7 +333,10 @@ const SLOT_QUICK2 = 13;
 const SLOT_QUICK3 = 14;
 const SLOT_QUICK4 = 15;
 const SLOT_QUICK5 = 16;
-const SLOT_ALL = 17;
+const SLOT_ALL = 17; //TODO is this even right
+
+//TODO og only
+const INV_SLOT_SIZE = 48;
 
 //TODO OG only
 const CATEGORY_BLANK      = 0;
@@ -489,6 +492,45 @@ const ACTIVATION_USAGE = 1;
 
 const OG_SKILLS = 15;
 
+//left top right bottom
+const STATS_BOUNDS = new Map([["NAME", [94, 56, 414, 92]], ["LEVEL", [55, 123, 139, 158]], ["EXPERIENCE", [158, 123, 298, 158]],
+	["NEXT_LEVEL", [317, 123, 455, 158]], ["RENOWN", [55, 189, 139, 224]], ["FAME", [158, 189, 298, 224]], ["NEXT_RENOWN", [317, 189, 455, 224]],
+	["STRENGTH_STR", [39, 255, 136, 286]], ["STRENGTH", [140, 255, 228, 286]], ["DAMAGE_STR", [291, 255, 382, 286]], ["DAMAGE", [387, 255, 472, 286]],
+	["DXTERITY_STR", [39, 334, 136, 366]], ["DEXTERITY", [140, 334, 228, 366]], ["ATTACK_STR", [291, 334, 382, 366]], ["ATTACK", [387, 334, 472, 366]],
+	["DEFENSE_STR", [291, 370, 382, 401]], ["DEFENSE", [387, 370, 474, 401]], ["VITALITY_STR", [39, 415, 136, 447]], ["VITALITY", [140, 415, 228, 447]],
+	["STAMINA_STR", [291, 415, 382, 447]], ["STAMINA", [387, 415, 472, 447]], ["LIFE_STR", [291, 452, 382, 483]], ["LIFE", [387, 452, 474, 483]],
+	["MAGIC_STR", [39, 494, 136, 525]], ["MAGIC", [140, 494, 228, 525]], ["MANA_STR", [291, 494, 382, 525]], ["MANA", [387, 494, 472, 525]],
+	["POINTS_STR", [151, 546, 264, 583]], ["POINTS", [267, 547, 352, 582]]]);
+
+//TODO OG only
+//  SLOT_LEFTHAND = 2;
+//  SLOT_LEFTARM = 4;
+//  TODO EVERYWHERE for inv divs, i will only have one for SLOT_LEFTHAND (not SLOT_LEFTARM)
+//TODO WHERE LEFT OFF i think i swapped the rings
+const INV_BOUNDS = new Map([[SLOT_RIGHTHAND, [552, 54, 641, 239]], [SLOT_HEAD, [727, 54, 816, 144]], [SLOT_NECK, [835, 54, 882, 100]],
+	[SLOT_LEFTHAND, [903, 54, 992, 239]], [SLOT_CHEST, [727, 156, 816, 289]], [SLOT_GLOVES, [552, 252, 641, 342]], [SLOT_RIGHTFINGER, [661, 300, 708, 346]],
+	[SLOT_BELT, [727, 300, 816, 346]], [SLOT_LEFTFINGER, [835, 300, 882, 346]], [SLOT_FEET, [903, 252, 992, 342]],
+	[17, [532, 383, 573, 423]], [27, [532, 427, 573, 470]], [37, [532, 475, 573, 519]], [47, [532, 523, 573, 564]],
+	[18, [577, 383, 621, 423]], [28, [577, 427, 621, 470]], [38, [577, 475, 621, 519]], [48, [577, 523, 621, 564]],
+	[19, [625, 383, 669, 423]], [29, [625, 427, 669, 470]], [39, [625, 475, 669, 519]], [49, [625, 523, 669, 564]],
+	[20, [673, 383, 717, 423]], [30, [673, 427, 717, 470]], [40, [673, 475, 717, 519]], [50, [673, 523, 717, 564]],
+	[21, [721, 383, 765, 423]], [31, [721, 427, 765, 470]], [41, [721, 475, 765, 519]], [51, [721, 523, 765, 564]],
+	[22, [769, 383, 813, 423]], [32, [769, 427, 813, 470]], [42, [769, 475, 813, 519]], [52, [769, 523, 813, 564]],
+	[23, [817, 383, 861, 423]], [33, [817, 427, 861, 470]], [43, [817, 475, 861, 519]], [53, [817, 523, 861, 564]],
+	[24, [865, 383, 909, 423]], [34, [865, 427, 909, 470]], [44, [865, 475, 909, 519]], [54, [865, 523, 909, 564]],
+	[25, [913, 383, 957, 423]], [35, [913, 427, 957, 470]], [45, [913, 475, 957, 519]], [55, [913, 523, 957, 564]],
+	[26, [961, 383, 1002, 423]], [36, [961, 427, 1002, 470]], [46, [961, 475, 1002, 519]], [56, [961, 523, 1002, 564]]]);
+
+const SKILLS_GOLD_BOUNDS = new Map([[SKILL_SWORD, [1165, 83, 1251, 107]], ["SWORD_STR", [1256, 83, 1454, 107]], [SKILL_CLUB, [1165, 115, 1251, 139]], ["CLUB_STR", [1256, 115, 1454, 139]],
+	[SKILL_HAMMER, [1165, 148, 1251, 172]], ["HAMMER_STR", [1256, 148, 1454, 172]], [SKILL_AXE, [1165, 182, 1251, 206]], ["AXE_STR", [1256, 182, 1454, 206]],
+	[SKILL_SPEAR, [1165, 213, 1251, 237]], ["SPEAR_STR", [1256, 213, 1454, 237]], [SKILL_STAFF, [1165, 244, 1251, 268]], ["STAFF_STR", [1256, 244, 1454, 268]],
+	[SKILL_POLEARM, [1165, 276, 1251, 300]], ["POLEARM_STR", [1256, 276, 1454, 300]], [SKILL_BOW, [1165, 308, 1251, 332]], ["BOW_STR", [1256, 308, 1454, 332]],
+	[SKILL_CRITICAL_STRIKE, [1165, 340, 1251, 364]], ["CRIT_STR", [1256, 340, 1454, 364]], [SKILL_SPELLCASTING, [1165, 371, 1251, 395]], ["SPELL_STR", [1256, 371, 1454, 395]],
+	[SKILL_DUAL_WIELD, [1165, 403, 1251, 427]], ["DUAL_STR", [1256, 403, 1454, 427]], [SKILL_SHIELD, [1165, 435, 1251, 459]], ["SHIELD_STR", [1256, 435, 1454, 459]],
+	[SKILL_ATTACK_MAGIC, [1165, 466, 1251, 490]], ["ATTMAG_STR", [1256, 466, 1454, 490]], [SKILL_DEFENSE_MAGIC, [1165, 499, 1251, 523]], ["DEFMAG_STR", [1256, 499, 1454, 523]],
+	[SKILL_CHARM_MAGIC, [1165, 532, 1251, 556]], ["CHAMAG_STR", [1256, 532, 1454, 556]], ["POINTS_STR", [1186, 570, 1299, 598]], ["POINTS", [1302, 570, 1387, 598]],
+	["GOLD_ICON", [1446, 537, 1509, 600]], ["GOLD", [1446, 601, 1509, 626]]]);
+	
 
 const ROMAN_VALUE =  [1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1];
 const ROMAN_SYMBOL = ['M', 'CM', 'D', 'CD', 'C', 'XC', 'L', 'XL', 'X', 'IX', 'V', 'IV', 'I'];
@@ -579,6 +621,7 @@ function computeEquippedEffects()
 	robj.player.equippedItems = new Array(SLOT_QUICK5)
 	PLAYER_TAB.equippedEffects.fill(0);
 
+	const l = 0, t = 1, r = 2, b = 3;
 	for (it of robj.player.itemInstances)
 	{
 		if (it.slotIndex <= SLOT_ALL)
@@ -594,11 +637,31 @@ function computeEquippedEffects()
 					PLAYER_TAB.equippedEffects[ef.type] += ef.value;
 				}
 			}
-			//inventory icons
+		//inventory icons
 			const icon = document.createElement("img");
 			icon.src = `img/${ITEMS_INFO.get(it.baseName.toUpperCase()).icon}`; //TODO TODO TODO hardcoding, but should be smarter...
 			icon.classList.add("center-contained");
 			PLAYER_TAB.invDivs.get(it.slotIndex == SLOT_LEFTARM ? SLOT_LEFTHAND : it.slotIndex).appendChild(icon);
+		}
+		else if (it.slotIndex > SLOT_QUICK5) //TODO hardcoding for now, because i dont have the quickslots on the screen
+		{
+			const iconDiv = document.createElement("div");
+			const slotsWide = Math.floor(ITEMS_INFO.get(it.baseName.toUpperCase()).iconWidth / INV_SLOT_SIZE);
+			const slotsTall = Math.floor(ITEMS_INFO.get(it.baseName.toUpperCase()).iconHeight / INV_SLOT_SIZE);
+
+			iconDiv.style.position = "absolute";
+			iconDiv.style.left = `calc(${INV_BOUNDS.get(it.slotIndex)[l]}% * 100 / 1536)`;
+			iconDiv.style.top = `calc(${INV_BOUNDS.get(it.slotIndex)[t]}% * 100 / 640)`;
+			iconDiv.style.width = `calc((${INV_BOUNDS.get(it.slotIndex + slotsWide - 1)[r]}% - ${INV_BOUNDS.get(it.slotIndex)[l]}% + 1%) * 100 / 1536)`;
+			iconDiv.style.height = `calc((${INV_BOUNDS.get(it.slotIndex + 10*slotsTall - 10)[b]}% - ${INV_BOUNDS.get(it.slotIndex)[t]}% + 1%) * 100 / 640)`;
+			iconDiv.classList.add("center-container");
+
+			const icon = document.createElement("img");
+			icon.src = `img/${ITEMS_INFO.get(it.baseName.toUpperCase()).icon}`;
+			icon.classList.add("center-contained");
+			iconDiv.appendChild(icon);
+			document.getElementById("player-statsInvSkillGold-div").appendChild(iconDiv);
+			PLAYER_TAB.invDivs.set(it.slotIndex, iconDiv);
 		}
 	}
 }
@@ -750,50 +813,14 @@ function run()
 //TODO TODO TODO also unarmed attacks
 function initStatsInvSkillsGold()
 {
-	//left top right bottom
-	const statsDivs = new Map([["NAME", [94, 56, 414, 92]], ["LEVEL", [55, 123, 139, 158]], ["EXPERIENCE", [158, 123, 298, 158]],
-	["NEXT_LEVEL", [317, 123, 455, 158]], ["RENOWN", [55, 189, 139, 224]], ["FAME", [158, 189, 298, 224]], ["NEXT_RENOWN", [317, 189, 455, 224]],
-	["STRENGTH_STR", [39, 255, 136, 286]], ["STRENGTH", [140, 255, 228, 286]], ["DAMAGE_STR", [291, 255, 382, 286]], ["DAMAGE", [387, 255, 472, 286]],
-	["DXTERITY_STR", [39, 334, 136, 366]], ["DEXTERITY", [140, 334, 228, 366]], ["ATTACK_STR", [291, 334, 382, 366]], ["ATTACK", [387, 334, 472, 366]],
-	["DEFENSE_STR", [291, 370, 382, 401]], ["DEFENSE", [387, 370, 474, 401]], ["VITALITY_STR", [39, 415, 136, 447]], ["VITALITY", [140, 415, 228, 447]],
-	["STAMINA_STR", [291, 415, 382, 447]], ["STAMINA", [387, 415, 472, 447]], ["LIFE_STR", [291, 452, 382, 483]], ["LIFE", [387, 452, 474, 483]],
-	["MAGIC_STR", [39, 494, 136, 525]], ["MAGIC", [140, 494, 228, 525]], ["MANA_STR", [291, 494, 382, 525]], ["MANA", [387, 494, 472, 525]],
-	["POINTS_STR", [151, 546, 264, 583]], ["POINTS", [267, 547, 352, 582]]]);
-
-	//TODO OG only
-	//  SLOT_LEFTHAND = 2;
-	//  SLOT_LEFTARM = 4;
-	//  TODO EVERYWHERE for inv divs, i will only have one for SLOT_LEFTHAND (not SLOT_LEFTARM)
-	//TODO WHERE LEFT OFF i think i swapped the rings
-	const invDivs = new Map([[SLOT_RIGHTHAND, [552, 54, 641, 239]], [SLOT_HEAD, [727, 54, 816, 144]], [SLOT_NECK, [835, 54, 882, 100]],
-	[SLOT_LEFTHAND, [903, 54, 992, 239]], [SLOT_CHEST, [727, 156, 816, 289]], [SLOT_GLOVES, [552, 252, 641, 342]], [SLOT_RIGHTFINGER, [661, 300, 708, 346]],
-	[SLOT_BELT, [727, 300, 816, 346]], [SLOT_LEFTFINGER, [835, 300, 882, 346]], [SLOT_FEET, [903, 252, 992, 342]],
-	["00", [532, 383, 573, 423]], ["10", [532, 427, 573, 470]], ["20", [532, 475, 573, 519]], ["30", [532, 523, 573, 564]],
-	["01", [577, 383, 621, 423]], ["11", [577, 427, 621, 470]], ["21", [577, 475, 621, 519]], ["31", [577, 523, 621, 564]],
-	["02", [625, 383, 669, 423]], ["12", [625, 427, 669, 470]], ["22", [625, 475, 669, 519]], ["32", [625, 523, 669, 564]],
-	["03", [673, 383, 717, 423]], ["13", [673, 427, 717, 470]], ["23", [673, 475, 717, 519]], ["33", [673, 523, 717, 564]],
-	["04", [721, 383, 765, 423]], ["14", [721, 427, 765, 470]], ["24", [721, 475, 765, 519]], ["34", [721, 523, 765, 564]],
-	["05", [769, 383, 813, 423]], ["15", [769, 427, 813, 470]], ["25", [769, 475, 813, 519]], ["35", [769, 523, 813, 564]],
-	["06", [817, 383, 861, 423]], ["16", [817, 427, 861, 470]], ["26", [817, 475, 861, 519]], ["36", [817, 523, 861, 564]],
-	["07", [865, 383, 909, 423]], ["17", [865, 427, 909, 470]], ["27", [865, 475, 909, 519]], ["37", [865, 523, 909, 564]],
-	["08", [913, 383, 957, 423]], ["18", [913, 427, 957, 470]], ["28", [913, 475, 957, 519]], ["38", [913, 523, 957, 564]],
-	["09", [961, 383, 1002, 423]], ["19", [961, 427, 1002, 470]], ["29", [961, 475, 1002, 519]], ["39", [961, 523, 1002, 564]]]);
-
-	const skillsGoldDivs = new Map([[SKILL_SWORD, [1165, 83, 1251, 107]], ["SWORD_STR", [1256, 83, 1454, 107]], [SKILL_CLUB, [1165, 115, 1251, 139]], ["CLUB_STR", [1256, 115, 1454, 139]],
-	[SKILL_HAMMER, [1165, 148, 1251, 172]], ["HAMMER_STR", [1256, 148, 1454, 172]], [SKILL_AXE, [1165, 182, 1251, 206]], ["AXE_STR", [1256, 182, 1454, 206]],
-	[SKILL_SPEAR, [1165, 213, 1251, 237]], ["SPEAR_STR", [1256, 213, 1454, 237]], [SKILL_STAFF, [1165, 244, 1251, 268]], ["STAFF_STR", [1256, 244, 1454, 268]],
-	[SKILL_POLEARM, [1165, 276, 1251, 300]], ["POLEARM_STR", [1256, 276, 1454, 300]], [SKILL_BOW, [1165, 308, 1251, 332]], ["BOW_STR", [1256, 308, 1454, 332]],
-	[SKILL_CRITICAL_STRIKE, [1165, 340, 1251, 364]], ["CRIT_STR", [1256, 340, 1454, 364]], [SKILL_SPELLCASTING, [1165, 371, 1251, 395]], ["SPELL_STR", [1256, 371, 1454, 395]],
-	[SKILL_DUAL_WIELD, [1165, 403, 1251, 427]], ["DUAL_STR", [1256, 403, 1454, 427]], [SKILL_SHIELD, [1165, 435, 1251, 459]], ["SHIELD_STR", [1256, 435, 1454, 459]],
-	[SKILL_ATTACK_MAGIC, [1165, 466, 1251, 490]], ["ATTMAG_STR", [1256, 466, 1454, 490]], [SKILL_DEFENSE_MAGIC, [1165, 499, 1251, 523]], ["DEFMAG_STR", [1256, 499, 1454, 523]],
-	[SKILL_CHARM_MAGIC, [1165, 532, 1251, 556]], ["CHAMAG_STR", [1256, 532, 1454, 556]], ["POINTS_STR", [1186, 570, 1299, 598]], ["POINTS", [1302, 570, 1387, 598]],
-	["GOLD_ICON", [1446, 537, 1509, 600]], ["GOLD", [1446, 601, 1509, 626]]]);
-
+	//TODO WHERE LEFT OFF dont create some inv divs
 	const player_statsInvSkillGold_div = document.getElementById("player-statsInvSkillGold-div");
-	for ([playerTabMap, map] of [[PLAYER_TAB.statsDivs, statsDivs], [PLAYER_TAB.invDivs, invDivs], [PLAYER_TAB.skillsGoldDivs, skillsGoldDivs]])
+	for ([playerTabMap, map] of [[PLAYER_TAB.statsDivs, STATS_BOUNDS], [PLAYER_TAB.invDivs, INV_BOUNDS], [PLAYER_TAB.skillsGoldDivs, SKILLS_GOLD_BOUNDS]])
 	{
 		for ([what, [l, t, r, b]] of map)
 		{
+			if (map === INV_BOUNDS && what > SLOT_QUICK5) continue;
+
 			const div = document.createElement("div");
 			div.style.position = "absolute";
 			div.style.left = `calc(${l}% * 100 / 1536)`;
@@ -2275,6 +2302,8 @@ function defaultizeItemTemplate(it)
 	if (it.requires === undefined)			it.requires = [];
 	if (it.grade === undefined)				it.grade = GRADE_STR_INT.get("");
 	if (it.icon === undefined)				it.icon = "";
+	if (it.iconWidth === undefined)			it.iconWidth = INV_SLOT_SIZE;
+	if (it.iconHeight === undefined)		it.iconHeight = INV_SLOT_SIZE;
 	if (it.unique === undefined)			it.unique = false;
 	if (it.identified === undefined)		it.identified = false;
 	if (it.rarity === undefined)			it.rarity = 1;
@@ -2299,7 +2328,9 @@ function undefineItemTemplate(it)
 	it.speed = undefined;				
 	it.requires = undefined;
 	it.grade = undefined;				
-	it.icon = undefined;				
+	it.icon = undefined;		
+	it.iconWidth = undefined;
+	it.iconHeight = undefined;		
 	it.unique = undefined;				
 	it.identified = undefined;			
 	it.rarity = undefined;				
@@ -2490,7 +2521,10 @@ async function parseItemsDat(datFile)
 				it.grade = GRADE_STR_INT.has(upper) ? GRADE_STR_INT.get(upper) : GRADE_STR_INT.get("");
 			}
 			else if (it.icon === undefined && tokens[0].slice(1, -1) == "ICON")
+			{
 				it.icon = tokens[1];
+				if (tokens.length > 4) {it.iconWidth = parseInt(tokens[3]); it.iconHeight = parseInt(tokens[4]);}
+			}
 			else if (it.unique === undefined && tokens[0].slice(1, -1) == "UNIQUE")
 				it.unique = (tokens[1] == "1")
 			else if (it.identified === undefined && tokens[0].slice(1, -1) == "IDENTIFIED")
