@@ -347,6 +347,57 @@ const CATEGORY_EVENT      = 7;
 const CATEGORY_ALL        = 8;
 
 //TODO OG only
+const TYPE_TO_CATEGORY = 
+[
+	CATEGORY_BLANK,
+	CATEGORY_BLANK,
+	CATEGORY_BLANK,
+	CATEGORY_BLANK,
+	CATEGORY_BLANK,
+	CATEGORY_BLANK,
+	CATEGORY_GOLD,
+	CATEGORY_ITEM,
+	CATEGORY_ITEM,
+	CATEGORY_CONTAINER,
+	CATEGORY_CONTAINER,
+	CATEGORY_CONTAINER,
+	CATEGORY_CONTAINER,
+	CATEGORY_CONTAINER,
+	CATEGORY_WEAPON,
+	CATEGORY_WEAPON,
+	CATEGORY_ARMOR,
+	CATEGORY_ARMOR,
+	CATEGORY_WEAPON,
+	CATEGORY_WEAPON,
+	CATEGORY_ARMOR,
+	CATEGORY_JEWELRY,
+	CATEGORY_JEWELRY,
+	CATEGORY_ARMOR,
+	CATEGORY_ARMOR,
+	CATEGORY_ARMOR,
+	CATEGORY_WEAPON,
+	CATEGORY_ITEM,
+	CATEGORY_ITEM,
+	CATEGORY_ITEM,
+	CATEGORY_WEAPON,
+	CATEGORY_WEAPON,
+	CATEGORY_WEAPON,
+	CATEGORY_WEAPON,
+	CATEGORY_ITEM,
+	CATEGORY_ITEM,
+	CATEGORY_ITEM,
+	CATEGORY_EVENT,
+	CATEGORY_EVENT,
+	CATEGORY_EVENT,
+	CATEGORY_EVENT,
+	CATEGORY_EVENT,
+	CATEGORY_EVENT,
+	CATEGORY_EVENT,
+	CATEGORY_EVENT,
+	CATEGORY_EVENT	
+];
+
+//TODO OG only
 const TYPE_NONE               = 0;
 const TYPE_STAIRS_UP          = 1;
 const TYPE_STAIRS_DOWN        = 2;
@@ -521,8 +572,9 @@ const PLAYER_TAB =
 //TODO can do something if slotindex or type are out of expected range
 //TODO what if non equipped but in such a slot? vice versa?
 //TODO right now hard coded for player, but you must generalize
+//TODO <= SLOT_EQUIPMENT is sus
 function computeEquippedEffects()
-//also computes equippedItems
+//also computes equippedItems and inventory icons
 {
 	robj.player.equippedItems = new Array(SLOT_QUICK5)
 	PLAYER_TAB.equippedEffects.fill(0);
@@ -542,6 +594,11 @@ function computeEquippedEffects()
 					PLAYER_TAB.equippedEffects[ef.type] += ef.value;
 				}
 			}
+			//inventory icons
+			const icon = document.createElement("img");
+			icon.src = `img/${ITEMS_INFO.get(it.baseName.toUpperCase()).icon}`; //TODO TODO TODO hardcoding, but should be smarter...
+			icon.classList.add("center-contained");
+			PLAYER_TAB.invDivs.get(it.slotIndex == SLOT_LEFTARM ? SLOT_LEFTHAND : it.slotIndex).appendChild(icon);
 		}
 	}
 }
@@ -573,6 +630,7 @@ function charNetResistance(c, d)
 }
 
 //TODO and everywhere, need to not hardcode PLAYER_TAB 
+//TODO and everywhere, need to update if any effects are updated
 function charNetEffect(c, e)
 {
 	ret = PLAYER_TAB.characterEffects[e] + PLAYER_TAB.equippedEffects[e];
@@ -628,10 +686,11 @@ function charDamageStr(c)
 //TODO TODO TODO WHERE LEFT OFF. also: damage.
 function charAttack(c)
 {
-	//TODO AttackDescriptions have tohitbonus, which zeems 0's unless given a value in monsters.dat [UNARMED_ATTACK] (but there can be many)
-	//TODO similarly, items have tohitbonus, which seems 0 unless given TOHITBONUS in items.dat
+	//AttackDescriptions have tohitbonus
+	//  unarmed: 0 unless <- monsters.dat "UNARMED_ATTACK"
+	//  armed:   <- items have tohitbonus, 0 unless <- ItemDescription.toHitBonus <- TOHITBONUS in items.dat
 	let attack = 50 + Math.trunc(charDexterity(c) / 2) + c.level +
-		(__activeWeapon ? charNetSkill(c, TYPE_TO_SKILL[__activeWeapon.type]) : 0) + (__currentAttack ? __currentAttack.toHitBonus : 0);
+		c.toHitBonus + (__activeWeapon ? charNetSkill(c, TYPE_TO_SKILL[__activeWeapon.type]) : 0) + (__currentAttack ? __currentAttack.toHitBonus : 0);
 	return attack + Math.ceil(charNetEffect(c, EFFECT_PERCENT_TO_HIT_BONUS) * 0.01 * attack) + Math.trunc(charNetEffect(c, EFFECT_TO_HIT_BONUS));
 }
 
@@ -639,18 +698,18 @@ function charDefense(c)
 {
 	let armor = 0;
 	//inventory armor
-	for (let i = 0; ++i; i < SLOT_EQUIPMENT)
+	for (let i = 0; i < SLOT_EQUIPMENT; ++i)
 	{
 		const it = c.equippedItems[i];
-		if (it !== undefined && ITEMS_INFO[it.baseName.toUpperCase()].category == CATEGORY_ARMOR)
+		if (it !== undefined && TYPE_TO_CATEGORY[ITEMS_INFO.get(it.baseName.toUpperCase()).type] == CATEGORY_ARMOR)
 		{
-			const add = it.grade > GRADE_NORMAL ? ITEMS_INFO[it.baseName.toUpperCase()].armor[1] : it.armorBonus;
+			const add = it.grade > GRADE_NORMAL ? ITEMS_INFO.get(it.baseName.toUpperCase()).armor[1] : it.armorBonus;
 			const gradeBonus = Math.ceil(add * GRADE_BONUS[it.grade] * 0.01);
-			armor += add + (it.grade > GRADE_NORMAL ? Math.min(1, gradeBonus) : gradeBonus);
+			armor += add + (it.grade > GRADE_NORMAL ? Math.max(1, gradeBonus) : gradeBonus);
 		}
 	}
-	//natural armor
-	armor += c.naturalArmor + c.level * 3 * (HasMaster() && Master().isPlayer() && !IsSummoned());
+	//natural armor TODO WHERE LEFT OFF hardcoding no, probably find an easier way to determine what the pet is
+	armor += c.naturalArmor + c.level * 3 * (false && HasMaster() && Master().isPlayer() && !IsSummoned());
 	return armor + Math.ceil(charNetEffect(c,  EFFECT_PERCENT_ARMOR_BONUS) * 0.01 * armor) + Math.trunc(charNetEffect(c, EFFECT_ARMOR_BONUS))
 		+ Math.trunc(charDexterity(c) / 5); //dexterity bonus
 }
@@ -701,9 +760,14 @@ function initStatsInvSkillsGold()
 	["MAGIC_STR", [39, 494, 136, 525]], ["MAGIC", [140, 494, 228, 525]], ["MANA_STR", [291, 494, 382, 525]], ["MANA", [387, 494, 472, 525]],
 	["POINTS_STR", [151, 546, 264, 583]], ["POINTS", [267, 547, 352, 582]]]);
 
-	const invDivs = new Map([["RHAND", [552, 54, 641, 239]], ["HELM", [727, 54, 816, 144]], ["NECK", [835, 54, 882, 100]],
-	["LHAND", [903, 54, 992, 239]], ["CHEST", [727, 156, 816, 289]], ["HANDS", [552, 252, 641, 342]], ["RRING", [661, 300, 708, 346]],
-	["BELT", [727, 300, 816, 346]], ["LRING", [835, 300, 882, 346]], ["FEET", [903, 252, 992, 342]],
+	//TODO OG only
+	//  SLOT_LEFTHAND = 2;
+	//  SLOT_LEFTARM = 4;
+	//  TODO EVERYWHERE for inv divs, i will only have one for SLOT_LEFTHAND (not SLOT_LEFTARM)
+	//TODO WHERE LEFT OFF i think i swapped the rings
+	const invDivs = new Map([[SLOT_RIGHTHAND, [552, 54, 641, 239]], [SLOT_HEAD, [727, 54, 816, 144]], [SLOT_NECK, [835, 54, 882, 100]],
+	[SLOT_LEFTHAND, [903, 54, 992, 239]], [SLOT_CHEST, [727, 156, 816, 289]], [SLOT_GLOVES, [552, 252, 641, 342]], [SLOT_RIGHTFINGER, [661, 300, 708, 346]],
+	[SLOT_BELT, [727, 300, 816, 346]], [SLOT_LEFTFINGER, [835, 300, 882, 346]], [SLOT_FEET, [903, 252, 992, 342]],
 	["00", [532, 383, 573, 423]], ["10", [532, 427, 573, 470]], ["20", [532, 475, 573, 519]], ["30", [532, 523, 573, 564]],
 	["01", [577, 383, 621, 423]], ["11", [577, 427, 621, 470]], ["21", [577, 475, 621, 519]], ["31", [577, 523, 621, 564]],
 	["02", [625, 383, 669, 423]], ["12", [625, 427, 669, 470]], ["22", [625, 475, 669, 519]], ["32", [625, 523, 669, 564]],
@@ -715,15 +779,15 @@ function initStatsInvSkillsGold()
 	["08", [913, 383, 957, 423]], ["18", [913, 427, 957, 470]], ["28", [913, 475, 957, 519]], ["38", [913, 523, 957, 564]],
 	["09", [961, 383, 1002, 423]], ["19", [961, 427, 1002, 470]], ["29", [961, 475, 1002, 519]], ["39", [961, 523, 1002, 564]]]);
 
-	const skillsGoldDivs = new Map([["SWORD", [1165, 83, 1251, 107]], ["SWORD_STR", [1256, 83, 1454, 107]], ["CLUB", [1165, 115, 1251, 139]], ["CLUB_STR", [1256, 115, 1454, 139]],
-	["HAMMER", [1165, 148, 1251, 172]], ["HAMMER_STR", [1256, 148, 1454, 172]], ["AXE", [1165, 182, 1251, 206]], ["AXE_STR", [1256, 182, 1454, 206]],
-	["SPEAR", [1165, 213, 1251, 237]], ["SPEAR_STR", [1256, 213, 1454, 237]], ["STAFF", [1165, 244, 1251, 268]], ["STAFF_STR", [1256, 244, 1454, 268]],
-	["POLEARM", [1165, 276, 1251, 300]], ["POLEARM_STR", [1256, 276, 1454, 300]], ["BOW", [1165, 308, 1251, 332]], ["BOW_STR", [1256, 308, 1454, 332]],
-	["CRIT", [1165, 340, 1251, 364]], ["CRIT_STR", [1256, 340, 1454, 364]], ["SPELL", [1165, 371, 1251, 395]], ["SPELL_STR", [1256, 371, 1454, 395]],
-	["DUAL", [1165, 403, 1251, 427]], ["DUAL_STR", [1256, 403, 1454, 427]], ["SHELD", [1165, 435, 1251, 459]], ["SHIELD_STR", [1256, 435, 1454, 459]],
-	["ATTMAG", [1165, 466, 1251, 490]], ["ATTMAG_STR", [1256, 466, 1454, 490]], ["DEFMAG", [1165, 499, 1251, 523]], ["DEFMAG_STR", [1256, 499, 1454, 523]],
-	["CHAMAG", [1165, 532, 1251, 556]], ["CHAMAG_STR", [1256, 532, 1454, 556]], ["POINTS_STR", [1186, 570, 1299, 598]], ["POINTS", [1302, 570, 1387, 598]],
-	["GOLD", [1446, 537, 1509, 600]]]);
+	const skillsGoldDivs = new Map([[SKILL_SWORD, [1165, 83, 1251, 107]], ["SWORD_STR", [1256, 83, 1454, 107]], [SKILL_CLUB, [1165, 115, 1251, 139]], ["CLUB_STR", [1256, 115, 1454, 139]],
+	[SKILL_HAMMER, [1165, 148, 1251, 172]], ["HAMMER_STR", [1256, 148, 1454, 172]], [SKILL_AXE, [1165, 182, 1251, 206]], ["AXE_STR", [1256, 182, 1454, 206]],
+	[SKILL_SPEAR, [1165, 213, 1251, 237]], ["SPEAR_STR", [1256, 213, 1454, 237]], [SKILL_STAFF, [1165, 244, 1251, 268]], ["STAFF_STR", [1256, 244, 1454, 268]],
+	[SKILL_POLEARM, [1165, 276, 1251, 300]], ["POLEARM_STR", [1256, 276, 1454, 300]], [SKILL_BOW, [1165, 308, 1251, 332]], ["BOW_STR", [1256, 308, 1454, 332]],
+	[SKILL_CRITICAL_STRIKE, [1165, 340, 1251, 364]], ["CRIT_STR", [1256, 340, 1454, 364]], [SKILL_SPELLCASTING, [1165, 371, 1251, 395]], ["SPELL_STR", [1256, 371, 1454, 395]],
+	[SKILL_DUAL_WIELD, [1165, 403, 1251, 427]], ["DUAL_STR", [1256, 403, 1454, 427]], [SKILL_SHIELD, [1165, 435, 1251, 459]], ["SHIELD_STR", [1256, 435, 1454, 459]],
+	[SKILL_ATTACK_MAGIC, [1165, 466, 1251, 490]], ["ATTMAG_STR", [1256, 466, 1454, 490]], [SKILL_DEFENSE_MAGIC, [1165, 499, 1251, 523]], ["DEFMAG_STR", [1256, 499, 1454, 523]],
+	[SKILL_CHARM_MAGIC, [1165, 532, 1251, 556]], ["CHAMAG_STR", [1256, 532, 1454, 556]], ["POINTS_STR", [1186, 570, 1299, 598]], ["POINTS", [1302, 570, 1387, 598]],
+	["GOLD_ICON", [1446, 537, 1509, 600]], ["GOLD", [1446, 601, 1509, 626]]]);
 
 	const player_statsInvSkillGold_div = document.getElementById("player-statsInvSkillGold-div");
 	for ([playerTabMap, map] of [[PLAYER_TAB.statsDivs, statsDivs], [PLAYER_TAB.invDivs, invDivs], [PLAYER_TAB.skillsGoldDivs, skillsGoldDivs]])
@@ -736,6 +800,7 @@ function initStatsInvSkillsGold()
 			div.style.top = `calc(${t}% * 100 / 640)`;
 			div.style.width = `calc((${r}% - ${l}% + 1%) * 100 / 1536)`;
 			div.style.height = `calc((${b}% - ${t}% + 1%) * 100 / 640)`;
+			div.classList.add("center-container");
 			//TODO any special behavior here...
 
 			//div.style.backgroundColor = "white";
@@ -774,7 +839,7 @@ function initStatsInvSkillsGold()
 	PLAYER_TAB.statsDivs.get("DAMAGE_STR").innerText = "Damage";
 	PLAYER_TAB.statsDivs.get("DAMAGE").innerText = charDamageStr(p);
 	PLAYER_TAB.statsDivs.get("ATTACK_STR").innerText = "Attack";
-	PLAYER_TAB.statsDivs.get("ATTACK").innerText = charAttack(p);
+	PLAYER_TAB.statsDivs.get("ATTACK").innerText = "charAttack(p)";
 	PLAYER_TAB.statsDivs.get("DEFENSE_STR").innerText = "Defense";
 	PLAYER_TAB.statsDivs.get("DEFENSE").innerText = charDefense(p);
 	PLAYER_TAB.statsDivs.get("LIFE_STR").innerText = "Life";
@@ -789,7 +854,7 @@ function initStatsInvSkillsGold()
 	//inv
 
 
-	//skills gold (TODO gold)
+	//skills
 	let i = 0;
 	for (div of PLAYER_TAB.skillsGoldDivs.values())
 	{
@@ -798,13 +863,97 @@ function initStatsInvSkillsGold()
 		
 		const skill = i >> 1;
 		if (i++ % 2 == 0)
-			div.innerText = robj.player.skills[skill] + Math.trunc(
-				PLAYER_TAB.equippedEffects[EFFECT_SKILL_SWORD + skill] + PLAYER_TAB.characterEffects[EFFECT_SKILL_SWORD + skill]);
+		{
+			const text = document.createElement("div");
+			text.innerText = charNetSkill(p, skill);
+			text.style.border = "1px solid red";
+			text.style.cursor = "pointer";
+
+			const input = document.createElement("input");
+			input.style.border = "1px solid blue";
+			input.style.width = "100%";
+			input.style.background = "transparent";
+			input.style.margin = "0";
+			input.style.padding = "0";
+			input.style.font = "inherit";
+			input.style.color = "inherit";
+			input.style.outline = "none";
+			input.style.boxShadow = "none";
+			input.hidden = true;
+
+			text.addEventListener("click", () => {
+				text.hidden = true;
+				input.hidden = false;
+				input.value = p.skills[skill];
+				input.focus();
+			});
+			function editSkill() {
+				const newSkill = input.value.trim();
+				p.skills[skill] = parseInt(newSkill);
+				text.innerText = charNetSkill(p, skill);
+				input.hidden = true;
+				text.hidden = false;
+			}
+			input.addEventListener("keydown", (e) => {
+				if (e.key === "Enter" || e.key === "Escape") {
+					editSkill();
+				}
+			});
+			input.addEventListener("blur", editSkill);
+
+			div.appendChild(text);
+			div.appendChild(input);
+		}
 		else 
 			div.innerText = `${SKILLS_INT_STR[skill]} Skill`;
 	}
 	PLAYER_TAB.skillsGoldDivs.get("POINTS_STR").innerText = "Points Remaining";
 	PLAYER_TAB.skillsGoldDivs.get("POINTS").innerText = robj.player.unusedSkillPoints;
+
+	//gold
+	const goldText = document.createElement("div");
+	goldText.innerText = p.gold;
+	goldText.style.border = "1px solid red";
+	goldText.style.cursor = "pointer";
+
+	const goldInput = document.createElement("input");
+	goldInput.style.border = "1px solid blue";
+	goldInput.style.width = "100%";
+	goldInput.style.background = "transparent";
+	goldInput.style.margin = "0";
+	goldInput.style.padding = "0";
+	goldInput.style.font = "inherit";
+	goldInput.style.color = "inherit";
+	goldInput.style.outline = "none";
+	goldInput.style.boxShadow = "none";
+	goldInput.hidden = true;
+
+	goldText.addEventListener("click", () => {
+		goldText.hidden = true;
+		goldInput.hidden = false;
+		goldInput.value = p.gold;
+		goldInput.focus();
+	});
+	//TODO WHERE LEFT OFF validation, perhaps changelog/confirmation
+	//  and everywhere
+	function editGold() {
+		const newGold = goldInput.value.trim();
+		p.gold = parseInt(newGold);
+		goldText.innerText = newGold;
+		goldInput.hidden = true;
+		goldText.hidden = false;
+	}
+	//TODO WHERE LEFT OFF escape should instead discard the edit
+	//  and everywhere
+	goldInput.addEventListener("keydown", (e) => {
+		if (e.key === "Enter" || e.key === "Escape") {
+			editGold();
+		}
+	});
+	goldInput.addEventListener("blur", editGold);
+
+	PLAYER_TAB.skillsGoldDivs.get("GOLD").appendChild(goldText);
+	PLAYER_TAB.skillsGoldDivs.get("GOLD").appendChild(goldInput);
 }
 
 function switchPlayerTab()
@@ -2230,7 +2379,7 @@ function addTemplateItem(it)
 			it2.merchantMaximum = rank == 0 ? it2.merchantMaximum + RANK_LEVEL_OFFSET[rank] : 32000;
 
 		defaultizeItemTemplate(it2);
-		ITEMS_INFO.set(it2.name, it2); //TODO what to do with duplicate names?
+		ITEMS_INFO.set(it2.name.toUpperCase(), it2); //TODO what to do with duplicate names?
 	}
 }
 
