@@ -496,7 +496,7 @@ const OG_SKILLS = 15;
 const STATS_BOUNDS = new Map([["NAME", [94, 56, 414, 92]], ["LEVEL", [55, 123, 139, 158]], ["EXPERIENCE", [158, 123, 298, 158]],
 	["NEXT_LEVEL", [317, 123, 455, 158]], ["RENOWN", [55, 189, 139, 224]], ["FAME", [158, 189, 298, 224]], ["NEXT_RENOWN", [317, 189, 455, 224]],
 	["STRENGTH_STR", [39, 255, 136, 286]], ["STRENGTH", [140, 255, 228, 286]], ["DAMAGE_STR", [291, 255, 382, 286]], ["DAMAGE", [387, 255, 472, 286]],
-	["DXTERITY_STR", [39, 334, 136, 366]], ["DEXTERITY", [140, 334, 228, 366]], ["ATTACK_STR", [291, 334, 382, 366]], ["ATTACK", [387, 334, 472, 366]],
+	["DEXTERITY_STR", [39, 334, 136, 366]], ["DEXTERITY", [140, 334, 228, 366]], ["ATTACK_STR", [291, 334, 382, 366]], ["ATTACK", [387, 334, 472, 366]],
 	["DEFENSE_STR", [291, 370, 382, 401]], ["DEFENSE", [387, 370, 474, 401]], ["VITALITY_STR", [39, 415, 136, 447]], ["VITALITY", [140, 415, 228, 447]],
 	["STAMINA_STR", [291, 415, 382, 447]], ["STAMINA", [387, 415, 472, 447]], ["LIFE_STR", [291, 452, 382, 483]], ["LIFE", [387, 452, 474, 483]],
 	["MAGIC_STR", [39, 494, 136, 525]], ["MAGIC", [140, 494, 228, 525]], ["MANA_STR", [291, 494, 382, 525]], ["MANA", [387, 494, 472, 525]],
@@ -808,6 +808,58 @@ function run()
 	// // and unhide the uploadScreen...
 }
 
+
+//TODO WHERE LEFT OFF integrating this, working on making editable strength dexterity vitality magic
+// initFunc takes no arguments. enterFunc and exitFunc each take exactly: _text and _input
+//  enterFunc and exitFunc should not modify .hidden or .focus() as those are done here
+//TODO WHERE LEFT OFF right now, no validation. perhaps do a confirmation too. 
+function addEditableFieldTo(div, initFunc, enterFunc, exitFunc)
+{
+	const text = document.createElement("div");
+	text.innerText = initFunc();
+	text.style.border = "1px solid red";
+	text.style.cursor = "pointer";
+
+	const input = document.createElement("input");
+	input.style.border = "1px solid blue";
+	input.style.width = "100%";
+	input.style.background = "transparent";
+	input.style.margin = "0";
+	input.style.padding = "0";
+	input.style.font = "inherit";
+	input.style.color = "inherit";
+	input.style.outline = "none";
+	input.style.boxShadow = "none";
+	input.hidden = true
+
+	function enterFuncGenerator(enterFunc) {
+		return () => {
+			text.hidden = true;
+			input.hidden = false;
+			enterFunc(text, input);
+			input.focus();
+		};
+	}
+	function exitFuncGenerator(exitFunc) {
+		return () => {
+			exitFunc(text, input);
+			input.hidden = true;
+			text.hidden = false;
+		};
+	}
+
+	text.addEventListener("click", enterFuncGenerator(enterFunc));
+	input.addEventListener("keydown", (e) => {
+		if (e.key === "Enter" || e.key === "Escape") { //TODO escape should exit
+			exitFuncGenerator(exitFunc)();
+		}
+	});
+	input.addEventListener("blur", exitFuncGenerator(exitFunc));
+
+	div.appendChild(text);
+	div.appendChild(input);
+}
+
 //TODO text might be too large
 //TODO TODO TODO attack descriptions have effects and things too...
 //TODO TODO TODO also unarmed attacks
@@ -852,7 +904,7 @@ function initStatsInvSkillsGold()
 	PLAYER_TAB.statsDivs.get("LEVEL").innerText = p.level;
 	PLAYER_TAB.statsDivs.get("STRENGTH_STR").innerText = "Strength";
 	PLAYER_TAB.statsDivs.get("STRENGTH").innerText = charStrength(p);
-	PLAYER_TAB.statsDivs.get("DXTERITY_STR").innerText = "Dexterity";
+	PLAYER_TAB.statsDivs.get("DEXTERITY_STR").innerText = "Dexterity";
 	PLAYER_TAB.statsDivs.get("DEXTERITY").innerText = charDexterity(p);
 	PLAYER_TAB.statsDivs.get("VITALITY_STR").innerText = "Vitality";
 	PLAYER_TAB.statsDivs.get("VITALITY").innerText = charVitality(p);
@@ -891,45 +943,17 @@ function initStatsInvSkillsGold()
 		const skill = i >> 1;
 		if (i++ % 2 == 0)
 		{
-			const text = document.createElement("div");
-			text.innerText = charNetSkill(p, skill);
-			text.style.border = "1px solid red";
-			text.style.cursor = "pointer";
-
-			const input = document.createElement("input");
-			input.style.border = "1px solid blue";
-			input.style.width = "100%";
-			input.style.background = "transparent";
-			input.style.margin = "0";
-			input.style.padding = "0";
-			input.style.font = "inherit";
-			input.style.color = "inherit";
-			input.style.outline = "none";
-			input.style.boxShadow = "none";
-			input.hidden = true;
-
-			text.addEventListener("click", () => {
-				text.hidden = true;
-				input.hidden = false;
-				input.value = p.skills[skill];
-				input.focus();
-			});
-			function editSkill() {
-				const newSkill = input.value.trim();
-				p.skills[skill] = parseInt(newSkill);
-				text.innerText = charNetSkill(p, skill);
-				input.hidden = true;
-				text.hidden = false;
-			}
-			input.addEventListener("keydown", (e) => {
-				if (e.key === "Enter" || e.key === "Escape") {
-					editSkill();
-				}
-			});
-			input.addEventListener("blur", editSkill);
-
-			div.appendChild(text);
-			div.appendChild(input);
+			addEditableFieldTo(div,	() => {
+										return charNetSkill(p, skill);
+									},
+									(_text, _input) => {
+										_input.value = p.skills[skill];
+									},
+									(_text, _input) => {
+										const newSkill = _input.value.trim();
+										p.skills[skill] = parseInt(newSkill);
+										_text.innerText = charNetSkill(p, skill);	
+									});
 		}
 		else 
 			div.innerText = `${SKILLS_INT_STR[skill]} Skill`;
@@ -938,49 +962,17 @@ function initStatsInvSkillsGold()
 	PLAYER_TAB.skillsGoldDivs.get("POINTS").innerText = robj.player.unusedSkillPoints;
 
 	//gold
-	const goldText = document.createElement("div");
-	goldText.innerText = p.gold;
-	goldText.style.border = "1px solid red";
-	goldText.style.cursor = "pointer";
-
-	const goldInput = document.createElement("input");
-	goldInput.style.border = "1px solid blue";
-	goldInput.style.width = "100%";
-	goldInput.style.background = "transparent";
-	goldInput.style.margin = "0";
-	goldInput.style.padding = "0";
-	goldInput.style.font = "inherit";
-	goldInput.style.color = "inherit";
-	goldInput.style.outline = "none";
-	goldInput.style.boxShadow = "none";
-	goldInput.hidden = true;
-
-	goldText.addEventListener("click", () => {
-		goldText.hidden = true;
-		goldInput.hidden = false;
-		goldInput.value = p.gold;
-		goldInput.focus();
-	});
-	//TODO WHERE LEFT OFF validation, perhaps changelog/confirmation
-	//  and everywhere
-	function editGold() {
-		const newGold = goldInput.value.trim();
-		p.gold = parseInt(newGold);
-		goldText.innerText = newGold;
-		goldInput.hidden = true;
-		goldText.hidden = false;
-	}
-	//TODO WHERE LEFT OFF escape should instead discard the edit
-	//  and everywhere
-	goldInput.addEventListener("keydown", (e) => {
-		if (e.key === "Enter" || e.key === "Escape") {
-			editGold();
-		}
-	});
-	goldInput.addEventListener("blur", editGold);
-
-	PLAYER_TAB.skillsGoldDivs.get("GOLD").appendChild(goldText);
-	PLAYER_TAB.skillsGoldDivs.get("GOLD").appendChild(goldInput);
+	addEditableFieldTo(PLAYER_TAB.skillsGoldDivs.get("GOLD"),	() => {
+																	return p.gold;
+																},
+																(_text, _input) => {
+																	_input.value = p.gold;
+																}, 
+																(_text, _input) => {
+																	const newGold = _input.value.trim();
+																	p.gold = parseInt(newGold);
+																	_text.innerText = p.gold;	
+																});
 }
 
 function switchPlayerTab()
