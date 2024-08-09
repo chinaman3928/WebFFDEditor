@@ -810,13 +810,14 @@ function run()
 
 
 //TODO WHERE LEFT OFF integrating this, working on making editable strength dexterity vitality magic
-// initFunc takes no arguments. enterFunc and exitFunc each take exactly: _text and _input
-//  enterFunc and exitFunc should not modify .hidden or .focus() as those are done here
+//  enterFunc and exitFunc each take exactly: _text and _input
+//  hoverboxFunc takes no arguments
+//  enterFunc and exitFunc should not modify .hidden or .focus() or hoverbox as those are done here
 //TODO WHERE LEFT OFF right now, no validation. perhaps do a confirmation too. 
-function addEditableFieldTo(div, initFunc, enterFunc, exitFunc)
+function addEditableFieldAndHoverboxTo(div, initText, enterFunc, exitFunc, hoverboxFunc)
 {
 	const text = document.createElement("div");
-	text.innerText = initFunc();
+	text.innerText = initText;
 	text.style.border = "1px solid red";
 	text.style.cursor = "pointer";
 
@@ -830,7 +831,11 @@ function addEditableFieldTo(div, initFunc, enterFunc, exitFunc)
 	input.style.color = "inherit";
 	input.style.outline = "none";
 	input.style.boxShadow = "none";
-	input.hidden = true
+	input.hidden = true;
+
+	const hoverbox = document.createElement("div");
+	hoverbox.classList.add("hoverbox");
+	hoverbox.innerText = hoverboxFunc();
 
 	function enterFuncGenerator(enterFunc) {
 		return () => {
@@ -838,6 +843,7 @@ function addEditableFieldTo(div, initFunc, enterFunc, exitFunc)
 			input.hidden = false;
 			enterFunc(text, input);
 			input.focus();
+			hoverbox.classList.add("hoverbox-enter");
 		};
 	}
 	function exitFuncGenerator(exitFunc) {
@@ -845,6 +851,8 @@ function addEditableFieldTo(div, initFunc, enterFunc, exitFunc)
 			exitFunc(text, input);
 			input.hidden = true;
 			text.hidden = false;
+			hoverbox.classList.remove("hoverbox-enter");
+			hoverbox.innerText = hoverboxFunc();
 		};
 	}
 
@@ -858,6 +866,7 @@ function addEditableFieldTo(div, initFunc, enterFunc, exitFunc)
 
 	div.appendChild(text);
 	div.appendChild(input);
+	div.appendChild(hoverbox);
 }
 
 //TODO text might be too large
@@ -886,12 +895,6 @@ function initStatsInvSkillsGold()
 			div.style.color = "white";
 			player_statsInvSkillGold_div.appendChild(div);
 			playerTabMap.set(what, div);
-
-			//TODO WHERE LEFT OFF twiddling hoverbox
-			const hoverbox = document.createElement("div");
-			hoverbox.classList.add("hoverbox");
-			hoverbox.innerText = "bruh";
-			div.appendChild(hoverbox);
 		}
 	}
 
@@ -910,13 +913,6 @@ function initStatsInvSkillsGold()
 	PLAYER_TAB.statsDivs.get("LEVEL").innerText = p.level;
 	PLAYER_TAB.statsDivs.get("STRENGTH_STR").innerText = "Strength";
 	PLAYER_TAB.statsDivs.get("STRENGTH").innerText = charStrength(p);
-
-	//TODO WHERE LEFT OFF hoverbox
-	const hoverbox = document.createElement("div");
-	hoverbox.classList.add("hoverbox");
-	hoverbox.innerText = "bruh";
-	PLAYER_TAB.statsDivs.get("STRENGTH").appendChild(hoverbox);
-
 	PLAYER_TAB.statsDivs.get("DEXTERITY_STR").innerText = "Dexterity";
 	PLAYER_TAB.statsDivs.get("DEXTERITY").innerText = charDexterity(p);
 	PLAYER_TAB.statsDivs.get("VITALITY_STR").innerText = "Vitality";
@@ -939,7 +935,21 @@ function initStatsInvSkillsGold()
 	PLAYER_TAB.statsDivs.get("STAMINA_STR").innerText = "Stamina";
 	PLAYER_TAB.statsDivs.get("STAMINA").innerText = charMaxStamina(p);
 	PLAYER_TAB.statsDivs.get("MANA_STR").innerText = "Mana";
-	PLAYER_TAB.statsDivs.get("MANA").innerText = charMaxMana(p);
+	//PLAYER_TAB.statsDivs.get("MANA").innerText = charMaxMana(p);
+	//TODO WHERE LEFT OFF add for life, stamina, magic, vitality, desterity, strength
+	addEditableFieldAndHoverboxTo(PLAYER_TAB.statsDivs.get("MANA"),	charMaxMana(p),
+																	(_text, _input) => {
+																		_input.value = p.maxMana;
+																	},
+																	(_text, _input) => {
+																		const newMana = _input.value.trim();
+																		p.maxMana = parseInt(newMana);
+																		_text.innerText = charMaxMana(p);
+																	},
+																	() => {
+																		return `${p.maxMana} + ${charNetEffect(p, EFFECT_PERCENT_MANA)}% [${Math.ceil(charNetEffect(p, EFFECT_PERCENT_MANA) * 0.01 * p.maxMana)}] + ${Math.trunc(charNetEffect(p, EFFECT_MAX_MANA))}`;
+																	});
+
 	PLAYER_TAB.statsDivs.get("POINTS_STR").innerText = "Points Remaining";
 	PLAYER_TAB.statsDivs.get("POINTS").innerText = p.unusedStatPoints;
 
@@ -956,17 +966,18 @@ function initStatsInvSkillsGold()
 		const skill = i >> 1;
 		if (i++ % 2 == 0)
 		{
-			addEditableFieldTo(div,	() => {
-										return charNetSkill(p, skill);
-									},
-									(_text, _input) => {
-										_input.value = p.skills[skill];
-									},
-									(_text, _input) => {
-										const newSkill = _input.value.trim();
-										p.skills[skill] = parseInt(newSkill);
-										_text.innerText = charNetSkill(p, skill);	
-									});
+			addEditableFieldAndHoverboxTo(div,	charNetSkill(p, skill),
+												(_text, _input) => {
+													_input.value = p.skills[skill];
+												},
+												(_text, _input) => {
+													const newSkill = _input.value.trim();
+													p.skills[skill] = parseInt(newSkill);
+													_text.innerText = charNetSkill(p, skill);
+												},
+												() => {
+													return `${p.skills[skill]} + ${charNetEffect(p, EFFECT_SKILL_SWORD + skill)}`;
+												});
 		}
 		else 
 			div.innerText = `${SKILLS_INT_STR[skill]} Skill`;
@@ -975,9 +986,8 @@ function initStatsInvSkillsGold()
 	PLAYER_TAB.skillsGoldDivs.get("POINTS").innerText = robj.player.unusedSkillPoints;
 
 	//gold
-	addEditableFieldTo(PLAYER_TAB.skillsGoldDivs.get("GOLD"),	() => {
-																	return p.gold;
-																},
+	//TODO WHERE LEFT OFF probably allow passing in False into slots where N/A, like hoverbox here or text/input for inventory icons
+	addEditableFieldAndHoverboxTo(PLAYER_TAB.skillsGoldDivs.get("GOLD"), p.gold,
 																(_text, _input) => {
 																	_input.value = p.gold;
 																}, 

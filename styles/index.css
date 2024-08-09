@@ -137,5 +137,9 @@ html {
 }
 
 .center-container:hover .hoverbox {
-  display: inline-block;
+  display: block;
+}
+
+.hoverbox-enter {
+  display: block;
 }
