@@ -117,9 +117,25 @@ html {
   justify-content: center;
   align-items: center;
   text-align: center;
+  position: relative;
 }
 
 .center-contained {
   max-width: 100%;
   max-height: 100%;
+}
+
+.hoverbox {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: black;
+  color: white;
+  opacity: 0.4;
+}
+
+.center-container:hover .hoverbox {
+  display: inline-block;
 }

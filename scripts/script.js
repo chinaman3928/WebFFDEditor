@@ -886,6 +886,12 @@ function initStatsInvSkillsGold()
 			div.style.color = "white";
 			player_statsInvSkillGold_div.appendChild(div);
 			playerTabMap.set(what, div);
+
+			//TODO WHERE LEFT OFF twiddling hoverbox
+			const hoverbox = document.createElement("div");
+			hoverbox.classList.add("hoverbox");
+			hoverbox.innerText = "bruh";
+			div.appendChild(hoverbox);
 		}
 	}
 
@@ -904,6 +910,13 @@ function initStatsInvSkillsGold()
 	PLAYER_TAB.statsDivs.get("LEVEL").innerText = p.level;
 	PLAYER_TAB.statsDivs.get("STRENGTH_STR").innerText = "Strength";
 	PLAYER_TAB.statsDivs.get("STRENGTH").innerText = charStrength(p);
+
+	//TODO WHERE LEFT OFF hoverbox
+	const hoverbox = document.createElement("div");
+	hoverbox.classList.add("hoverbox");
+	hoverbox.innerText = "bruh";
+	PLAYER_TAB.statsDivs.get("STRENGTH").appendChild(hoverbox);
+
 	PLAYER_TAB.statsDivs.get("DEXTERITY_STR").innerText = "Dexterity";
 	PLAYER_TAB.statsDivs.get("DEXTERITY").innerText = charDexterity(p);
 	PLAYER_TAB.statsDivs.get("VITALITY_STR").innerText = "Vitality";
