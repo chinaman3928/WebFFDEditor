@@ -911,19 +911,15 @@ function initStatsInvSkillsGold()
 	PLAYER_TAB.statsDivs.get("NAME").innerText = robj.player.lineage > 0 ?	`${p.name} the ${FAME_NAMES[p.fameRank]} (${romanNumeral(p.lineage)})` :
 																			`${p.name} the ${FAME_NAMES[p.fameRank]}`;
 	PLAYER_TAB.statsDivs.get("LEVEL").innerText = p.level;
-	PLAYER_TAB.statsDivs.get("STRENGTH_STR").innerText = "Strength";
-	PLAYER_TAB.statsDivs.get("STRENGTH").innerText = charStrength(p);
-	PLAYER_TAB.statsDivs.get("DEXTERITY_STR").innerText = "Dexterity";
-	PLAYER_TAB.statsDivs.get("DEXTERITY").innerText = charDexterity(p);
-	PLAYER_TAB.statsDivs.get("VITALITY_STR").innerText = "Vitality";
-	PLAYER_TAB.statsDivs.get("VITALITY").innerText = charVitality(p);
-	PLAYER_TAB.statsDivs.get("MAGIC_STR").innerText = "Magic";
-	PLAYER_TAB.statsDivs.get("MAGIC").innerText = charMagic(p);
 	PLAYER_TAB.statsDivs.get("EXPERIENCE").innerText = p.experience;
 	PLAYER_TAB.statsDivs.get("NEXT_LEVEL").innerText = charExperienceGate(p);
 	PLAYER_TAB.statsDivs.get("RENOWN").innerText = p.fameRank;
 	PLAYER_TAB.statsDivs.get("FAME").innerText = p.fame;
 	PLAYER_TAB.statsDivs.get("NEXT_RENOWN").innerText = charFameGate(p);
+	PLAYER_TAB.statsDivs.get("STRENGTH_STR").innerText = "Strength";
+	PLAYER_TAB.statsDivs.get("DEXTERITY_STR").innerText = "Dexterity";
+	PLAYER_TAB.statsDivs.get("VITALITY_STR").innerText = "Vitality";
+	PLAYER_TAB.statsDivs.get("MAGIC_STR").innerText = "Magic";
 	PLAYER_TAB.statsDivs.get("DAMAGE_STR").innerText = "Damage";
 	PLAYER_TAB.statsDivs.get("DAMAGE").innerText = charDamageStr(p);
 	PLAYER_TAB.statsDivs.get("ATTACK_STR").innerText = "Attack";
@@ -931,24 +927,30 @@ function initStatsInvSkillsGold()
 	PLAYER_TAB.statsDivs.get("DEFENSE_STR").innerText = "Defense";
 	PLAYER_TAB.statsDivs.get("DEFENSE").innerText = charDefense(p);
 	PLAYER_TAB.statsDivs.get("LIFE_STR").innerText = "Life";
-	PLAYER_TAB.statsDivs.get("LIFE").innerText = charMaxHP(p);
 	PLAYER_TAB.statsDivs.get("STAMINA_STR").innerText = "Stamina";
-	PLAYER_TAB.statsDivs.get("STAMINA").innerText = charMaxStamina(p);
 	PLAYER_TAB.statsDivs.get("MANA_STR").innerText = "Mana";
-	//PLAYER_TAB.statsDivs.get("MANA").innerText = charMaxMana(p);
-	//TODO WHERE LEFT OFF add for life, stamina, magic, vitality, desterity, strength
-	addEditableFieldAndHoverboxTo(PLAYER_TAB.statsDivs.get("MANA"),	charMaxMana(p),
-																	(_text, _input) => {
-																		_input.value = p.maxMana;
-																	},
-																	(_text, _input) => {
-																		const newMana = _input.value.trim();
-																		p.maxMana = parseInt(newMana);
-																		_text.innerText = charMaxMana(p);
-																	},
-																	() => {
-																		return `${p.maxMana} + ${charNetEffect(p, EFFECT_PERCENT_MANA)}% [${Math.ceil(charNetEffect(p, EFFECT_PERCENT_MANA) * 0.01 * p.maxMana)}] + ${Math.trunc(charNetEffect(p, EFFECT_MAX_MANA))}`;
-																	});
+
+	for (const [div, func, attr, perc, flat] of [	["STRENGTH",	charStrength,	"strength",		EFFECT_PERCENT_STRENGTH,	EFFECT_STRENGTH],
+													["DEXTERITY",	charDexterity,	"dexterity",	EFFECT_PERCENT_DEXTERITY,	EFFECT_DEXTERITY],
+													["VITALITY",	charVitality,	"vitality",		EFFECT_PERCENT_VITALITY, 	EFFECT_VITALITY],
+													["MAGIC",		charMagic,		"magic",		EFFECT_PERCENT_MAGIC, 		EFFECT_MAGIC],
+													["LIFE",		charMaxHP,		"maxHp", 		EFFECT_PERCENT_H_P,			EFFECT_MAX_HP],
+													["STAMINA",		charMaxStamina, "maxStamina",	EFFECT_PERCENT_STAMINA, 	EFFECT_MAX_STAMINA],
+													["MANA",		charMaxMana,	"maxMana",		EFFECT_PERCENT_MANA,		EFFECT_MAX_MANA]])
+	{
+		addEditableFieldAndHoverboxTo(PLAYER_TAB.statsDivs.get(div),	func(p),
+																		(_text, _input) => {
+																			_input.value = p[attr];
+																		},
+																		(_text, _input) => {
+																			const newVal = _input.value.trim();
+																			p[attr] = parseInt(newVal);
+																			_text.innerText = func(p);
+																		},
+																		() => {
+																			return `${p[attr]} + ${charNetEffect(p, perc)}% [${Math.ceil(charNetEffect(p, perc) * 0.01 * p[attr])}] + ${Math.trunc(charNetEffect(p, flat))}`;
+																		});
+	}
 
 	PLAYER_TAB.statsDivs.get("POINTS_STR").innerText = "Points Remaining";
 	PLAYER_TAB.statsDivs.get("POINTS").innerText = p.unusedStatPoints;

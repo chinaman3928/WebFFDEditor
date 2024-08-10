@@ -133,7 +133,7 @@ html {
   transform: translateX(-50%);
   background-color: black;
   color: white;
-  opacity: 0.4;
+  --opacity: 0.4;
 }
 
 .center-container:hover .hoverbox {
