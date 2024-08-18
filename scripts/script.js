@@ -250,6 +250,221 @@ const EFFECT_DISPEL = 71;
 const EFFECT_DISPEL_ENEMY = 72;
 const EFFECT_ALL_TYPES = 73;
 
+const EFFECT_FLAT = 0;
+const EFFECT_PERCENT = 1;
+const EFFECT_FLAT_PERCENT = [
+	EFFECT_FLAT,
+	EFFECT_FLAT,
+	EFFECT_FLAT,
+	EFFECT_FLAT,
+	EFFECT_FLAT,
+	EFFECT_FLAT,
+	EFFECT_FLAT,
+	EFFECT_FLAT,
+	EFFECT_FLAT,
+	EFFECT_FLAT,
+	EFFECT_FLAT,
+	EFFECT_FLAT,
+	EFFECT_FLAT,
+	EFFECT_FLAT,
+	EFFECT_FLAT,
+	EFFECT_FLAT,
+	EFFECT_FLAT,
+	EFFECT_FLAT,
+	EFFECT_FLAT,
+	EFFECT_FLAT,
+	EFFECT_FLAT,
+	EFFECT_FLAT,
+	EFFECT_FLAT,
+	EFFECT_FLAT,
+	EFFECT_FLAT,
+	EFFECT_FLAT,
+	EFFECT_FLAT,
+	EFFECT_FLAT,
+	EFFECT_FLAT,
+	EFFECT_FLAT,
+	EFFECT_PERCENT,
+	EFFECT_PERCENT,
+	EFFECT_PERCENT,
+	EFFECT_PERCENT,
+	EFFECT_PERCENT,
+	EFFECT_PERCENT,
+	EFFECT_PERCENT,
+	EFFECT_PERCENT,
+	EFFECT_PERCENT,
+	EFFECT_PERCENT,
+	EFFECT_PERCENT,
+	EFFECT_PERCENT,
+	EFFECT_PERCENT,
+	EFFECT_PERCENT,
+	EFFECT_PERCENT,
+	EFFECT_PERCENT,
+	EFFECT_PERCENT,
+	EFFECT_PERCENT,
+	EFFECT_PERCENT,
+	EFFECT_PERCENT,
+	EFFECT_PERCENT,
+	EFFECT_PERCENT,
+	EFFECT_PERCENT,
+	EFFECT_PERCENT,
+	EFFECT_PERCENT,
+	EFFECT_PERCENT,
+	EFFECT_PERCENT,
+	EFFECT_PERCENT
+];
+
+const EFFECT_ITEM_POSITIVE_STRINGS = [
+	"Strength Bonus",
+	"Dexterity Bonus",
+	"Vitality Bonus",
+	"Magic Bonus",
+	"Mana Bonus",
+	"Life Bonus",
+	"Stamina",
+	"Mana Recovered",
+	"HP Recovered",
+	"Stamina Recovered",
+	"Defense Bonus",
+	"Attack Bonus",
+	"Damage Dealt Bonus",
+	"Damage Taken Reduced",
+	"Knockback",
+	"Sword Skill Bonus",
+	"Club & Mace Skill Bonus",
+	"Hammer Skill Bonus",
+	"Axe Skill Bonus",
+	"Spear Skill Bonus",
+	"Staff Skill Bonus",
+	"Polearm Skill Bonus",
+	"Bow & Crossbow Skill Bonus",
+	"Critical Strike Skill Bonus",
+	"Spell Casting Skill Bonus",
+	"Dual-Wielding Skill Bonus",
+	"Shield Battle Skill Bonus",
+	"Attack Magic Skill Bonus",
+	"Defense Magic Skill Bonus",
+	"Charm Magic Skill Bonus",
+	"% Strength Bonus",
+	"% Dexterity Bonus",
+	"% Vitality Bonus",
+	"% Magic Bonus",
+	"% Mana Bonus",
+	"% Life Bonus",
+	"% Stamina Bonus",
+	"% Movement Speed Bonus",
+	"% Attack Speed Bonus",
+	"% Defense Bonus",
+	"% Attack Bonus",
+	"% Damage Dealt Bonus",
+	"% Damage Taken Reduced",
+	"% Chance of Finding Magical Items",
+	"% More Gold Dropped By Enemies",
+	"% Faster Casting Speed",
+	"% Life Stolen Per Hit",
+	"% Mana Stolen Per Hit",
+	"% Damage Reflected To Enemy",
+	"% Improved Chance Of Block",
+	"% Reduced Item Requirements",
+	"% Piercing Resistance Bonus",
+	"% Slashing Resistance Bonus",
+	"% Crushing Resistance Bonus",
+	"% Magical Resistance Bonus",
+	"% Fire Resistance Bonus",
+	"% Ice Resistance Bonus",
+	"% Electric Resistance Bonus",
+	"N/A",
+	"Remove Effect",
+	"Knockback Effect",
+	"Identify Item",
+	"Write Spell",
+	"Summon Creature",
+	"Add Elemental Damage",
+	"Transform Creature",
+	"Revert Transformation",
+	"Opens Town Portal",
+	"Discover Current Level",
+	"Cause Target to Flee",
+	"Charm Target",
+	"Dispel Summoned Monster",
+	"Dispel Summoned Enemy Monster"
+];
+
+const EFFECT_ITEM_NEGATIVE_STRINGS = [
+	"Strength Penalty",
+	"Dexterity Penalty",
+	"Vitality Penalty",
+	"Magic Penalty",
+	"Mana Penalty",
+	"Life Penalty",
+	"Stamina Penalty",
+	"Mana Drained",
+	"HP Damage",
+	"Stamina Drained",
+	"Defense Penalty",
+	"Attack Penalty",
+	"Damage Dealt Penalty",
+	"Damage Taken Increased",
+	"Knockback",
+	"Sword Skill Penalty",
+	"Club & Mace Skill Penalty",
+	"Hammer Skill Penalty",
+	"Axe Skill Penalty",
+	"Spear Skill Penalty",
+	"Staff Skill Penalty",
+	"Polearm Skill Penalty",
+	"Bow & Crossbow Skill Penalty",
+	"Critical Strike Skill Penalty",
+	"Spell Casting Skill Penalty",
+	"Dual-Wielding Skill Penalty",
+	"Shield Battle Skill Penalty",
+	"Attack Magic Skill Penalty",
+	"Defense Magic Skill Penalty",
+	"Charm Magic Skill Penalty",
+	"% Strength Penalty",
+	"% Dexterity Penalty",
+	"% Vitality Penalty",
+	"% Magic Penalty",
+	"% Mana Penalty",
+	"% Life Penalty",
+	"% Stamina Penalty",
+	"% Movement Speed Penalty",
+	"% Attack Speed Penalty",
+	"% Defense Penalty",
+	"% Attack Penalty",
+	"% Damage Dealt Penalty",
+	"% Damage Taken Increased",
+	"% Reduced Chance of Finding Magical Items",
+	"% Less Gold Dropped By Enemies",
+	"% Slower Casting Speed",
+	"% Life Drained Per Hit",
+	"% Mana Drained Per Hit",
+	"% Damage Reflected To Enemy",
+	"% Reduced Chance Of Block",
+	"% Increased Item Requirements",
+	"% Piercing Resistance Penalty",
+	"% Slashing Resistance Penalty",
+	"% Crushing Resistance Penalty",
+	"% Magical Resistance Penalty",
+	"% Fire Resistance Penalty",
+	"% Ice Resistance Penalty",
+	"% Electric Resistance Penalty",
+	"N/A",
+	"Remove Effect",
+	"Knockback Effect",
+	"Identify Item",
+	"Write Spell",
+	"Summon Creature",
+	"Add Elemental Damage",
+	"Transform Creature",
+	"Revert Transformation",
+	"Opens Town Portal",
+	"Discover Current Level",
+	"Cause Target to Flee",
+	"Charm Target",
+	"Dispel Summoned Monster",
+	"Dispel Summoned Enemy Monster"
+];
+
 const IS_MAGIC = 
 [
 	true, true, true, true, true, true, true, true, true, true, true, true, true, true, false, false,
@@ -642,6 +857,8 @@ function computeEquippedEffects()
 			icon.src = `img/${ITEMS_INFO.get(it.baseName.toUpperCase()).icon}`; //TODO TODO TODO hardcoding, but should be smarter...
 			icon.classList.add("center-contained");
 			PLAYER_TAB.invDivs.get(it.slotIndex == SLOT_LEFTARM ? SLOT_LEFTHAND : it.slotIndex).appendChild(icon);
+
+			addHoverboxToItem(PLAYER_TAB.invDivs.get(it.slotIndex == SLOT_LEFTARM ? SLOT_LEFTHAND : it.slotIndex), it);
 		}
 		else if (it.slotIndex > SLOT_QUICK5) //TODO hardcoding for now, because i dont have the quickslots on the screen
 		{
@@ -809,6 +1026,30 @@ function run()
 }
 
 
+function addHoverboxToItem(div, it)
+{
+	const hoverbox = document.createElement("div");
+	hoverbox.classList.add("hoverbox");
+
+	for (const act of [ACTIVATION_PASSIVE, ACTIVATION_USAGE])
+	{
+		for (const e of it.effects[act])
+		{
+			const div = document.createElement("div");
+			const valStr = `${Math.abs(Math.trunc(e.value))}${EFFECT_FLAT_PERCENT[e.type] ? '' : ' '}`;
+			if (Math.sign(e.value) === Math.sign(EFFECT_MAXIMUM[e.type]))
+				div.textContent = `${EFFECT_FLAT_PERCENT[e.type] ? '' : (e.value > 0 ? '+' : '')}${valStr}${EFFECT_ITEM_POSITIVE_STRINGS[e.type]}`;
+			else
+				div.textContent = `${EFFECT_FLAT_PERCENT[e.type] ? '' : (e.value < 0 ? '-' : '')}${valStr}${EFFECT_ITEM_NEGATIVE_STRINGS[e.type]}`;
+			hoverbox.appendChild(div);
+		}
+	}
+
+
+	div.appendChild(hoverbox);
+}
+
+
 //TODO WHERE LEFT OFF integrating this, working on making editable strength dexterity vitality magic
 //  enterFunc and exitFunc each take exactly: _text and _input
 //  hoverboxFunc takes no arguments
@@ -906,7 +1147,6 @@ function initStatsInvSkillsGold()
 	//TODO but consider that the displayed number might not be whats used in game
 	//TODO there is a petstatsmenu.cpp, how is that different? how about other monsters?
 	//TODO TODO TODO Invenctory::EffectValue is probably different from Character::EffectValue?
-	//stats
 	const p = robj.player;
 	PLAYER_TAB.statsDivs.get("NAME").innerText = robj.player.lineage > 0 ?	`${p.name} the ${FAME_NAMES[p.fameRank]} (${romanNumeral(p.lineage)})` :
 																			`${p.name} the ${FAME_NAMES[p.fameRank]}`;

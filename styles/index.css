@@ -134,6 +134,11 @@ html {
   background-color: black;
   color: white;
   --opacity: 0.4;
+
+  max-width: 50vw;
+  overflow: auto;
+  white-space: nowrap;
+  z-index: 10;
 }
 
 .center-container:hover .hoverbox {
