@@ -879,6 +879,8 @@ function computeEquippedEffects()
 			iconDiv.appendChild(icon);
 			document.getElementById("player-statsInvSkillGold-div").appendChild(iconDiv);
 			PLAYER_TAB.invDivs.set(it.slotIndex, iconDiv);
+
+			addHoverboxToItem(iconDiv, it);
 		}
 	}
 }
@@ -1033,18 +1035,18 @@ function addHoverboxToItem(div, it)
 
 	for (const act of [ACTIVATION_PASSIVE, ACTIVATION_USAGE])
 	{
+		const actStr = act ? "USAGE" : "PASSIVE";
 		for (const e of it.effects[act])
 		{
 			const div = document.createElement("div");
 			const valStr = `${Math.abs(Math.trunc(e.value))}${EFFECT_FLAT_PERCENT[e.type] ? '' : ' '}`;
 			if (Math.sign(e.value) === Math.sign(EFFECT_MAXIMUM[e.type]))
-				div.textContent = `${EFFECT_FLAT_PERCENT[e.type] ? '' : (e.value > 0 ? '+' : '')}${valStr}${EFFECT_ITEM_POSITIVE_STRINGS[e.type]}`;
+				div.textContent = `${actStr} ${EFFECT_FLAT_PERCENT[e.type] ? '' : (e.value > 0 ? '+' : '')}${valStr}${EFFECT_ITEM_POSITIVE_STRINGS[e.type]}`;
 			else
-				div.textContent = `${EFFECT_FLAT_PERCENT[e.type] ? '' : (e.value < 0 ? '-' : '')}${valStr}${EFFECT_ITEM_NEGATIVE_STRINGS[e.type]}`;
+				div.textContent = `${actStr} ${EFFECT_FLAT_PERCENT[e.type] ? '' : (e.value < 0 ? '-' : '')}${valStr}${EFFECT_ITEM_NEGATIVE_STRINGS[e.type]}`;
 			hoverbox.appendChild(div);
 		}
 	}
-
 
 	div.appendChild(hoverbox);
 }
