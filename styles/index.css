@@ -1,3 +1,7 @@
+body {
+  font-size: 1vw;
+}
+
 html {
   height: 100%;
   width: 100%;
@@ -121,8 +125,9 @@ html {
 }
 
 .center-contained {
-  max-width: 100%;
-  max-height: 100%;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .hoverbox {
@@ -133,7 +138,7 @@ html {
   transform: translateX(-50%);
   background-color: black;
   color: white;
-  --opacity: 0.4;
+  opacity: 0.7;
 
   max-width: 50vw;
   overflow: auto;
@@ -141,10 +146,23 @@ html {
   z-index: 10;
 }
 
-.center-container:hover .hoverbox {
+.center-container:hover > .hoverbox {
+  display: block;
+}
+
+.center-container:hover span:hover .hoverbox {
   display: block;
 }
 
 .hoverbox-enter {
   display: block;
+}
+
+.grade-rank-icon {
+  z-index: 9;
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: calc(3200vw / 1536);
+  --height: calc(3200vh / 640);
 }

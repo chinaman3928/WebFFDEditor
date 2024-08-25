@@ -858,6 +858,17 @@ function computeEquippedEffects()
 			icon.classList.add("center-contained");
 			PLAYER_TAB.invDivs.get(it.slotIndex == SLOT_LEFTARM ? SLOT_LEFTHAND : it.slotIndex).appendChild(icon);
 
+
+			//TODO WHERE LEFT OFF grade star
+			const star = document.createElement("img");
+			star.src = "img/goldstar.png";
+			star.classList.add("grade-rank-icon");
+			const rank = document.createElement("img");
+			rank.src = "img/elite.png";
+			rank.classList.add("grade-rank-icon");
+			PLAYER_TAB.invDivs.get(it.slotIndex == SLOT_LEFTARM ? SLOT_LEFTHAND : it.slotIndex).appendChild(star);
+			PLAYER_TAB.invDivs.get(it.slotIndex == SLOT_LEFTARM ? SLOT_LEFTHAND : it.slotIndex).appendChild(rank);
+
 			addHoverboxToItem(PLAYER_TAB.invDivs.get(it.slotIndex == SLOT_LEFTARM ? SLOT_LEFTHAND : it.slotIndex), it);
 		}
 		else if (it.slotIndex > SLOT_QUICK5) //TODO hardcoding for now, because i dont have the quickslots on the screen
@@ -1039,11 +1050,28 @@ function addHoverboxToItem(div, it)
 		for (const e of it.effects[act])
 		{
 			const div = document.createElement("div");
-			const valStr = `${Math.abs(Math.trunc(e.value))}${EFFECT_FLAT_PERCENT[e.type] ? '' : ' '}`;
 			if (Math.sign(e.value) === Math.sign(EFFECT_MAXIMUM[e.type]))
-				div.textContent = `${actStr} ${EFFECT_FLAT_PERCENT[e.type] ? '' : (e.value > 0 ? '+' : '')}${valStr}${EFFECT_ITEM_POSITIVE_STRINGS[e.type]}`;
+				div.innerHTML = `${actStr} ${EFFECT_FLAT_PERCENT[e.type] ? '' : (e.value > 0 ? '+' : '')}<span></span>${EFFECT_FLAT_PERCENT[e.type] ? '' : ' '}${EFFECT_ITEM_POSITIVE_STRINGS[e.type]}`;
 			else
-				div.textContent = `${actStr} ${EFFECT_FLAT_PERCENT[e.type] ? '' : (e.value < 0 ? '-' : '')}${valStr}${EFFECT_ITEM_NEGATIVE_STRINGS[e.type]}`;
+				div.innerHTML = `${actStr} ${EFFECT_FLAT_PERCENT[e.type] ? '' : (e.value < 0 ? '-' : '')}<span></span>${EFFECT_FLAT_PERCENT[e.type] ? '' : ' '}${EFFECT_ITEM_NEGATIVE_STRINGS[e.type]}`;
+
+
+			const valStr = `${Math.abs(Math.trunc(e.value))}`;
+			div.querySelector("span").style.position = "relative";
+			addEditableFieldAndHoverboxTo(div.querySelector("span"), valStr,	(_text, _input) => {
+																					_input.value = e.value;
+																				},
+																				(_text, _input) => {
+																					const newVal = _input.value.trim();
+																					e.value = parseFloat(newVal);
+																					_text.innerText = `${Math.abs(Math.trunc(e.value))}`;
+																					//TODO WHERE LEFT OFF need to change the entire line, not just the span								
+																				},
+																				() => {
+																					return "hoverbox text";
+																				});
+
+
 			hoverbox.appendChild(div);
 		}
 	}
@@ -1059,14 +1087,14 @@ function addHoverboxToItem(div, it)
 //TODO WHERE LEFT OFF right now, no validation. perhaps do a confirmation too. 
 function addEditableFieldAndHoverboxTo(div, initText, enterFunc, exitFunc, hoverboxFunc)
 {
-	const text = document.createElement("div");
+	const text = document.createElement("span"); //WHERE LEFT OFF it was div before span
 	text.innerText = initText;
 	text.style.border = "1px solid red";
 	text.style.cursor = "pointer";
 
 	const input = document.createElement("input");
 	input.style.border = "1px solid blue";
-	input.style.width = "100%";
+	input.style.maxWidth = "100%";
 	input.style.background = "transparent";
 	input.style.margin = "0";
 	input.style.padding = "0";
