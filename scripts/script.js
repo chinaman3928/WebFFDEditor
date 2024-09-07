@@ -1104,6 +1104,7 @@ function addEditableFieldAndHoverboxTo(div, initText, enterFunc, exitFunc, hover
 	input.style.color = "inherit";
 	input.style.outline = "none";
 	input.style.boxShadow = "none";
+	input.style.textAlign = "center";
 	input.hidden = true;
 
 	const hoverbox = document.createElement("div");
