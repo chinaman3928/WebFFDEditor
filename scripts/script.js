@@ -1132,6 +1132,27 @@ function addEditableFieldAndHoverboxTo(div, initText, enterFunc, exitFunc, hover
 			hoverbox.innerText = hoverboxFunc();
 		};
 	}
+	function checkInputGenerator() {
+		return () => {
+			let value = parseInt(input.value);
+			const min = -2^31;
+			const max = 2^31 - 1;
+
+			if (input.value == "") {
+				return;
+			}
+
+			if (isNaN(value)) {
+				return; // how to handle not number input?
+			}
+
+			if (value < min) {
+				input.value = min;
+			} else if (value > max) {
+				input.value = max;
+			}
+		};
+	}
 
 	text.addEventListener("click", enterFuncGenerator(enterFunc));
 	input.addEventListener("keydown", (e) => {
@@ -1140,6 +1161,7 @@ function addEditableFieldAndHoverboxTo(div, initText, enterFunc, exitFunc, hover
 		}
 	});
 	input.addEventListener("blur", exitFuncGenerator(exitFunc));
+	input.addEventListener("input", checkInputGenerator());
 
 	div.appendChild(text);
 	div.appendChild(input);
