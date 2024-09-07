@@ -1072,7 +1072,7 @@ function addHoverboxToItem(div, it)
 																				() => {
 																					return "hoverbox text";
 																				});
-
+			//expand as user types
 			const input = div.querySelector("input");
 			input.addEventListener("input",	() => {
 													const span = document.createElement("span");
