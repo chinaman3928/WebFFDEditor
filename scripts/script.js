@@ -1057,8 +1057,10 @@ function addHoverboxToItem(div, it)
 
 
 			const valStr = `${Math.abs(Math.trunc(e.value))}`;
-			div.querySelector("span").style.position = "relative";
+			const span = div.querySelector("span");
+			span.style.position = "relative";
 			addEditableFieldAndHoverboxTo(div.querySelector("span"), valStr,	(_text, _input) => {
+																					_input.style.width = `${_text.offsetWidth}px`;
 																					_input.value = e.value;
 																				},
 																				(_text, _input) => {
@@ -1087,13 +1089,13 @@ function addHoverboxToItem(div, it)
 //TODO WHERE LEFT OFF right now, no validation. perhaps do a confirmation too. 
 function addEditableFieldAndHoverboxTo(div, initText, enterFunc, exitFunc, hoverboxFunc)
 {
-	const text = document.createElement("span"); //WHERE LEFT OFF it was div before span
+	const text = document.createElement("span"); //TODO WHERE LEFT OFF  it was div before span
 	text.innerText = initText;
-	text.style.border = "1px solid red";
+	text.style.border = "none" || "1px solid red"; //TODO WHERE LEFT OFF 
 	text.style.cursor = "pointer";
 
 	const input = document.createElement("input");
-	input.style.border = "1px solid blue";
+	input.style.border = "none" || "1px solid blue"; //TODO WHERE LEFT OFF 
 	input.style.maxWidth = "100%";
 	input.style.background = "transparent";
 	input.style.margin = "0";
@@ -1110,9 +1112,9 @@ function addEditableFieldAndHoverboxTo(div, initText, enterFunc, exitFunc, hover
 
 	function enterFuncGenerator(enterFunc) {
 		return () => {
+			enterFunc(text, input);
 			text.hidden = true;
 			input.hidden = false;
-			enterFunc(text, input);
 			input.focus();
 			hoverbox.classList.add("hoverbox-enter");
 		};
