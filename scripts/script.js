@@ -1135,8 +1135,8 @@ function addEditableFieldAndHoverboxTo(div, initText, enterFunc, exitFunc, hover
 	function checkInputGenerator() {
 		return () => {
 			let value = parseInt(input.value);
-			const min = -2^31;
-			const max = 2^31 - 1;
+			const min = -(2**31);
+			const max = 2**31 - 1;
 
 			if (input.value == "") {
 				return;
