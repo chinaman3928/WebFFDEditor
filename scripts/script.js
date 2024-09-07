@@ -1073,6 +1073,20 @@ function addHoverboxToItem(div, it)
 																					return "hoverbox text";
 																				});
 
+			const input = div.querySelector("input");
+			input.addEventListener("input",	() => {
+													const span = document.createElement("span");
+													span.style.position = "absolute";
+													span.style.visibility = "hidden";
+													span.style.font = input.style.font;
+													span.style.padding = input.style.padding;
+													span.style.border = input.style.border;
+
+													span.textContent = input.value;
+													document.body.appendChild(span);
+													input.style.width = `${span.offsetWidth}px`
+													document.body.removeChild(span);
+			});
 
 			hoverbox.appendChild(div);
 		}
