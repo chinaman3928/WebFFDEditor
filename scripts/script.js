@@ -1087,6 +1087,9 @@ function addHoverboxToItem(div, it)
 //  hoverboxFunc takes no arguments
 //  enterFunc and exitFunc should not modify .hidden or .focus() or hoverbox as those are done here
 //TODO WHERE LEFT OFF right now, no validation. perhaps do a confirmation too. 
+
+//ANGELA TODO work on clamping the typeable values
+//	if typed value exceeds 32 bit limit (+/- ok), fix it to the min/max value
 function addEditableFieldAndHoverboxTo(div, initText, enterFunc, exitFunc, hoverboxFunc)
 {
 	const text = document.createElement("span"); //TODO WHERE LEFT OFF  it was div before span
