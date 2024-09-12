@@ -68,7 +68,11 @@ html {
   padding-bottom: 150px;
 }
 
-#player-statsInvSkillGold-div {
+#player-statsInvSkillGold-tab {
+  position: relative;
+}
+
+#spellsJournalQuests-tab {
   position: relative;
 }
 

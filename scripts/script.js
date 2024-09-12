@@ -85,7 +85,7 @@ function hoverGame(ev)
 		classList.add("gameSelect-hover");
 }
 
-let DISTRIBUTION = "SG"
+let DISTRIBUTION = "WT"
 document.getElementById("distributionSelect").addEventListener("change", changeDistribution);
 function changeDistribution(ev)
 {
@@ -707,6 +707,33 @@ const ACTIVATION_USAGE = 1;
 
 const OG_SKILLS = 15;
 
+const SPHERE_ATTACK = 0;
+const SPHERE_DEFENSE = 1;
+const SPHERE_CHARM = 2;
+const MAX_SPELLS_PER_SPHERE = 6;
+
+//OG WT only
+const JOURNAL_TIME_PLAYED = 0;
+const JOURNAL_STEPS_TAKEN = 1;
+const JOURNAL_GOLD_GATHERED = 2;
+const JOURNAL_QUESTS_COMPLETED = 3;
+const JOURNAL_LEVELS_EXPLORED = 4;
+const JOURNAL_DEATHS = 5;
+const JOURNAL_MONSTERS_KILLED = 6;
+const JOURNAL_FAMOUS_MONSTERS_KILLED = 7;
+const JOURNAL_SPELLS_CAST = 8;
+const JOURNAL_CHESTS_OPENED = 9;
+const JOURNAL_TRAPS_SPRUNG = 10;
+const JOURNAL_BARRELS_BROKEN = 11;
+const JOURNAL_POTIONS_USED = 12;
+const JOURNAL_PORTALS_USED = 13;
+const JOURNAL_FISH_CAUGHT = 14;
+const JOURNAL_TIMES_GAMBLED = 15
+const JOURNAL_ALL = 16;
+
+const JOURNAL_STRS = ["Time Played", "Steps Taken", "Gold Gathered", "Quests Completed", "Deepest Depth", "Deaths", "Monsters Defeated",
+	"Bosses Defeated", "Spells Cast", "Chests Opened", "Traps Sprung", "Barrels Broken", "Potions Used", "Portals Used", "Fish Caught", "Times Gambled"];
+
 //left top right bottom
 const STATS_BOUNDS = new Map([["NAME", [94, 56, 414, 92]], ["LEVEL", [55, 123, 139, 158]], ["EXPERIENCE", [158, 123, 298, 158]],
 	["NEXT_LEVEL", [317, 123, 455, 158]], ["RENOWN", [55, 189, 139, 224]], ["FAME", [158, 189, 298, 224]], ["NEXT_RENOWN", [317, 189, 455, 224]],
@@ -747,7 +774,7 @@ const SKILLS_GOLD_BOUNDS = new Map([[SKILL_SWORD, [1165, 83, 1251, 107]], ["SWOR
 	["GOLD_ICON", [1446, 537, 1509, 600]], ["GOLD", [1446, 601, 1509, 626]]]);
 
 
-const SPELLS_BOUNDS = new Map([["TITLE", [178, 97, 320, 126]], ["ACTIVE", [232, 144, 275, 187]],
+const SPELLS_BOUNDS = new Map([["TITLE", [178, 97, 330, 126]], ["ACTIVE", [232, 144, 275, 187]],
 	["ATTACK_STR", [87, 218, 235, 246]], ["ATTACK_SKILL", [340, 218, 423, 246]], ["ATTACK", [89, 258, 132, 301]],
 	["DEFENSE_STR", [87, 318, 235, 346]], ["DEFENSE_SKILL", [340, 318, 423, 346]], ["DEFENSE", [89, 359, 132, 402]],
 	["CHARM_STR", [87, 417, 235, 445]], ["CHARM_SKILL", [340, 417, 423, 445]], ["CHARM", [89, 458, 132, 501]]])
@@ -756,7 +783,7 @@ const SPELLS_BOUNDS_OFFSET = 58;
 const JOURNAL_BOUNDS = new Map([["TITLE", [697, 97, 849, 126]], ["ENTRY", [646, 174, 906, 194]]]);
 const JOURNAL_BOUND_OFFSET = 23;
 
-const QUESTS_BOUNDS = new Map([["TITLE", [1209, 97, 1364, 126]], ["TOGGLE", [1141, 165, 1432, 243]],
+const QUESTS_BOUNDS = new Map([["TITLE", [1209, 97, 1361, 126]], ["TOGGLE", [1141, 165, 1432, 243]],
 	["DESCRIPTION", [1135, 260, 1435, 400]], ["REWARD", [1213, 416, 1361, 444]],
 	["GOLD_STR", [1152, 450, 1252, 470]], ["GOLD", [1254, 450, 1422, 470]],
 	["EXPERIENCE_STR", [1152, 473, 1252, 493]], ["EXPERIENCE", [1254, 473, 1422, 493]],
@@ -832,7 +859,7 @@ async function preRun(ev)
 const PLAYER_TAB =
 {
 	opened: false,
-	elem: document.getElementById("playerTab"),
+	elem: document.getElementById(""),
 	stack: [],
 	statsDivs: new Map(),
 	invDivs: new Map(),
@@ -905,7 +932,7 @@ function computeEquippedEffects()
 			icon.src = `img/${ITEMS_INFO.get(it.baseName.toUpperCase()).icon}`;
 			icon.classList.add("center-contained");
 			iconDiv.appendChild(icon);
-			document.getElementById("player-statsInvSkillGold-div").appendChild(iconDiv);
+			document.getElementById("player-statsInvSkillGold-tab").appendChild(iconDiv);
 			PLAYER_TAB.invDivs.set(it.slotIndex, iconDiv);
 
 			addHoverboxToItem(iconDiv, it);
@@ -1039,7 +1066,7 @@ function charMaxMana(c)
 	return c.maxMana + Math.ceil(charNetEffect(c, EFFECT_PERCENT_MANA) * 0.01 * c.maxMana) + Math.trunc(charNetEffect(c, EFFECT_MAX_MANA));
 }
 
-
+let CURRENT_SCREEN = uploadScreen;
 function run()
 {
 	// for (each of the tab links)
@@ -1047,9 +1074,9 @@ function run()
 	// 	make it interactable;
 	// }
 
-	uploadScreen.hidden = true;
-
 	switchPlayerTab();
+	switchSpellsJournalQuests();
+
 
 	// //eventually need to reset relevant globals too...
 	// // and unhide the uploadScreen...
@@ -1205,7 +1232,7 @@ function addEditableFieldAndHoverboxTo(div, initText, enterFunc, exitFunc, hover
 function initStatsInvSkillsGold()
 {
 	//TODO WHERE LEFT OFF dont create some inv divs
-	const player_statsInvSkillGold_div = document.getElementById("player-statsInvSkillGold-div");
+	const player_statsInvSkillGold_div = document.getElementById("player-statsInvSkillGold-tab");
 	for ([playerTabMap, map] of [[PLAYER_TAB.statsDivs, STATS_BOUNDS], [PLAYER_TAB.invDivs, INV_BOUNDS], [PLAYER_TAB.skillsGoldDivs, SKILLS_GOLD_BOUNDS]])
 	{
 		for ([what, [l, t, r, b]] of map)
@@ -1326,13 +1353,112 @@ function initStatsInvSkillsGold()
 																	const newGold = _input.value.trim();
 																	p.gold = parseInt(newGold);
 																	_text.innerText = p.gold;	
+																},
+																() => {
+																	p.gold
 																});
 }
 
 function switchPlayerTab()
 {
-	PLAYER_TAB.elem.hidden = false;
+	CURRENT_SCREEN.hidden = true;
+	CURRENT_SCREEN = document.getElementById("player-statsInvSkillGold-tab")
+	CURRENT_SCREEN.hidden = false;
 	initStatsInvSkillsGold();
+}
+
+
+function addAbsoluteDiv(to, bounds)
+{
+	const [l, t, r, b] = bounds;
+	const div = document.createElement("div");
+	div.style.position = "absolute";
+	div.style.left = `calc(${l}% * 100 / 1536)`;
+	div.style.top = `calc(${t}% * 100 / 640)`;
+	div.style.width = `calc((${r}% - ${l}% + 1%) * 100 / 1536)`;
+	div.style.height = `calc((${b}% - ${t}% + 1%) * 100 / 640)`;
+	div.classList.add("center-container");
+
+	div.style.color = "white";
+	to.appendChild(div);
+
+	return div;
+}
+
+
+function existenceTimeToJournalStr(secs)
+{
+	secs = Math.floor(secs);
+	const hrs = Math.floor(secs / 3600);
+	secs %= 3600;
+	const mins = Math.floor(secs / 60);
+	secs %= 60;
+	return `${hrs}hrs ${mins}mins ${secs}secs`;
+}
+
+//TODO skills may change upon switchtabbing in
+function initSpellsJournalQuests()
+{
+	const to = document.getElementById("spellsJournalQuests-tab");
+	
+	//spells
+	// const SPELLS_BOUNDS = new Map([["TITLE", [178, 97, 330, 126]], ["ACTIVE", [232, 144, 275, 187]],
+	// 	["ATTACK_STR", [87, 218, 235, 246]], ["ATTACK_SKILL", [340, 218, 423, 246]], ["ATTACK", [89, 258, 132, 301]],
+	// 	["DEFENSE_STR", [87, 318, 235, 346]], ["DEFENSE_SKILL", [340, 318, 423, 346]], ["DEFENSE", [89, 359, 132, 402]],
+	// 	["CHARM_STR", [87, 417, 235, 445]], ["CHARM_SKILL", [340, 417, 423, 445]], ["CHARM", [89, 458, 132, 501]]])
+	// const SPELLS_BOUNDS_OFFSET = 58;
+	addAbsoluteDiv(to, SPELLS_BOUNDS.get("TITLE")).textContent = "Active Spell";
+	if (SPELLS_INFO.has(robj.player.activeSpellName.toUpperCase()))
+		addAbsoluteDiv(to, SPELLS_BOUNDS.get("ACTIVE")).innerHTML = `<img src="img/${SPELLS_INFO.get(robj.player.activeSpellName.toUpperCase()).icon}" class="center-contained">`;
+
+	addAbsoluteDiv(to, SPELLS_BOUNDS.get("ATTACK_STR")).textContent = "Attack Magic";
+	addAbsoluteDiv(to, SPELLS_BOUNDS.get("ATTACK_SKILL")).textContent = charNetSkill(robj.player, SKILL_ATTACK_MAGIC);
+	function fillIcons(sphere, sphereStr) {
+		const ltrb = SPELLS_BOUNDS.get(sphereStr);
+		for (let i = 0; i < MAX_SPELLS_PER_SPHERE; ++i)
+		{
+			ltrb[0] += i ? SPELLS_BOUNDS_OFFSET : 0;
+			ltrb[2] += i ? SPELLS_BOUNDS_OFFSET : 0;
+			const iconDiv = addAbsoluteDiv(to, ltrb);
+			if (robj.player.knownSpells[sphere][i])
+				iconDiv.innerHTML = `<img class="center-contained" src="img/${SPELLS_INFO.get(robj.player.knownSpells[sphere][i].toUpperCase()).icon}">`;
+		}
+	};
+	fillIcons(SPHERE_ATTACK, "ATTACK");
+
+	addAbsoluteDiv(to, SPELLS_BOUNDS.get("DEFENSE_STR")).textContent = "Defense Magic";
+	addAbsoluteDiv(to, SPELLS_BOUNDS.get("DEFENSE_SKILL")).textContent = charNetSkill(robj.player, SKILL_DEFENSE_MAGIC);
+	fillIcons(SPHERE_DEFENSE, "DEFENSE");
+
+	addAbsoluteDiv(to, SPELLS_BOUNDS.get("CHARM_STR")).textContent = "Charm Magic";
+	addAbsoluteDiv(to, SPELLS_BOUNDS.get("CHARM_SKILL")).textContent = charNetSkill(robj.player, SKILL_CHARM_MAGIC);
+	fillIcons(SPHERE_CHARM, "CHARM");
+
+	
+
+	//journal
+	addAbsoluteDiv(to, JOURNAL_BOUNDS.get("TITLE")).textContent = "Journal";
+	const ltrb = JOURNAL_BOUNDS.get("ENTRY");
+	for (let entry = 0; entry < JOURNAL_ALL; ++entry)
+	{
+		ltrb[1] += entry ? JOURNAL_BOUND_OFFSET : 0;
+		ltrb[3] += entry ? JOURNAL_BOUND_OFFSET : 0;
+		const div = addAbsoluteDiv(to, ltrb);
+		div.style.display = "flex";
+		div.style.justifyContent = "space-between";
+		div.innerHTML = `<span>${JOURNAL_STRS[entry]}</span><span>${entry == JOURNAL_TIME_PLAYED ? existenceTimeToJournalStr(robj.player.existenceTime) : robj.player.journalStats[entry]}</span>`;
+	}
+
+
+	//quests
+}
+
+function switchSpellsJournalQuests()
+{
+	CURRENT_SCREEN.hidden = true;
+	CURRENT_SCREEN = document.getElementById("spellsJournalQuests-tab");
+	CURRENT_SCREEN.hidden = false;
+	initSpellsJournalQuests();
 }
 
 
@@ -2930,7 +3056,7 @@ async function parseItemsDat(datFile)
 
     if (inItem)
 	{
-		if (it.name === undefined/* || it.icon === undefined*/)
+		if (it.name === undefined || it.icon === undefined)
 		{
 			ERR_MSGS.push(`items.dat: The item before ${i} has no name or no icon`);
 			return;
@@ -2952,7 +3078,11 @@ async function promiseParseSpellsDat(datFile)
 // or at least not easily, so override that behavior. but then that means you will need to have a clear button
 //TODO name collisions; sometimes there are intentional rewrites, then what? how do they do it?
 //TODO are attack defense charm values in dat case insensitive? for that matter, anything else?
-const K_MAGIC_CHARM = 2;
+function addTemplateSpell(name, sphere, icon)
+{
+	SPELLS_INFO.set(name.toUpperCase(), {sphere: sphere, icon: icon})
+}
+
 async function parseSpellsDat(datFile)
 {
 	let dat = null;
@@ -2964,7 +3094,7 @@ async function parseSpellsDat(datFile)
 
 	let i = 0;
     let depth = 0, inSpell = false;
-    let name = undefined, sphere = undefined;
+    let name = undefined, sphere = undefined, icon = undefined;
 
     while (true)
     {
@@ -2985,6 +3115,8 @@ async function parseSpellsDat(datFile)
                 name = tokens[1];
             else if (sphere === undefined && tokens[0].slice(1, -1) == "SPHERE")
                 sphere = tokens[1];
+			else if (icon === undefined && tokens[0].slice(1, -1) == "ICON")
+				icon = tokens[1];
         }
         else if (tokens[0][0] == '[' && tokens[0][1] == '/' && tokens[0].at(-1) == ']')
         {
@@ -3000,9 +3132,9 @@ async function parseSpellsDat(datFile)
 					ERR_MSGS.push(`spells.dat: The spell before ${i} has no name.`);
 					return;
 				}
-            	SPELLS_INFO.set(name, sphere);
+            	addTemplateSpell(name, sphere, icon);
                 inSpell = false;
-                name = undefined, sphere = undefined;
+                name = undefined, sphere = undefined, icon = undefined;
             }
             --depth;
         }
@@ -3021,7 +3153,7 @@ async function parseSpellsDat(datFile)
 			ERR_MSGS.push(`spells.dat: The spell before ${i} has no name.`);
 			return;
 		}
-		SPELLS_INFO.set(name, sphere);
+		addTemplateSpell(name, sphere, icon);
 	}
 }
 
