@@ -50,7 +50,7 @@
 		</div>
 
 		<p>Select your .FFD file.</p>
-		<input type="file" style="display:block">
+		<input id="ffdSelector" type="file" style="display:block">
 		
 		<p style="display:inline-block">On what distribution?</p>
 		<select id="distributionSelect" style="display:block">
@@ -78,10 +78,6 @@
 			</div>
 		</div>
 
-		<!---->
-		<input id="ffdSelector" type="file">
-		<!---->
-
 		<button id="runButton">PRESS THIS BUTTON FOR WIZARDRY</button>
 	</div>
 
@@ -89,32 +85,14 @@
 		<div id="player-statsInvSkillGold-div">
 			<img id="player-statsInvSkillGold" src="img/og_statsInvSkillsGold.png" style="width:100%; display:block;">
 		</div>
-
-		<div>
-			<div id="player-statsArea"></div>
-			<div id="player-skillsArea"></div>
-			<div id="player-inventoryArea"></div>
-		</div>
-
-		<div>
-			<div id="player-enchants"></div>
-			<div id="player-resists"></div>
-		</div>
 	</div> 
+
+	<div id="spellsJournalQuests">
+		<img src="img/og_spellsJournalQuests.png" style="width:100%; display:block;">
+	</div>
 
 	<div id="petsTab" hidden="false">
 		<p>Yea pets.</p>
-	</div>
-
-	<div id="questsTab" hidden="false">
-		<div>
-			<div id="quests-groveArea"></div>
-		</div>
-
-		<div>
-			<div id="quests-statues-druantiaArea"></div>
-			<div id="quests-statues-typhonArea"></div>
-		</div>
 	</div>
 
 	<div id="historiesTab" hidden="false">
