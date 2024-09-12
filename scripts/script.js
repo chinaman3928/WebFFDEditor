@@ -1402,11 +1402,6 @@ function initSpellsJournalQuests()
 	const to = document.getElementById("spellsJournalQuests-tab");
 	
 	//spells
-	// const SPELLS_BOUNDS = new Map([["TITLE", [178, 97, 330, 126]], ["ACTIVE", [232, 144, 275, 187]],
-	// 	["ATTACK_STR", [87, 218, 235, 246]], ["ATTACK_SKILL", [340, 218, 423, 246]], ["ATTACK", [89, 258, 132, 301]],
-	// 	["DEFENSE_STR", [87, 318, 235, 346]], ["DEFENSE_SKILL", [340, 318, 423, 346]], ["DEFENSE", [89, 359, 132, 402]],
-	// 	["CHARM_STR", [87, 417, 235, 445]], ["CHARM_SKILL", [340, 417, 423, 445]], ["CHARM", [89, 458, 132, 501]]])
-	// const SPELLS_BOUNDS_OFFSET = 58;
 	addAbsoluteDiv(to, SPELLS_BOUNDS.get("TITLE")).textContent = "Active Spell";
 	if (SPELLS_INFO.has(robj.player.activeSpellName.toUpperCase()))
 		addAbsoluteDiv(to, SPELLS_BOUNDS.get("ACTIVE")).innerHTML = `<img src="img/${SPELLS_INFO.get(robj.player.activeSpellName.toUpperCase()).icon}" class="center-contained">`;
@@ -1434,8 +1429,6 @@ function initSpellsJournalQuests()
 	addAbsoluteDiv(to, SPELLS_BOUNDS.get("CHARM_SKILL")).textContent = charNetSkill(robj.player, SKILL_CHARM_MAGIC);
 	fillIcons(SPHERE_CHARM, "CHARM");
 
-	
-
 	//journal
 	addAbsoluteDiv(to, JOURNAL_BOUNDS.get("TITLE")).textContent = "Journal";
 	const ltrb = JOURNAL_BOUNDS.get("ENTRY");
@@ -1451,6 +1444,14 @@ function initSpellsJournalQuests()
 
 
 	//quests
+	//TODO some of this stuff is centered in website but not in game, but whatever for now
+	addAbsoluteDiv(to, QUESTS_BOUNDS.get("TITLE")).textContent = "Active Quests";
+	addAbsoluteDiv(to, QUESTS_BOUNDS.get("REWARD")).textContent = "Reward";
+	addAbsoluteDiv(to, QUESTS_BOUNDS.get("GOLD_STR")).textContent = "Gold";
+	addAbsoluteDiv(to, QUESTS_BOUNDS.get("EXPERIENCE_STR")).textContent = "Experience";
+	addAbsoluteDiv(to, QUESTS_BOUNDS.get("FAME_STR")).textContent = "Fame";
+	addAbsoluteDiv(to, QUESTS_BOUNDS.get("ITEM_STR")).textContent = "Item";
+
 }
 
 function switchSpellsJournalQuests()
