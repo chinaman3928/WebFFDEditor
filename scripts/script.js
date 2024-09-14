@@ -1086,7 +1086,7 @@ function run()
 	// }
 
 	switchPlayerTab();
-	switchSpellsJournalQuests();
+	// switchSpellsJournalQuests();
 
 
 	// //eventually need to reset relevant globals too...
