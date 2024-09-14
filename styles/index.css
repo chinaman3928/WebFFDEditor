@@ -134,6 +134,18 @@ html {
   object-fit: contain;
 }
 
+.quest-toggle {
+  display: flex;
+  align-items: center;
+  height: 33.33%;
+  background-color: black;
+  opacity: 0.6;
+}
+
+.purpletext {
+  color: #BD8AFF;
+}
+
 .hoverbox {
   display: none;
   position: absolute;

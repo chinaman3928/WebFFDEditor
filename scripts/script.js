@@ -734,6 +734,17 @@ const JOURNAL_ALL = 16;
 const JOURNAL_STRS = ["Time Played", "Steps Taken", "Gold Gathered", "Quests Completed", "Deepest Depth", "Deaths", "Monsters Defeated",
 	"Bosses Defeated", "Spells Cast", "Chests Opened", "Traps Sprung", "Barrels Broken", "Potions Used", "Portals Used", "Fish Caught", "Times Gambled"];
 
+
+const QUEST_KILL_MONSTER = 0;
+const QUEST_KILL_MONSTERS = 1;
+const QUEST_MONSTER_ITEM = 2;
+const QUEST_FIND_ITEM = 3;
+const QUEST_KILL_ARMY = 4;
+const QUEST_ARMY_ITEM = 5;
+const QUEST_MASTERQUEST = 6;
+const QUEST_ALL = 7;
+
+
 //left top right bottom
 const STATS_BOUNDS = new Map([["NAME", [94, 56, 414, 92]], ["LEVEL", [55, 123, 139, 158]], ["EXPERIENCE", [158, 123, 298, 158]],
 	["NEXT_LEVEL", [317, 123, 455, 158]], ["RENOWN", [55, 189, 139, 224]], ["FAME", [158, 189, 298, 224]], ["NEXT_RENOWN", [317, 189, 455, 224]],
@@ -783,7 +794,7 @@ const SPELLS_BOUNDS_OFFSET = 58;
 const JOURNAL_BOUNDS = new Map([["TITLE", [697, 97, 849, 126]], ["ENTRY", [646, 174, 906, 194]]]);
 const JOURNAL_BOUND_OFFSET = 23;
 
-const QUESTS_BOUNDS = new Map([["TITLE", [1209, 97, 1361, 126]], ["TOGGLE", [1141, 165, 1432, 243]],
+const QUESTS_BOUNDS = new Map([["TITLE", [1209, 97, 1361, 126]], ["TOGGLES", [1141, 165, 1432, 243]],
 	["DESCRIPTION", [1135, 260, 1435, 400]], ["REWARD", [1213, 416, 1361, 444]],
 	["GOLD_STR", [1152, 450, 1252, 470]], ["GOLD", [1254, 450, 1422, 470]],
 	["EXPERIENCE_STR", [1152, 473, 1252, 493]], ["EXPERIENCE", [1254, 473, 1422, 493]],
@@ -1396,6 +1407,57 @@ function existenceTimeToJournalStr(secs)
 	return `${hrs}hrs ${mins}mins ${secs}secs`;
 }
 
+function questMiniDescriptionHTML(descriptionDiv, q)
+{
+	//TODO q.questItem.name ... newlines \b?
+	switch (q.type)
+	{
+	case QUEST_MASTERQUEST:
+		descriptionDiv.innerHTML = `Destroy <span class="purpletext">${q.questMonsterName}</span> the <span class="purpletext">${q.questMonsterBaseName}</span> and its <span class="purpletext">${q.questMinionMonsterBaseName}</span> minions on <span class="purpletext">level ${q.level}</span>.`;
+		break;
+	case QUEST_KILL_ARMY:
+		descriptionDiv.innerHTML = `Destroy <span class="purpletext">${q.questMonsterName}</span> the <span class="purpletext">${q.questMonsterBaseName}</span> and its <span class="purpletext">${q.questMinionMonsterBaseName}</span> minions on <span class="purpletext">level ${q.level}</span>.`;
+		break;
+	case QUEST_ARMY_ITEM:
+		descriptionDiv.innerHTML = `Destroy <span class="purpletext">${q.questMonsterName}</span> the <span class="purpletext">${q.questMonsterBaseName}</span> and its <span class="purpletext">${q.questMinionMonsterBaseName}</span> minions on <span class="purpletext">level ${q.level}</span> and return the <span class="purpletext">${q.questItem.name}</span>.`;
+		break;
+	case QUEST_KILL_MONSTER:
+		descriptionDiv.innerHTML = `Destroy <span class="purpletext">${q.questMonsterName}</span> the <span class="purpletext">${q.questMonsterBaseName}</span> on <span class="purpletext">level ${q.level}</span>.`;
+		break;
+	case QUEST_KILL_MONSTERS:
+		descriptionDiv.innerHTML = `Destroy <span class="purpletext">${q.questMonsterCount} ${q.questMonsterName}s</span> on <span class="purpletext">level ${q.level}</span>.`
+		break;
+	case QUEST_MONSTER_ITEM:
+		descriptionDiv.innerHTML = `Destroy <span class="purpletext">${q.questMonsterName}</span> the <span class="purpletext">${q.questMonsterBaseName}</span> on <span class="purpletext">level ${q.level}</span> and retrieve <span class="purpletext">${q.questItem.name}</span>.`
+		break;
+	case QUEST_FIND_ITEM :
+		descriptionDiv.innerHTML = `Retrieve <span class="purpletext">${q.questItem.name}</span> from <span class="purpletext">level ${q.level}</span>.`
+	}
+
+	if (q.itemReward !== undefined)
+	{
+		//TODO but what if the item name has \b in it?
+		// and where else are newlines replaced for quests, and everywhere else?
+		descriptionDiv.insertAdjacentHTML("beforeend", ` Your reward is a <span class="purpletext">${q.itemReward.name.replace('\n', ' ')}</span>.`);
+	}
+
+	if (q.completed)
+	{
+		//NOTE the game toggles the purpletext, but i wont
+		descriptionDiv.insertAdjacentHTML("beforeend", `<br><br>Quest completed! Return to <span class="purpletext">${q.giverName}</span> to receive your reward!`);
+	}
+	//NOTE THE game has "Remaining." as purpletext but not the monster name. i do it reverse
+	else if (q.type === QUEST_KILL_MONSTERS)
+	{
+		descriptionDiv.insertAdjacentHTML("beforeend", `<br>(${q.questMonsterCount - q.questMonstersCompleted}) <span class="purpletext">${q.questMonsterName}</span> Remaining.`);
+	}
+	else if (q.type === QUEST_KILL_ARMY || q.type === QUEST_ARMY_ITEM)
+	{
+		descriptionDiv.insertAdjacentHTML("beforeend", `<br>(${q.questMinionCount - q.questMinionsCompleted}) <span class="purpletext">${q.QuestMinionMonsterName}</span> Remaining.`);
+	}
+}
+
+//TODO same with all inits and switches; do you want to totally recompute everything every time or what?
 //TODO skills may change upon switchtabbing in
 function initSpellsJournalQuests()
 {
@@ -1442,8 +1504,8 @@ function initSpellsJournalQuests()
 		div.innerHTML = `<span>${JOURNAL_STRS[entry]}</span><span>${entry == JOURNAL_TIME_PLAYED ? existenceTimeToJournalStr(robj.player.existenceTime) : robj.player.journalStats[entry]}</span>`;
 	}
 
-
 	//quests
+	//TODO \b and newlines everywhere
 	//TODO some of this stuff is centered in website but not in game, but whatever for now
 	addAbsoluteDiv(to, QUESTS_BOUNDS.get("TITLE")).textContent = "Active Quests";
 	addAbsoluteDiv(to, QUESTS_BOUNDS.get("REWARD")).textContent = "Reward";
@@ -1452,6 +1514,31 @@ function initSpellsJournalQuests()
 	addAbsoluteDiv(to, QUESTS_BOUNDS.get("FAME_STR")).textContent = "Fame";
 	addAbsoluteDiv(to, QUESTS_BOUNDS.get("ITEM_STR")).textContent = "Item";
 
+	const toggles = addAbsoluteDiv(to, QUESTS_BOUNDS.get("TOGGLES"));
+	toggles.style.overflow = "auto";
+	toggles.classList.remove("center-container");
+	const description = addAbsoluteDiv(to, QUESTS_BOUNDS.get("DESCRIPTION"));
+		description.classList.remove("center-container");
+	const gold = addAbsoluteDiv(to, QUESTS_BOUNDS.get("GOLD"));
+	const experience = addAbsoluteDiv(to, QUESTS_BOUNDS.get("EXPERIENCE"));
+	const fame = addAbsoluteDiv(to, QUESTS_BOUNDS.get("FAME"));
+	const item = addAbsoluteDiv(to, QUESTS_BOUNDS.get("ITEM"));
+
+	for (const quest of robj.player.quests)
+	{
+		const div = document.createElement("div");
+		div.classList.add("quest-toggle");
+		div.textContent = quest.questName;
+		div.addEventListener("click", () => {
+			questMiniDescriptionHTML(description, quest);
+			gold.textContent = quest.goldReward;
+			experience.textContent = quest.experienceReward;
+			fame.textContent = quest.fameReward;
+			item.textContent = quest.itemReward === undefined ? "" : quest.itemReward.name;	
+		})
+		toggles.appendChild(div);
+	}
+	if (robj.player.quests) toggles.querySelector("div").click();
 }
 
 function switchSpellsJournalQuests()
