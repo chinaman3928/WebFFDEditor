@@ -1186,8 +1186,8 @@ function initBottomBar()
 	spells.addEventListener("click", click_spellsJournalQuests);
 	journal.addEventListener("click", click_spellsJournalQuests);
 	quests.addEventListener("click", click_spellsJournalQuests);
-	histories.addEventListener("mouseleave", () => {"TODO HISTORIES";});
-	save.addEventListener("click", () => {"TODO SAVE";});
+	histories.addEventListener("click", () => {"TODO HISTORIES";});
+	save.addEventListener("click", downloadFile);
 
 	to_width_height[0].hidden = false;
 }
@@ -1775,12 +1775,6 @@ async function parseFFD(ffdFile)
 			//robj.disabledAchievements = parseBool(); //TODO however it seems nothing has this?
 		}
 	}
-
-	//TODO add button for download once has finished
-	const downloadButton = document.createElement("button");
-	downloadButton.innerHTML = "Download";
-	downloadButton.addEventListener("click", downloadFile);
-	document.body.appendChild(downloadButton);
 }
 
 
