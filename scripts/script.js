@@ -759,10 +759,9 @@ const STATS_BOUNDS = new Map([["NAME", [94, 56, 414, 92]], ["LEVEL", [55, 123, 1
 //  SLOT_LEFTHAND = 2;
 //  SLOT_LEFTARM = 4;
 //  TODO EVERYWHERE for inv divs, i will only have one for SLOT_LEFTHAND (not SLOT_LEFTARM)
-//TODO WHERE LEFT OFF i think i swapped the rings
 const INV_BOUNDS = new Map([[SLOT_RIGHTHAND, [552, 54, 641, 239]], [SLOT_HEAD, [727, 54, 816, 144]], [SLOT_NECK, [835, 54, 882, 100]],
-	[SLOT_LEFTHAND, [903, 54, 992, 239]], [SLOT_CHEST, [727, 156, 816, 289]], [SLOT_GLOVES, [552, 252, 641, 342]], [SLOT_RIGHTFINGER, [661, 300, 708, 346]],
-	[SLOT_BELT, [727, 300, 816, 346]], [SLOT_LEFTFINGER, [835, 300, 882, 346]], [SLOT_FEET, [903, 252, 992, 342]],
+	[SLOT_LEFTHAND, [903, 54, 992, 239]], [SLOT_CHEST, [727, 156, 816, 289]], [SLOT_GLOVES, [552, 252, 641, 342]], [SLOT_RIGHTFINGER, [835, 300, 882, 346]],
+	[SLOT_BELT, [727, 300, 816, 346]], [SLOT_LEFTFINGER, [661, 300, 708, 346]], [SLOT_FEET, [903, 252, 992, 342]],
 	[17, [532, 383, 573, 423]], [27, [532, 427, 573, 470]], [37, [532, 475, 573, 519]], [47, [532, 523, 573, 564]],
 	[18, [577, 383, 621, 423]], [28, [577, 427, 621, 470]], [38, [577, 475, 621, 519]], [48, [577, 523, 621, 564]],
 	[19, [625, 383, 669, 423]], [29, [625, 427, 669, 470]], [39, [625, 475, 669, 519]], [49, [625, 523, 669, 564]],
@@ -1086,7 +1085,7 @@ function run()
 	// }
 
 	switchPlayerTab();
-	// switchSpellsJournalQuests();
+	switchSpellsJournalQuests();
 
 
 	// //eventually need to reset relevant globals too...
