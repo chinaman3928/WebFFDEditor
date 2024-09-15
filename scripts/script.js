@@ -800,7 +800,12 @@ const QUESTS_BOUNDS = new Map([["TITLE", [1209, 97, 1361, 126]], ["TOGGLES", [11
 	["FAME_STR", [1152, 496, 1252, 516]], ["FAME", [1254, 496, 1422, 516]],
 	["ITEM_STR", [1152, 519, 1252, 539]], ["ITEM", [1254, 519, 1422, 539]]]);
 
-	
+
+//TODO i'll probably throw quickslot in INV_BOUNDS, but here for now
+const BOTTOMBAR_BOUNDS = new Map([["STATS", [46, 27, 93, 74]], ["INVENTORY", [97, 27, 144, 74]], ["SPELLS", [148, 27, 195, 74]], ["SKILLS", [199, 27, 246, 74]], 
+	["JOURNAL", [399, 27, 446, 74]], ["QUESTS", [450, 27, 497, 74]], ["HISTORIES", [501, 27, 548, 74]], ["SAVE", [552, 27, 599, 74]], ["QUICKSLOT", [178, 78, 226, 126]]])
+const BOTTOMBAR_QUICKSLOT_ADD_ONE_ON = 6;
+
 const ROMAN_VALUE =  [1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1];
 const ROMAN_SYMBOL = ['M', 'CM', 'D', 'CD', 'C', 'XC', 'L', 'XL', 'X', 'IX', 'V', 'IV', 'I'];
 function romanNumeral(n)
@@ -1079,17 +1084,112 @@ function charMaxMana(c)
 let CURRENT_SCREEN = uploadScreen;
 function run()
 {
-	// for (each of the tab links)
-	// {
-	// 	make it interactable;
-	// }
-
-	switchPlayerTab();
-	switchSpellsJournalQuests();
-
+	initBottomBar();
+	document.getElementById("bottombar-div").querySelector("div").click(); //switchPlayerTab()
 
 	// //eventually need to reset relevant globals too...
 	// // and unhide the uploadScreen...
+}
+
+function initBottomBar()
+{
+	//TODO make these contants globals lazy dumbass
+	const to_width_height = [document.getElementById("bottombar-div"), 645, 128];
+	const stats = addAbsoluteDiv(to_width_height, BOTTOMBAR_BOUNDS.get("STATS"));
+	const inventory = addAbsoluteDiv(to_width_height, BOTTOMBAR_BOUNDS.get("INVENTORY"));
+	const spells = addAbsoluteDiv(to_width_height, BOTTOMBAR_BOUNDS.get("SPELLS"));
+	const skills = addAbsoluteDiv(to_width_height, BOTTOMBAR_BOUNDS.get("SKILLS"));
+	const journal = addAbsoluteDiv(to_width_height, BOTTOMBAR_BOUNDS.get("JOURNAL"));
+	const quests = addAbsoluteDiv(to_width_height, BOTTOMBAR_BOUNDS.get("QUESTS"));
+	const histories = addAbsoluteDiv(to_width_height, BOTTOMBAR_BOUNDS.get("HISTORIES"));
+	const save = addAbsoluteDiv(to_width_height, BOTTOMBAR_BOUNDS.get("SAVE"));
+
+	stats.innerHTML =     `<img class="center-contained" src="img/litStatsButton.png" hidden="true">`;
+	inventory.innerHTML = `<img class="center-contained" src="img/litInventoryButton.png" hidden="true">`;
+	skills.innerHTML =    `<img class="center-contained" src="img/litSkillsButton.png" hidden="true">`;
+	spells.innerHTML =    `<img class="center-contained" src="img/litSpellsButton.png" hidden="true">`;
+	journal.innerHTML =   `<img class="center-contained" src="img/litJournalButton.png" hidden="true">`;
+	quests.innerHTML =    `<img class="center-contained" src="img/litQuestsButton.png" hidden="true">`;
+	histories.innerHTML = `<img class="center-contained" src="img/litHistoriesButton.png" hidden="true">`;
+	save.innerHTML =      `<img class="center-contained" src="img/litSaveButton.png" hidden="true">`;
+
+	//hover
+	const hover_statsInvSkills = () => {
+		stats.querySelector("img").hidden = false;
+		inventory.querySelector("img").hidden = false;
+		skills.querySelector("img").hidden = false;
+	};
+	const hover_spellsJournalQuests = () => {
+		spells.querySelector("img").hidden = false;
+		journal.querySelector("img").hidden = false;
+		quests.querySelector("img").hidden = false;
+	};
+	stats.addEventListener("mouseenter", hover_statsInvSkills);
+	inventory.addEventListener("mouseenter", hover_statsInvSkills);
+	skills.addEventListener("mouseenter", hover_statsInvSkills);
+	spells.addEventListener("mouseenter", hover_spellsJournalQuests);
+	journal.addEventListener("mouseenter", hover_spellsJournalQuests);
+	quests.addEventListener("mouseenter", hover_spellsJournalQuests);
+	histories.addEventListener("mouseenter", () => {histories.querySelector("img").hidden = false;});
+	save.addEventListener("mouseenter", () => {save.querySelector("img").hidden = false;});
+
+	//mouseleave
+	const mouseleave_statsInvSkills = () => {
+		if (CURRENT_SCREEN === document.getElementById("player-statsInvSkillGold-tab")) return;
+		stats.querySelector("img").hidden = true;
+		inventory.querySelector("img").hidden = true;
+		skills.querySelector("img").hidden = true;
+	};
+	const mouseleave_spellsJournalQuests = () => {
+		if (CURRENT_SCREEN === document.getElementById("spellsJournalQuests-tab")) return;
+		spells.querySelector("img").hidden = true;
+		journal.querySelector("img").hidden = true;
+		quests.querySelector("img").hidden = true;
+	};
+	stats.addEventListener("mouseleave", mouseleave_statsInvSkills);
+	inventory.addEventListener("mouseleave", mouseleave_statsInvSkills);
+	skills.addEventListener("mouseleave", mouseleave_statsInvSkills);
+	spells.addEventListener("mouseleave", mouseleave_spellsJournalQuests);
+	journal.addEventListener("mouseleave", mouseleave_spellsJournalQuests);
+	quests.addEventListener("mouseleave", mouseleave_spellsJournalQuests);
+	histories.addEventListener("mouseleave", () => {histories.querySelector("img").hidden = true;}); //TODO
+	save.addEventListener("mouseleave", () => {save.querySelector("img").hidden = true;}); //TODO
+
+	//click
+	const switchOut = () => {
+		if (CURRENT_SCREEN === document.getElementById("player-statsInvSkillGold-tab")) {
+			stats.querySelector("img").hidden = true;
+			inventory.querySelector("img").hidden = true;
+			skills.querySelector("img").hidden = true;
+		}
+		else if (CURRENT_SCREEN === document.getElementById("spellsJournalQuests-tab")) {
+			spells.querySelector("img").hidden = true;
+			journal.querySelector("img").hidden = true;
+			quests.querySelector("img").hidden = true;
+		}
+	}
+	const click_statsInvSkills = () => {
+		if (CURRENT_SCREEN === document.getElementById("player-statsInvSkillGold-tab")) return;
+		hover_statsInvSkills();
+		switchOut();
+		switchPlayerTab();
+	}
+	const click_spellsJournalQuests = () => {
+		if (CURRENT_SCREEN === document.getElementById("spellsJournalQuests-tab")) return;
+		hover_spellsJournalQuests();
+		switchOut();
+		switchSpellsJournalQuests();
+	}
+	stats.addEventListener("click", click_statsInvSkills);
+	inventory.addEventListener("click", click_statsInvSkills);
+	skills.addEventListener("click", click_statsInvSkills);
+	spells.addEventListener("click", click_spellsJournalQuests);
+	journal.addEventListener("click", click_spellsJournalQuests);
+	quests.addEventListener("click", click_spellsJournalQuests);
+	histories.addEventListener("mouseleave", () => {"TODO HISTORIES";});
+	save.addEventListener("click", () => {"TODO SAVE";});
+
+	to_width_height[0].hidden = false;
 }
 
 
@@ -1368,25 +1468,31 @@ function initStatsInvSkillsGold()
 																	p.gold
 																});
 }
-
+//does not check if already - done in bottombar
 function switchPlayerTab()
 {
 	CURRENT_SCREEN.hidden = true;
-	CURRENT_SCREEN = document.getElementById("player-statsInvSkillGold-tab")
+	CURRENT_SCREEN = document.getElementById("player-statsInvSkillGold-tab");
 	CURRENT_SCREEN.hidden = false;
+	//TDOO totally re-doing everything every SINGLE time
+	for (const keep = CURRENT_SCREEN.firstElementChild; 
+		CURRENT_SCREEN.lastElementChild && CURRENT_SCREEN.lastElementChild !== keep;
+		CURRENT_SCREEN.removeChild(CURRENT_SCREEN.lastElementChild));
 	initStatsInvSkillsGold();
 }
 
 
-function addAbsoluteDiv(to, bounds)
+function addAbsoluteDiv(to_width_height, bounds)
+// to_width_height (addTo, itsWidth, itsHeight) ; bounds (ltrb)
 {
+	const [to, w, h] = to_width_height;
 	const [l, t, r, b] = bounds;
 	const div = document.createElement("div");
 	div.style.position = "absolute";
-	div.style.left = `calc(${l}% * 100 / 1536)`;
-	div.style.top = `calc(${t}% * 100 / 640)`;
-	div.style.width = `calc((${r}% - ${l}% + 1%) * 100 / 1536)`;
-	div.style.height = `calc((${b}% - ${t}% + 1%) * 100 / 640)`;
+	div.style.left = `calc(${l}% * 100 / ${w})`;
+	div.style.top = `calc(${t}% * 100 / ${h})`;
+	div.style.width = `calc((${r}% - ${l}% + 1%) * 100 / ${w})`;
+	div.style.height = `calc((${b}% - ${t}% + 1%) * 100 / ${h})`;
 	div.classList.add("center-container");
 
 	div.style.color = "white";
@@ -1460,44 +1566,45 @@ function questMiniDescriptionHTML(descriptionDiv, q)
 //TODO skills may change upon switchtabbing in
 function initSpellsJournalQuests()
 {
-	const to = document.getElementById("spellsJournalQuests-tab");
+	//TODO make constant global
+	const to_width_height = [document.getElementById("spellsJournalQuests-tab"), 1536, 640];
 	
 	//spells
-	addAbsoluteDiv(to, SPELLS_BOUNDS.get("TITLE")).textContent = "Active Spell";
+	addAbsoluteDiv(to_width_height, SPELLS_BOUNDS.get("TITLE")).textContent = "Active Spell";
 	if (SPELLS_INFO.has(robj.player.activeSpellName.toUpperCase()))
-		addAbsoluteDiv(to, SPELLS_BOUNDS.get("ACTIVE")).innerHTML = `<img src="img/${SPELLS_INFO.get(robj.player.activeSpellName.toUpperCase()).icon}" class="center-contained">`;
+		addAbsoluteDiv(to_width_height, SPELLS_BOUNDS.get("ACTIVE")).innerHTML = `<img src="img/${SPELLS_INFO.get(robj.player.activeSpellName.toUpperCase()).icon}" class="center-contained">`;
 
-	addAbsoluteDiv(to, SPELLS_BOUNDS.get("ATTACK_STR")).textContent = "Attack Magic";
-	addAbsoluteDiv(to, SPELLS_BOUNDS.get("ATTACK_SKILL")).textContent = charNetSkill(robj.player, SKILL_ATTACK_MAGIC);
+	addAbsoluteDiv(to_width_height, SPELLS_BOUNDS.get("ATTACK_STR")).textContent = "Attack Magic";
+	addAbsoluteDiv(to_width_height, SPELLS_BOUNDS.get("ATTACK_SKILL")).textContent = charNetSkill(robj.player, SKILL_ATTACK_MAGIC);
 	function fillIcons(sphere, sphereStr) {
-		const ltrb = SPELLS_BOUNDS.get(sphereStr);
+		const ltrb = [...SPELLS_BOUNDS.get(sphereStr)];
 		for (let i = 0; i < MAX_SPELLS_PER_SPHERE; ++i)
 		{
 			ltrb[0] += i ? SPELLS_BOUNDS_OFFSET : 0;
 			ltrb[2] += i ? SPELLS_BOUNDS_OFFSET : 0;
-			const iconDiv = addAbsoluteDiv(to, ltrb);
+			const iconDiv = addAbsoluteDiv(to_width_height, ltrb);
 			if (robj.player.knownSpells[sphere][i])
 				iconDiv.innerHTML = `<img class="center-contained" src="img/${SPELLS_INFO.get(robj.player.knownSpells[sphere][i].toUpperCase()).icon}">`;
 		}
 	};
 	fillIcons(SPHERE_ATTACK, "ATTACK");
 
-	addAbsoluteDiv(to, SPELLS_BOUNDS.get("DEFENSE_STR")).textContent = "Defense Magic";
-	addAbsoluteDiv(to, SPELLS_BOUNDS.get("DEFENSE_SKILL")).textContent = charNetSkill(robj.player, SKILL_DEFENSE_MAGIC);
+	addAbsoluteDiv(to_width_height, SPELLS_BOUNDS.get("DEFENSE_STR")).textContent = "Defense Magic";
+	addAbsoluteDiv(to_width_height, SPELLS_BOUNDS.get("DEFENSE_SKILL")).textContent = charNetSkill(robj.player, SKILL_DEFENSE_MAGIC);
 	fillIcons(SPHERE_DEFENSE, "DEFENSE");
 
-	addAbsoluteDiv(to, SPELLS_BOUNDS.get("CHARM_STR")).textContent = "Charm Magic";
-	addAbsoluteDiv(to, SPELLS_BOUNDS.get("CHARM_SKILL")).textContent = charNetSkill(robj.player, SKILL_CHARM_MAGIC);
+	addAbsoluteDiv(to_width_height, SPELLS_BOUNDS.get("CHARM_STR")).textContent = "Charm Magic";
+	addAbsoluteDiv(to_width_height, SPELLS_BOUNDS.get("CHARM_SKILL")).textContent = charNetSkill(robj.player, SKILL_CHARM_MAGIC);
 	fillIcons(SPHERE_CHARM, "CHARM");
 
 	//journal
-	addAbsoluteDiv(to, JOURNAL_BOUNDS.get("TITLE")).textContent = "Journal";
-	const ltrb = JOURNAL_BOUNDS.get("ENTRY");
+	addAbsoluteDiv(to_width_height, JOURNAL_BOUNDS.get("TITLE")).textContent = "Journal";
+	const ltrb = [...JOURNAL_BOUNDS.get("ENTRY")];
 	for (let entry = 0; entry < JOURNAL_ALL; ++entry)
 	{
 		ltrb[1] += entry ? JOURNAL_BOUND_OFFSET : 0;
 		ltrb[3] += entry ? JOURNAL_BOUND_OFFSET : 0;
-		const div = addAbsoluteDiv(to, ltrb);
+		const div = addAbsoluteDiv(to_width_height, ltrb);
 		div.style.display = "flex";
 		div.style.justifyContent = "space-between";
 		div.innerHTML = `<span>${JOURNAL_STRS[entry]}</span><span>${entry == JOURNAL_TIME_PLAYED ? existenceTimeToJournalStr(robj.player.existenceTime) : robj.player.journalStats[entry]}</span>`;
@@ -1506,22 +1613,22 @@ function initSpellsJournalQuests()
 	//quests
 	//TODO \b and newlines everywhere
 	//TODO some of this stuff is centered in website but not in game, but whatever for now
-	addAbsoluteDiv(to, QUESTS_BOUNDS.get("TITLE")).textContent = "Active Quests";
-	addAbsoluteDiv(to, QUESTS_BOUNDS.get("REWARD")).textContent = "Reward";
-	addAbsoluteDiv(to, QUESTS_BOUNDS.get("GOLD_STR")).textContent = "Gold";
-	addAbsoluteDiv(to, QUESTS_BOUNDS.get("EXPERIENCE_STR")).textContent = "Experience";
-	addAbsoluteDiv(to, QUESTS_BOUNDS.get("FAME_STR")).textContent = "Fame";
-	addAbsoluteDiv(to, QUESTS_BOUNDS.get("ITEM_STR")).textContent = "Item";
+	addAbsoluteDiv(to_width_height, QUESTS_BOUNDS.get("TITLE")).textContent = "Active Quests";
+	addAbsoluteDiv(to_width_height, QUESTS_BOUNDS.get("REWARD")).textContent = "Reward";
+	addAbsoluteDiv(to_width_height, QUESTS_BOUNDS.get("GOLD_STR")).textContent = "Gold";
+	addAbsoluteDiv(to_width_height, QUESTS_BOUNDS.get("EXPERIENCE_STR")).textContent = "Experience";
+	addAbsoluteDiv(to_width_height, QUESTS_BOUNDS.get("FAME_STR")).textContent = "Fame";
+	addAbsoluteDiv(to_width_height, QUESTS_BOUNDS.get("ITEM_STR")).textContent = "Item";
 
-	const toggles = addAbsoluteDiv(to, QUESTS_BOUNDS.get("TOGGLES"));
+	const toggles = addAbsoluteDiv(to_width_height, QUESTS_BOUNDS.get("TOGGLES"));
 	toggles.style.overflow = "auto";
 	toggles.classList.remove("center-container");
-	const description = addAbsoluteDiv(to, QUESTS_BOUNDS.get("DESCRIPTION"));
+	const description = addAbsoluteDiv(to_width_height, QUESTS_BOUNDS.get("DESCRIPTION"));
 		description.classList.remove("center-container");
-	const gold = addAbsoluteDiv(to, QUESTS_BOUNDS.get("GOLD"));
-	const experience = addAbsoluteDiv(to, QUESTS_BOUNDS.get("EXPERIENCE"));
-	const fame = addAbsoluteDiv(to, QUESTS_BOUNDS.get("FAME"));
-	const item = addAbsoluteDiv(to, QUESTS_BOUNDS.get("ITEM"));
+	const gold = addAbsoluteDiv(to_width_height, QUESTS_BOUNDS.get("GOLD"));
+	const experience = addAbsoluteDiv(to_width_height, QUESTS_BOUNDS.get("EXPERIENCE"));
+	const fame = addAbsoluteDiv(to_width_height, QUESTS_BOUNDS.get("FAME"));
+	const item = addAbsoluteDiv(to_width_height, QUESTS_BOUNDS.get("ITEM"));
 
 	for (const quest of robj.player.quests)
 	{
@@ -1540,11 +1647,17 @@ function initSpellsJournalQuests()
 	if (robj.player.quests) toggles.querySelector("div").click();
 }
 
+//does not check if already - done in bottombar
+
 function switchSpellsJournalQuests()
 {
 	CURRENT_SCREEN.hidden = true;
 	CURRENT_SCREEN = document.getElementById("spellsJournalQuests-tab");
 	CURRENT_SCREEN.hidden = false;
+	//TDOO totally re-doing everything every SINGLE time
+	for (const keep = CURRENT_SCREEN.firstElementChild;  
+		CURRENT_SCREEN.lastElementChild && CURRENT_SCREEN.lastElementChild !== keep;
+		CURRENT_SCREEN.removeChild(CURRENT_SCREEN.lastElementChild));
 	initSpellsJournalQuests();
 }
 
