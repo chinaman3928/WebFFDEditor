@@ -542,13 +542,13 @@ const SLOT_FEET = 7;
 const SLOT_LEFTFINGER = 8;
 const SLOT_RIGHTFINGER = 9;
 const SLOT_BELT = 10;
-const SLOT_EQUIPMENT = 11;
+const SLOT_QUICK0 = 11;
 const SLOT_QUICK1 = 12;
 const SLOT_QUICK2 = 13;
 const SLOT_QUICK3 = 14;
 const SLOT_QUICK4 = 15;
 const SLOT_QUICK5 = 16;
-const SLOT_ALL = 17; //TODO is this even right
+const SLOT_ALL = 17; //number of equippable slots
 
 //TODO og only
 const INV_SLOT_SIZE = 48;
@@ -771,7 +771,9 @@ const INV_BOUNDS = new Map([[SLOT_RIGHTHAND, [552, 54, 641, 239]], [SLOT_HEAD, [
 	[23, [817, 383, 861, 423]], [33, [817, 427, 861, 470]], [43, [817, 475, 861, 519]], [53, [817, 523, 861, 564]],
 	[24, [865, 383, 909, 423]], [34, [865, 427, 909, 470]], [44, [865, 475, 909, 519]], [54, [865, 523, 909, 564]],
 	[25, [913, 383, 957, 423]], [35, [913, 427, 957, 470]], [45, [913, 475, 957, 519]], [55, [913, 523, 957, 564]],
-	[26, [961, 383, 1002, 423]], [36, [961, 427, 1002, 470]], [46, [961, 475, 1002, 519]], [56, [961, 523, 1002, 564]]]);
+	[26, [961, 383, 1002, 423]], [36, [961, 427, 1002, 470]], [46, [961, 475, 1002, 519]], [56, [961, 523, 1002, 564]],
+	[SLOT_QUICK0, [178, 78, 226, 126]], [SLOT_QUICK1, [178 + 48*1, 78, 226 + 48*1, 126]], [SLOT_QUICK2, [178 + 48*2, 78, 226 + 48*2, 126]],
+	[SLOT_QUICK3, [178 + 48*3, 78, 226 + 48*3, 126]], [SLOT_QUICK4, [178 + 48*4, 78, 226 + 48*4, 126]], [SLOT_QUICK5, [178 + 48*5 + 1, 78, 226 + 48*5 + 1, 126]], ]);
 
 const SKILLS_GOLD_BOUNDS = new Map([[SKILL_SWORD, [1165, 83, 1251, 107]], ["SWORD_STR", [1256, 83, 1454, 107]], [SKILL_CLUB, [1165, 115, 1251, 139]], ["CLUB_STR", [1256, 115, 1454, 139]],
 	[SKILL_HAMMER, [1165, 148, 1251, 172]], ["HAMMER_STR", [1256, 148, 1454, 172]], [SKILL_AXE, [1165, 182, 1251, 206]], ["AXE_STR", [1256, 182, 1454, 206]],
@@ -801,10 +803,8 @@ const QUESTS_BOUNDS = new Map([["TITLE", [1209, 97, 1361, 126]], ["TOGGLES", [11
 	["ITEM_STR", [1152, 519, 1252, 539]], ["ITEM", [1254, 519, 1422, 539]]]);
 
 
-//TODO i'll probably throw quickslot in INV_BOUNDS, but here for now
 const BOTTOMBAR_BOUNDS = new Map([["STATS", [46, 27, 93, 74]], ["INVENTORY", [97, 27, 144, 74]], ["SPELLS", [148, 27, 195, 74]], ["SKILLS", [199, 27, 246, 74]], 
-	["JOURNAL", [399, 27, 446, 74]], ["QUESTS", [450, 27, 497, 74]], ["HISTORIES", [501, 27, 548, 74]], ["SAVE", [552, 27, 599, 74]], ["QUICKSLOT", [178, 78, 226, 126]]])
-const BOTTOMBAR_QUICKSLOT_ADD_ONE_ON = 6;
+	["JOURNAL", [399, 27, 446, 74]], ["QUESTS", [450, 27, 497, 74]], ["HISTORIES", [501, 27, 548, 74]], ["SAVE", [552, 27, 599, 74]]]);
 
 const ROMAN_VALUE =  [1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1];
 const ROMAN_SYMBOL = ['M', 'CM', 'D', 'CD', 'C', 'XC', 'L', 'XL', 'X', 'IX', 'V', 'IV', 'I'];
@@ -888,11 +888,10 @@ const PLAYER_TAB =
 //TODO can do something if slotindex or type are out of expected range
 //TODO what if non equipped but in such a slot? vice versa?
 //TODO right now hard coded for player, but you must generalize
-//TODO <= SLOT_EQUIPMENT is sus
 function computeEquippedEffects()
 //also computes equippedItems and inventory icons
 {
-	robj.player.equippedItems = new Array(SLOT_QUICK5)
+	robj.player.equippedItems = new Array(SLOT_ALL)
 	PLAYER_TAB.equippedEffects.fill(0);
 
 	const l = 0, t = 1, r = 2, b = 3;
@@ -902,8 +901,9 @@ function computeEquippedEffects()
 		{
 			robj.player.equippedItems[it.slotIndex] = it;
 		}
-		if (it.equipped && 0 <= it.slotIndex && it.slotIndex <= SLOT_EQUIPMENT)
+		if (it.equipped && 0 <= it.slotIndex && it.slotIndex < SLOT_QUICK0)
 		{
+			//compute equipped effects
 			for (ef of it.effects[ACTIVATION_PASSIVE])
 			{
 				if (0 <= ef.type && ef.type <= EFFECT_ALL_TYPES)
@@ -911,12 +911,14 @@ function computeEquippedEffects()
 					PLAYER_TAB.equippedEffects[ef.type] += ef.value;
 				}
 			}
-		//inventory icons
+		}
+		if (it.slotIndex <= SLOT_QUICK5)
+		{
+			//main inventory + quickslot
 			const icon = document.createElement("img");
 			icon.src = `img/${ITEMS_INFO.get(it.baseName.toUpperCase()).icon}`; //TODO TODO TODO hardcoding, but should be smarter...
 			icon.classList.add("center-contained");
 			PLAYER_TAB.invDivs.get(it.slotIndex == SLOT_LEFTARM ? SLOT_LEFTHAND : it.slotIndex).appendChild(icon);
-
 
 			//TODO WHERE LEFT OFF grade star
 			const star = document.createElement("img");
@@ -930,8 +932,10 @@ function computeEquippedEffects()
 
 			addHoverboxToItem(PLAYER_TAB.invDivs.get(it.slotIndex == SLOT_LEFTARM ? SLOT_LEFTHAND : it.slotIndex), it);
 		}
-		else if (it.slotIndex > SLOT_QUICK5) //TODO hardcoding for now, because i dont have the quickslots on the screen
+		else
 		{
+			//TODO should addAbsoluteDiv but lazy to work around the slotsWide and slotsTall...
+			//everything else
 			const iconDiv = document.createElement("div");
 			const slotsWide = Math.floor(ITEMS_INFO.get(it.baseName.toUpperCase()).iconWidth / INV_SLOT_SIZE);
 			const slotsTall = Math.floor(ITEMS_INFO.get(it.baseName.toUpperCase()).iconHeight / INV_SLOT_SIZE);
@@ -1050,7 +1054,7 @@ function charDefense(c)
 {
 	let armor = 0;
 	//inventory armor
-	for (let i = 0; i < SLOT_EQUIPMENT; ++i)
+	for (let i = 0; i < SLOT_QUICK0; ++i)
 	{
 		const it = c.equippedItems[i];
 		if (it !== undefined && TYPE_TO_CATEGORY[ITEMS_INFO.get(it.baseName.toUpperCase()).type] == CATEGORY_ARMOR)
@@ -1358,22 +1362,10 @@ function initStatsInvSkillsGold()
 	const player_statsInvSkillGold_div = document.getElementById("player-statsInvSkillGold-tab");
 	for ([playerTabMap, map] of [[PLAYER_TAB.statsDivs, STATS_BOUNDS], [PLAYER_TAB.invDivs, INV_BOUNDS], [PLAYER_TAB.skillsGoldDivs, SKILLS_GOLD_BOUNDS]])
 	{
-		for ([what, [l, t, r, b]] of map)
+		for ([what, ltrb] of map)
 		{
 			if (map === INV_BOUNDS && what > SLOT_QUICK5) continue;
-
-			const div = document.createElement("div");
-			div.style.position = "absolute";
-			div.style.left = `calc(${l}% * 100 / 1536)`;
-			div.style.top = `calc(${t}% * 100 / 640)`;
-			div.style.width = `calc((${r}% - ${l}% + 1%) * 100 / 1536)`;
-			div.style.height = `calc((${b}% - ${t}% + 1%) * 100 / 640)`;
-			div.classList.add("center-container");
-			//TODO any special behavior here...
-
-			//div.style.backgroundColor = "white";
-			div.style.color = "white";
-			player_statsInvSkillGold_div.appendChild(div);
+			const div = addAbsoluteDiv((map === INV_BOUNDS && what >= SLOT_QUICK0 && what <= SLOT_QUICK5) ? [document.getElementById("bottombar-div"), 645, 128] : [player_statsInvSkillGold_div, 1536, 640], ltrb);
 			playerTabMap.set(what, div);
 		}
 	}
