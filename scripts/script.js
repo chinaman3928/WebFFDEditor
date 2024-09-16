@@ -1146,13 +1146,17 @@ function initBottomBar()
 		journal.querySelector("img").hidden = true;
 		quests.querySelector("img").hidden = true;
 	};
+	const mouseleave_histories = () => {
+		if (CURRENT_SCREEN === document.getElementById("histories-tab")) return;
+		histories.querySelector("img").hidden = true;
+	};
 	stats.addEventListener("mouseleave", mouseleave_statsInvSkills);
 	inventory.addEventListener("mouseleave", mouseleave_statsInvSkills);
 	skills.addEventListener("mouseleave", mouseleave_statsInvSkills);
 	spells.addEventListener("mouseleave", mouseleave_spellsJournalQuests);
 	journal.addEventListener("mouseleave", mouseleave_spellsJournalQuests);
 	quests.addEventListener("mouseleave", mouseleave_spellsJournalQuests);
-	histories.addEventListener("mouseleave", () => {histories.querySelector("img").hidden = true;}); //TODO
+	histories.addEventListener("mouseleave", mouseleave_histories);
 	save.addEventListener("mouseleave", () => {save.querySelector("img").hidden = true;}); //TODO
 
 	//click
@@ -1167,6 +1171,9 @@ function initBottomBar()
 			journal.querySelector("img").hidden = true;
 			quests.querySelector("img").hidden = true;
 		}
+		else if (CURRENT_SCREEN === document.getElementById("histories-tab")) {
+			histories.querySelector("img").hidden = true;
+		}
 	}
 	const click_statsInvSkills = () => {
 		if (CURRENT_SCREEN === document.getElementById("player-statsInvSkillGold-tab")) return;
@@ -1180,13 +1187,19 @@ function initBottomBar()
 		switchOut();
 		switchSpellsJournalQuests();
 	}
+	const click_histories = () => {
+		if (CURRENT_SCREEN === document.getElementById("histories-tab")) return;
+		histories.querySelector("img").hidden = false;
+		switchOut();
+		switchHistoriesTab();
+	};
 	stats.addEventListener("click", click_statsInvSkills);
 	inventory.addEventListener("click", click_statsInvSkills);
 	skills.addEventListener("click", click_statsInvSkills);
 	spells.addEventListener("click", click_spellsJournalQuests);
 	journal.addEventListener("click", click_spellsJournalQuests);
 	quests.addEventListener("click", click_spellsJournalQuests);
-	histories.addEventListener("click", () => {"TODO HISTORIES";});
+	histories.addEventListener("click", click_histories);
 	save.addEventListener("click", downloadFile);
 
 	to_width_height[0].hidden = false;
@@ -1648,7 +1661,6 @@ function initSpellsJournalQuests()
 }
 
 //does not check if already - done in bottombar
-
 function switchSpellsJournalQuests()
 {
 	CURRENT_SCREEN.hidden = true;
@@ -1659,6 +1671,25 @@ function switchSpellsJournalQuests()
 		CURRENT_SCREEN.lastElementChild && CURRENT_SCREEN.lastElementChild !== keep;
 		CURRENT_SCREEN.removeChild(CURRENT_SCREEN.lastElementChild));
 	initSpellsJournalQuests();
+}
+
+
+function initHistories()
+{
+	"TODO HISTORIES";
+}
+
+//does not check if already - done in bottombar
+function switchHistoriesTab()
+{
+	CURRENT_SCREEN.hidden = true;
+	CURRENT_SCREEN = document.getElementById("histories-tab");
+	CURRENT_SCREEN.hidden = false;
+	//TDOO totally re-doing everything every SINGLE time
+	for (const keep = CURRENT_SCREEN.firstElementChild;  
+		CURRENT_SCREEN.lastElementChild && CURRENT_SCREEN.lastElementChild !== keep;
+		CURRENT_SCREEN.removeChild(CURRENT_SCREEN.lastElementChild));
+	initHistories();
 }
 
 
