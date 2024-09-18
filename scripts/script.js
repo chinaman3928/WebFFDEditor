@@ -552,6 +552,7 @@ const SLOT_ALL = 17; //number of equippable slots
 
 //TODO og only
 const INV_SLOT_SIZE = 48;
+const HISTORIES_INV_WIDTH = 10;
 
 //TODO OG only
 const CATEGORY_BLANK      = 0;
@@ -891,7 +892,7 @@ const PLAYER_TAB =
 function computeEquippedEffects()
 //also computes equippedItems and inventory icons
 {
-	robj.player.equippedItems = new Array(SLOT_ALL)
+	robj.player.equippedItems = new Array(SLOT_ALL);
 	PLAYER_TAB.equippedEffects.fill(0);
 
 	const l = 0, t = 1, r = 2, b = 3;
@@ -1666,9 +1667,113 @@ function switchSpellsJournalQuests()
 }
 
 
+function dfsAppendSubitems(it, arr)
+{
+	for (const subitem of it.items)
+	{
+		arr.push(subitem);
+		dfsAppendSubitems(subitem, arr);
+	}
+}
+
+function fits(open, i, w, h)
+{
+	if (i % HISTORIES_INV_WIDTH > HISTORIES_INV_WIDTH - w || i + HISTORIES_INV_WIDTH * (h - 1) >= open.length) return false;
+
+	for (let row = 0; row < h; ++row)
+		for (let col = 0; col < w; ++col)
+			if (!open[i + HISTORIES_INV_WIDTH*row + col]) return false;
+	for (let row = 0; row < h; ++row)
+		for (let col = 0; col < w; ++col)
+			open[i + HISTORIES_INV_WIDTH*row + col] = false;
+	return true;
+}
+
+function addInvChunk(historiesInvDiv, open)
+{
+	for (let _ = 0; _ < 40; ++_) open.push(true);
+	// const img = document.createElement("img");
+	// img.src = "img/histories_invChunk.png";
+	// img.style.width = "100%";
+	// historiesInvDiv.appendChild(img);
+}
+
 function initHistories()
 {
-	"TODO HISTORIES";
+	const historiesDiv = document.getElementById("histories-tab");
+	// const historiesInvDiv = historiesDiv.getElementById("histories-inv-div");
+	const historiesInvDiv = addAbsoluteDiv([historiesDiv, 1536, 640], [13, 41, 493, 569]);
+	historiesInvDiv.classList.add("hidden-scrollable");
+	historiesInvDiv.style.overflowY = "auto";
+
+	//items
+	const items = [...robj.discoveryHistory.at(1).itemHistory];
+	for (const it of robj.discoveryHistory.at(1).itemHistory)
+	{
+		dfsAppendSubitems(it, items);
+	}
+	// items.sort((a, b) = {});
+
+	const open = new Array(11 * HISTORIES_INV_WIDTH).fill(true);
+	for (const it of items)
+	{
+		let w = undefined;
+		try
+		{
+			w = Math.floor(ITEMS_INFO.get(it.baseName.toUpperCase()).iconWidth / INV_SLOT_SIZE)
+		}
+		catch
+		{
+			w = 4;
+		}
+		let h = undefined;
+		try
+		{
+			h = Math.floor(ITEMS_INFO.get(it.baseName.toUpperCase()).iconHeight / INV_SLOT_SIZE);
+		}
+		catch
+		{
+			h = 4;
+		}
+		while (true)
+		{
+			let i = 0;
+			for (; i < open.length; ++i)
+			{
+				if (fits(open, i, w, h))
+				{
+					const x = i % HISTORIES_INV_WIDTH, y = Math.floor(i / HISTORIES_INV_WIDTH);
+					//i want these divs to be 49x49, just so happens that 49 - 1 = INV_SLOT_SIZE
+					const l = x * INV_SLOT_SIZE;
+					const t = y * INV_SLOT_SIZE;
+					const r = l + w * INV_SLOT_SIZE;
+					const b = t + h * INV_SLOT_SIZE;
+
+					const img = document.createElement("img");
+					try 
+					{
+						img.src = `img/${ITEMS_INFO.get(it.baseName.toUpperCase()).icon}`;
+					}
+					catch
+					{
+						img.src = "img/192x192.png";
+					}
+					img.classList.add("center-contained");
+
+					let bruh = addAbsoluteDiv([historiesInvDiv, 481, 529], [l, t, r, b]);
+					bruh.appendChild(img);
+					// bruh.style.border = "solid 1px red";
+					break;
+				}
+			}
+			if (i < open.length) break;
+			addInvChunk(historiesInvDiv, open);
+		}
+	}
+
+	//depths + map
+
+	//characters
 }
 
 //does not check if already - done in bottombar

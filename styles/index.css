@@ -182,3 +182,12 @@ html {
   width: calc(3200vw / 1536);
   --height: calc(3200vh / 640);
 }
+
+/* https://stackoverflow.com/a/38994837 */
+.hidden-scrollable {
+  -ms-overflow-style: none;  /* Internet Explorer 10+ */
+  scrollbar-width: none;  /* Firefox */
+}
+.hidden-scrollable::-webkit-scrollbar { 
+  display: none;  /* Safari and Chrome */
+}
