@@ -1214,10 +1214,51 @@ function initBottomBar()
 }
 
 
+function displayItemName(s)
+{
+	const build = [];
+	let prev = 0;
+	let openPurple = true;
+	let i = 0;
+	for (; i < s.length; ++i)
+	{
+		if (s[i] == '\b' || s[i] == '\n')
+		{
+			build.push(s.slice(prev, i));
+			prev = i + 1;
+			if (s[i] == '\b')
+			{
+				build.push(openPurple ? "<span class='purpletext'>" : "</span>");
+				openPurple = !openPurple;
+			}
+			else
+			{
+				build.push("<br>");
+			}
+		}
+	}
+	if (prev < s.length) build.push(s.slice(prev, i));
+	return build.join("");
+}
+
+
 function addHoverboxToItem(div, it)
 {
 	const hoverbox = document.createElement("div");
 	hoverbox.classList.add("hoverbox");
+
+	//name
+	const nameDiv = document.createElement("div");
+	addEditableFieldAndHoverboxTo(nameDiv, displayItemName(it.name),	(_text, _input) => {
+																			"TODO TODO TODO";
+																		},
+																		(_text, _input) => {
+																			"TODO TODO TODO";
+																		},
+																		() => {
+																			return "hoverbox text";
+																		});
+	hoverbox.appendChild(nameDiv);
 
 	for (const act of [ACTIVATION_PASSIVE, ACTIVATION_USAGE])
 	{
@@ -1282,7 +1323,7 @@ function addHoverboxToItem(div, it)
 function addEditableFieldAndHoverboxTo(div, initText, enterFunc, exitFunc, hoverboxFunc)
 {
 	const text = document.createElement("span"); //TODO WHERE LEFT OFF  it was div before span
-	text.innerText = initText;
+	text.innerHTML = initText;
 	text.style.border = "none" || "1px solid red"; //TODO WHERE LEFT OFF 
 	text.style.cursor = "pointer";
 
