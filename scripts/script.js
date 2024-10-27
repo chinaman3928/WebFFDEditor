@@ -885,6 +885,35 @@ const PLAYER_TAB =
 };
 
 
+function itemGradeRank(iconDiv, it)
+{
+	if (it.grade > GRADE_NORMAL)
+	{
+		const star = document.createElement("img");
+		star.src = "img/goldstar.png";
+		star.classList.add("grade-rank-icon");
+		star.style.height = `${32 * 10000 / (parseFloat(iconDiv.style.height) * 640)}%`;
+		iconDiv.appendChild(star);
+	}
+
+	//TODO yea but if you name an item with {ELite Legendary} it'll trick this thing into thinking ranked
+	let the_rank = 0;
+	for (let i = 1 /*deliberate*/; i < RANK_INT_STR.length; ++i)
+		if (it.baseName.length > RANK_INT_STR[i].length && it.baseName.slice(0, RANK_INT_STR[i].length) == RANK_INT_STR[i])
+		{
+			the_rank = i;
+			break;
+		}
+	if (the_rank)
+	{
+		const rank = document.createElement("img");
+		rank.src = "img/elite.png";
+		rank.style.height = `${32 * 10000 / (parseFloat(iconDiv.style.height) * 640)}%`;
+		rank.classList.add("grade-rank-icon");
+		iconDiv.appendChild(rank);
+	}
+}
+
 function itemHaze(div, it)
 {
 	if (it.effects[ACTIVATION_PASSIVE].length >= 1 || it.damageBonus.length >= 1)
@@ -934,18 +963,7 @@ function computeEquippedEffects()
 			icon.classList.add("center-contained");
 			iconDiv.appendChild(icon);
 
-			//TODO WHERE LEFT OFF grade star
-			const star = document.createElement("img");
-			star.src = "img/goldstar.png";
-			star.classList.add("grade-rank-icon");
-			star.style.height = `${32 * 10000 / (parseFloat(iconDiv.style.height) * 640)}%`;
-			const rank = document.createElement("img");
-			rank.src = "img/elite.png";
-			rank.style.height = `${32 * 10000 / (parseFloat(iconDiv.style.height) * 640)}%`;
-			rank.classList.add("grade-rank-icon");
-			iconDiv.appendChild(star);
-			iconDiv.appendChild(rank);
-
+			itemGradeRank(iconDiv, it);
 			itemHaze(iconDiv, it);
 			addHoverboxToItem(iconDiv, it);
 		}
@@ -971,6 +989,7 @@ function computeEquippedEffects()
 			document.getElementById("player-statsInvSkillGold-tab").appendChild(iconDiv);
 			PLAYER_TAB.invDivs.set(it.slotIndex, iconDiv);
 
+			itemGradeRank(iconDiv, it);
 			itemHaze(iconDiv, it);
 			addHoverboxToItem(iconDiv, it);
 		}
