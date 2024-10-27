@@ -917,21 +917,24 @@ function computeEquippedEffects()
 		{
 			//main inventory + quickslot
 			const icon = document.createElement("img");
+			const iconDiv = PLAYER_TAB.invDivs.get(it.slotIndex == SLOT_LEFTARM ? SLOT_LEFTHAND : it.slotIndex);
 			icon.src = `img/${ITEMS_INFO.get(it.baseName.toUpperCase()).icon}`; //TODO TODO TODO hardcoding, but should be smarter...
 			icon.classList.add("center-contained");
-			PLAYER_TAB.invDivs.get(it.slotIndex == SLOT_LEFTARM ? SLOT_LEFTHAND : it.slotIndex).appendChild(icon);
+			iconDiv.appendChild(icon);
 
 			//TODO WHERE LEFT OFF grade star
 			const star = document.createElement("img");
 			star.src = "img/goldstar.png";
 			star.classList.add("grade-rank-icon");
+			star.style.height = `${32 * 10000 / (parseFloat(iconDiv.style.height) * 640)}%`;
 			const rank = document.createElement("img");
 			rank.src = "img/elite.png";
+			rank.style.height = `${32 * 10000 / (parseFloat(iconDiv.style.height) * 640)}%`;
 			rank.classList.add("grade-rank-icon");
-			PLAYER_TAB.invDivs.get(it.slotIndex == SLOT_LEFTARM ? SLOT_LEFTHAND : it.slotIndex).appendChild(star);
-			PLAYER_TAB.invDivs.get(it.slotIndex == SLOT_LEFTARM ? SLOT_LEFTHAND : it.slotIndex).appendChild(rank);
+			iconDiv.appendChild(star);
+			iconDiv.appendChild(rank);
 
-			addHoverboxToItem(PLAYER_TAB.invDivs.get(it.slotIndex == SLOT_LEFTARM ? SLOT_LEFTHAND : it.slotIndex), it);
+			addHoverboxToItem(iconDiv, it);
 		}
 		else
 		{
@@ -942,10 +945,10 @@ function computeEquippedEffects()
 			const slotsTall = Math.floor(ITEMS_INFO.get(it.baseName.toUpperCase()).iconHeight / INV_SLOT_SIZE);
 
 			iconDiv.style.position = "absolute";
-			iconDiv.style.left = `calc(${INV_BOUNDS.get(it.slotIndex)[l]}% * 100 / 1536)`;
-			iconDiv.style.top = `calc(${INV_BOUNDS.get(it.slotIndex)[t]}% * 100 / 640)`;
-			iconDiv.style.width = `calc((${INV_BOUNDS.get(it.slotIndex + slotsWide - 1)[r]}% - ${INV_BOUNDS.get(it.slotIndex)[l]}% + 1%) * 100 / 1536)`;
-			iconDiv.style.height = `calc((${INV_BOUNDS.get(it.slotIndex + 10*slotsTall - 10)[b]}% - ${INV_BOUNDS.get(it.slotIndex)[t]}% + 1%) * 100 / 640)`;
+			iconDiv.style.left = `${INV_BOUNDS.get(it.slotIndex)[l] * 100 / 1536}%`;
+			iconDiv.style.top = `${INV_BOUNDS.get(it.slotIndex)[t] * 100 / 640}%`;
+			iconDiv.style.width = `${(INV_BOUNDS.get(it.slotIndex + slotsWide - 1)[r] - INV_BOUNDS.get(it.slotIndex)[l] + 1) * 100 / 1536}%`;
+			iconDiv.style.height = `${(INV_BOUNDS.get(it.slotIndex + 10*slotsTall - 10)[b] - INV_BOUNDS.get(it.slotIndex)[t] + 1) * 100 / 640}%`;
 			iconDiv.classList.add("center-container");
 
 			const icon = document.createElement("img");
@@ -1425,8 +1428,18 @@ function initStatsInvSkillsGold()
 	}
 
 	PLAYER_TAB.statsDivs.get("POINTS_STR").innerText = "Points Remaining";
-	PLAYER_TAB.statsDivs.get("POINTS").innerText = p.unusedStatPoints;
-
+	addEditableFieldAndHoverboxTo(PLAYER_TAB.statsDivs.get("POINTS"),	p.unusedStatPoints,
+																		(_text, _input) => {
+																			_input.value = p.unusedStatPoints;
+																		},
+																		(_text, _input) => {
+																			const newVal = _input.value.trim();
+																			p.unusedStatPoints = parseInt(newVal);
+																			_text.innerText = p.unusedStatPoints;
+																		},
+																		() => {
+																			return p.unusedStatPoints;
+																		});
 	//inv
 
 
@@ -1457,7 +1470,18 @@ function initStatsInvSkillsGold()
 			div.innerText = `${SKILLS_INT_STR[skill]} Skill`;
 	}
 	PLAYER_TAB.skillsGoldDivs.get("POINTS_STR").innerText = "Points Remaining";
-	PLAYER_TAB.skillsGoldDivs.get("POINTS").innerText = robj.player.unusedSkillPoints;
+	addEditableFieldAndHoverboxTo(PLAYER_TAB.skillsGoldDivs.get("POINTS"),	robj.player.unusedSkillPoints,
+																			(_text, _input) => {
+																				_input.value = robj.player.unusedSkillPoints;
+																			},
+																			(_text, _input) => {
+																				const newVal = _input.value.trim();
+																				robj.player.unusedSkillPoints = parseInt(newVal);
+																				_text.innerText = robj.player.unusedSkillPoints;
+																			},
+																			() => {
+																				return robj.player.unusedSkillPoints;
+																			});
 
 	//gold
 	//TODO WHERE LEFT OFF probably allow passing in False into slots where N/A, like hoverbox here or text/input for inventory icons
@@ -1495,10 +1519,10 @@ function addAbsoluteDiv(to_width_height, bounds)
 	const [l, t, r, b] = bounds;
 	const div = document.createElement("div");
 	div.style.position = "absolute";
-	div.style.left = `calc(${l}% * 100 / ${w})`;
-	div.style.top = `calc(${t}% * 100 / ${h})`;
-	div.style.width = `calc((${r}% - ${l}% + 1%) * 100 / ${w})`;
-	div.style.height = `calc((${b}% - ${t}% + 1%) * 100 / ${h})`;
+	div.style.left = `${l * 100 / w}%`;
+	div.style.top = `${t * 100 / h}%`;
+	div.style.width = `${(r - l + 1) * 100 / w}%`;
+	div.style.height = `${(b - t + 1) * 100 / h}%`;
 	div.classList.add("center-container");
 
 	div.style.color = "white";
@@ -1705,6 +1729,17 @@ function initHistories()
 	const historiesInvDiv = addAbsoluteDiv([historiesDiv, 1536, 640], [13, 41, 493, 569]);
 	historiesInvDiv.classList.add("hidden-scrollable");
 	historiesInvDiv.style.overflowY = "auto";
+
+
+	//twiddle
+	const twiddle = addAbsoluteDiv([historiesDiv, 1536, 640], [530, 21, 985, 110]);
+	twiddle.style.display = "flex";
+	twiddle.style.justifyContent = "center";
+	twiddle.style.alignItems = "center";
+	twiddle.style.flexDirection = "column";
+	twiddle.innerHTML = "<div style='flex:1;'>Line 1</div><div style='flex:1;'>Select a level history:</div><div style='flex:1;'>Line 3</div>";
+	
+
 
 	//items
 	const items = [...robj.discoveryHistory.at(1).itemHistory];

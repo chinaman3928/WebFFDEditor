@@ -177,10 +177,8 @@ html {
 .grade-rank-icon {
   z-index: 9;
   position: absolute;
-  right: 0;
   top: 0;
-  width: calc(3200vw / 1536);
-  --height: calc(3200vh / 640);
+  right: 0;
 }
 
 /* https://stackoverflow.com/a/38994837 */
