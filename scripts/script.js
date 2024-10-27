@@ -884,6 +884,18 @@ const PLAYER_TAB =
 	characterEffects: new Array(EFFECT_ALL_TYPES)
 };
 
+
+function itemHaze(div, it)
+{
+	if (it.effects[ACTIVATION_PASSIVE].length >= 1 || it.damageBonus.length >= 1)
+	{
+		if (it.artifact)	div.classList.add("yellow-haze");
+		else if (it.unique)	div.classList.add("teal-haze");
+		else 				div.classList.add("purple-haze");
+	}
+}
+
+
 //TODO resists may not appear here ... so when you consider resists, consider the resists attribute
 
 //TODO can do something if slotindex or type are out of expected range
@@ -934,6 +946,7 @@ function computeEquippedEffects()
 			iconDiv.appendChild(star);
 			iconDiv.appendChild(rank);
 
+			itemHaze(iconDiv, it);
 			addHoverboxToItem(iconDiv, it);
 		}
 		else
@@ -958,6 +971,7 @@ function computeEquippedEffects()
 			document.getElementById("player-statsInvSkillGold-tab").appendChild(iconDiv);
 			PLAYER_TAB.invDivs.set(it.slotIndex, iconDiv);
 
+			itemHaze(iconDiv, it);
 			addHoverboxToItem(iconDiv, it);
 		}
 	}
@@ -1258,6 +1272,7 @@ function addHoverboxToItem(div, it)
 																		() => {
 																			return "hoverbox text";
 																		});
+    nameDiv.style.background = "#21D09B";
 	hoverbox.appendChild(nameDiv);
 
 	for (const act of [ACTIVATION_PASSIVE, ACTIVATION_USAGE])

@@ -189,3 +189,18 @@ html {
 .hidden-scrollable::-webkit-scrollbar { 
   display: none;  /* Safari and Chrome */
 }
+
+.purple-haze {
+  background-image: url("../img/magicicon.png");
+	background-size: 100% 100%;
+}
+
+.teal-haze {
+  background-image: url("../img/uniqueicon.png");
+	background-size: 100% 100%;
+}
+
+.yellow-haze {
+  background-image: url("../img/artifacticon.png");
+	background-size: 100% 100%;
+}
