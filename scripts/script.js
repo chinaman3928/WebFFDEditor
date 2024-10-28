@@ -490,6 +490,18 @@ const DAMAGE_ELECTRIC = 6;
 const DAMAGE_UNDEAD = 7;
 const DAMAGE_TYPES = 8;
 
+const DAMAGE_STRS = [
+	"Piercing Damage",
+	"Slashing Damage",
+	"Crushing Damage",
+	"Magical Damage",
+	"Fire Damage",
+	"Ice Damage",
+	"Electrical Damage",
+	"Damage to Undead"
+];
+
+
 //TODO undead maps to fire; is this ever an issue?
 const DAMAGE_TO_EFFECT = 
 [
@@ -1275,6 +1287,36 @@ function displayItemName(s)
 }
 
 
+function dynamicallyExpand(div)
+{
+	const input = div.querySelector("input");
+	input.addEventListener("input",	() => {
+		const span = document.createElement("span");
+		span.style.position = "absolute";
+		span.style.visibility = "hidden";
+		span.style.font = input.style.font;
+		span.style.padding = input.style.padding;
+		span.style.border = input.style.border;
+
+		span.textContent = input.value;
+		document.body.appendChild(span);
+		input.style.width = `${span.offsetWidth}px`
+		document.body.removeChild(span);
+	});
+}
+
+
+function itemNameHighlight(div, it)
+{
+	if (it.effects[ACTIVATION_PASSIVE].length >= 1 || it.damageBonus.length >= 1)
+	{
+		if (it.artifact)	div.classList.add("highlight-yellow");
+		else if (it.unique)	div.classList.add("highlight-teal");
+		else				div.classList.add("highlight-lightPurple");
+	}
+}
+
+
 function addHoverboxToItem(div, it)
 {
 	const hoverbox = document.createElement("div");
@@ -1291,9 +1333,34 @@ function addHoverboxToItem(div, it)
 																		() => {
 																			return "hoverbox text";
 																		});
-    nameDiv.style.background = "#21D09B";
+    itemNameHighlight(nameDiv, it);
 	hoverbox.appendChild(nameDiv);
 
+	//bonuses
+	for (let i = 0; i < it.damageBonus.length; ++i)
+	{
+		const bonusDiv = document.createElement("div");
+		bonusDiv.innerHTML = `+<span></span> ${DAMAGE_STRS[it.damageBonus[i]]}`;
+		const span = bonusDiv.querySelector("span");
+		span.style.position = "relative";
+		addEditableFieldAndHoverboxTo(span, it.damageBonusValue[i], (_text, _input) => {
+																		_input.style.width = `${_text.offsetWidth}px`;
+																		_input.value = it.damageBonusValue[i];
+																	},
+																	(_text, _input) => {
+																		const newVal = _input.value.trim();
+																		it.damageBonusValue[i] = parseInt(newVal);
+																		_text.innerText = it.damageBonusValue[i];
+																	},
+																	() => {
+																		return "hoverbox text";
+																	});
+		bonusDiv.classList.add("highlight-lightPurple");
+		dynamicallyExpand(bonusDiv);
+		hoverbox.appendChild(bonusDiv);
+	}
+
+	//effects
 	for (const act of [ACTIVATION_PASSIVE, ACTIVATION_USAGE])
 	{
 		const actStr = act ? "USAGE" : "PASSIVE";
@@ -1304,7 +1371,6 @@ function addHoverboxToItem(div, it)
 				div.innerHTML = `${actStr} ${EFFECT_FLAT_PERCENT[e.type] ? '' : (e.value > 0 ? '+' : '')}<span></span>${EFFECT_FLAT_PERCENT[e.type] ? '' : ' '}${EFFECT_ITEM_POSITIVE_STRINGS[e.type]}`;
 			else
 				div.innerHTML = `${actStr} ${EFFECT_FLAT_PERCENT[e.type] ? '' : (e.value < 0 ? '-' : '')}<span></span>${EFFECT_FLAT_PERCENT[e.type] ? '' : ' '}${EFFECT_ITEM_NEGATIVE_STRINGS[e.type]}`;
-
 
 			const valStr = `${Math.abs(Math.trunc(e.value))}`;
 			const span = div.querySelector("span");
@@ -1322,26 +1388,11 @@ function addHoverboxToItem(div, it)
 																				() => {
 																					return "hoverbox text";
 																				});
-			//expand as user types
-			const input = div.querySelector("input");
-			input.addEventListener("input",	() => {
-													const span = document.createElement("span");
-													span.style.position = "absolute";
-													span.style.visibility = "hidden";
-													span.style.font = input.style.font;
-													span.style.padding = input.style.padding;
-													span.style.border = input.style.border;
-
-													span.textContent = input.value;
-													document.body.appendChild(span);
-													input.style.width = `${span.offsetWidth}px`
-													document.body.removeChild(span);
-			});
-
+			div.classList.add("highlight-darkPurple");
+			dynamicallyExpand(div);
 			hoverbox.appendChild(div);
 		}
 	}
-
 	div.appendChild(hoverbox);
 }
 

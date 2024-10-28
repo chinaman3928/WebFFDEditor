@@ -204,3 +204,31 @@ html {
   background-image: url("../img/artifacticon.png");
 	background-size: 100% 100%;
 }
+
+.highlight-lightPurple {
+  background-color: #C600FE;
+}
+
+/* .highlight-red {} */
+
+/* .highlight-green {} */
+
+/* .highlight-darkRed {} */
+
+.highlight-yellow {
+  background-color: #FEFB00;
+}
+
+.highlight-darkPurple {
+  background-color: #5F0088;
+}
+
+/* .highlight-lightBlue {} */
+
+/* .highlight-gray {} */
+
+.highlight-teal {
+  background-color: #20CF9A;
+}
+
+/* .highlight-black {} */
