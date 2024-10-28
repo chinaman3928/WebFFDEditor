@@ -1261,6 +1261,7 @@ function initBottomBar()
 
 function displayItemName(s)
 {
+	//replaces all '\n' with "<br>", all '\b...\b' with <span class="'purpletext'>...</span>
 	const build = [];
 	let prev = 0;
 	let openPurple = true;
@@ -1280,6 +1281,51 @@ function displayItemName(s)
 			{
 				build.push("<br>");
 			}
+		}
+	}
+	if (prev < s.length) build.push(s.slice(prev, i));
+	return build.join("");
+}
+
+
+function userFriendlyName(s)
+{
+	//replaces all '\n' with '\'+'n', all '\b' with '\'+'b', all '\' with '\'+'\'
+	const build = [];
+	let prev = 0;
+	let i = 0;
+	for (; i < s.length; ++i)
+	{
+		if (s[i] == '\b' || s[i] == '\n' || s[i] == '\\')
+		{
+			build.push(s.slice(prev, i));
+			prev = i + 1;
+			if (s[i] == '\b')		build.push("\\b");
+			else if (s[i] == '\n')	build.push("\\n");
+			else					build.push("\\\\");
+		}
+	}
+	if (prev < s.length) build.push(s.slice(prev, i));
+	return build.join("");
+}
+
+
+function escapeUserFriendlyName(s)
+{
+	//converse of userFriendlyName(s)
+	const build = [];
+	let prev = 0;
+	let i = 0;
+	for (; i < s.length; ++i)
+	{
+		if (s[i] == '\\' && i + 1 < s.length && (s[i + 1] == 'b' || s[i + 1] == 'n' || s[i + 1] == '\\'))
+		{
+			build.push(s.slice(prev, i));
+			prev = i + 2;
+			++i;
+			if (s[i] == 'b')	 build.push("\b");
+			else if (s[i] = 'n') build.push("\n");
+			else 				 build.push("\\");
 		}
 	}
 	if (prev < s.length) build.push(s.slice(prev, i));
@@ -1325,15 +1371,20 @@ function addHoverboxToItem(div, it)
 	//name
 	const nameDiv = document.createElement("div");
 	addEditableFieldAndHoverboxTo(nameDiv, displayItemName(it.name),	(_text, _input) => {
-																			"TODO TODO TODO";
+																			_text.innerText = userFriendlyName(it.name);
+																			_input.style.width = `${_text.offsetWidth}px`;
+																			_input.value = userFriendlyName(it.name);
 																		},
 																		(_text, _input) => {
-																			"TODO TODO TODO";
+																			const newVal = _input.value;
+																			it.name = escapeUserFriendlyName(newVal);
+																			_text.innerHTML = displayItemName(it.name);
 																		},
 																		() => {
 																			return "hoverbox text";
 																		});
     itemNameHighlight(nameDiv, it);
+	dynamicallyExpand(nameDiv);
 	hoverbox.appendChild(nameDiv);
 
 	//bonuses
