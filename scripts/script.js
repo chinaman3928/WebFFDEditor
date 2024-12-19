@@ -899,16 +899,23 @@ const PLAYER_TAB =
 
 function itemGradeRank(iconDiv, it)
 {
-	if (it.grade > GRADE_NORMAL)
-	{
-		const star = document.createElement("img");
-		star.src = "img/goldstar.png";
-		star.classList.add("grade-rank-icon");
-		star.style.height = `${32 * 10000 / (parseFloat(iconDiv.style.height) * 640)}%`;
-		iconDiv.appendChild(star);
-	}
+	const itemGradeDiv = document.createElement("div");
+	itemGradeDiv.style.cursor = "pointer";
+	itemGradeDiv.classList.add("grade-rank-icon");
+
+	const star = document.createElement("img");
+	star.src = "img/goldstar.png";
+	star.classList.add("grade-rank-icon");
+	star.style.width = "100%";
+	itemGradeDiv.appendChild(star);
+	if (it.grade == GRADE_NORMAL) star.style.opacity = "0.55";
 
 	//TODO yea but if you name an item with {ELite Legendary} it'll trick this thing into thinking ranked
+	const rank = document.createElement("img");
+	rank.src = "img/elite.png";
+	rank.style.width = "100%";
+	rank.classList.add("grade-rank-icon");
+	itemGradeDiv.appendChild(rank);
 	let the_rank = 0;
 	for (let i = 1 /*deliberate*/; i < RANK_INT_STR.length; ++i)
 		if (it.baseName.length > RANK_INT_STR[i].length && it.baseName.slice(0, RANK_INT_STR[i].length) == RANK_INT_STR[i])
@@ -916,13 +923,98 @@ function itemGradeRank(iconDiv, it)
 			the_rank = i;
 			break;
 		}
-	if (the_rank)
+	if (!the_rank) rank.style.opacity = "0.55";
+
+	itemGradeDiv.style.height = `${32 * 10000 / (parseFloat(iconDiv.style.height) * 640)}%`;
+	itemGradeDiv.style.aspectRatio = 1;
+
+	const gradeSelect = document.createElement("select");
+	gradeSelect.classList.add("hoverbox");
+	gradeSelect.innerHTML = ` 	<option value=${GRADE_NORMAL}>-</option> 
+								<option value=${GRADE_SUPERIOR}>Superior</option> 
+								<option value=${GRADE_EXCEPTIONAL}>Exceptional</option> 
+								<option value=${GRADE_FLAWLESS}>Flawless</option> `;
+	gradeSelect.value = it.grade;
+	itemGradeDiv.appendChild(gradeSelect);
+
+	itemGradeDiv.addEventListener("click", () => {gradeSelect.style.display = "block"; gradeSelect.focus();});
+	gradeSelect.addEventListener("blur", () => {gradeSelect.style.display = "none";});
+	gradeSelect.addEventListener("change", () => {handleGradeSelect(iconDiv, it, gradeSelect);});
+
+	iconDiv.appendChild(itemGradeDiv);
+}
+
+function handleGradeSelect(iconDiv, it, gradeSelect)
+{
+	const newGrade = parseInt(gradeSelect.value);
+	if (newGrade == it.grade) return;
+
+	if (newGrade == GRADE_NORMAL)
 	{
-		const rank = document.createElement("img");
-		rank.src = "img/elite.png";
-		rank.style.height = `${32 * 10000 / (parseFloat(iconDiv.style.height) * 640)}%`;
-		rank.classList.add("grade-rank-icon");
-		iconDiv.appendChild(rank);
+		removeGradeFromItemName(it);
+		iconDiv.querySelector(".item-box-name").innerHTML = displayItemName(it.name);
+		// goldstar change;
+	}
+	else
+	{
+		if (it.grade == GRADE_NORMAL) addGradeToItemName(it, newGrade);
+		else                          it.name = it.name.replace(GRADE_INT_STR[it.grade], GRADE_INT_STR[newGrade]); //TODO this is simple and dumb replacement
+		iconDiv.querySelector(".item-box-name").innerHTML = displayItemName(it.name);
+		// goldstar change;
+	}
+
+	it.grade = newGrade;
+	if (TYPE_TO_CATEGORY[ITEMS_INFO.get(it.baseName.toUpperCase()).type] == CATEGORY_WEAPON)
+	{
+		iconDiv.querySelector(".item-box-damage").innerText = innerText = `Attack Damage : ${itemMinDamage(it)} - ${itemMaxDamage(it)}`;
+	}
+	// propogate damage to character stats;
+
+}
+
+function addGradeToItemName(it, newGrade)
+//assume it.grade == GRADE_NORMAL currently
+//if can find a line containing it.baseName, prepends '\b'+gradestr+' '+'\b' onto that line
+//  else prepends '\b'+gradestr+' '+'\b' onto it.name
+{
+	const gradestr = GRADE_INT_STR[newGrade];
+	let startLine = 0;
+	for (let i = 0; i < it.name.length; ++i)
+	{
+		if (it.name[i] == '\n')
+		{
+			startLine = i + 1;
+		}
+		else if (it.name.slice(i, i + it.baseName.length) == it.baseName)
+		{
+			it.name = it.name.slice(0, startLine) + `\b${gradestr} \b` + it.name.slice(startLine);
+			return;
+		}
+	}
+	it.name = `\b${gradestr} \b` + it.name;
+}
+
+function removeGradeFromItemName(it)
+//assume it.grade > GRADE_NORMAL
+//on the first occurrence of gradestr within an open bold:
+//  remove whole bold <-> matches exactly '\b'+gradestr+' '+'\b'
+//  else just remove gradestr and keep the \b...\b
+{
+	const gradestr = GRADE_INT_STR[it.grade];
+	let prevBoldOpen = false; //open <-> true
+	for (let i = 0; i < it.name.length; ++i)
+	{
+		if (it.name[i] == '\b')
+		{
+			prevBoldOpen = !prevBoldOpen;
+		}
+		else if (prevBoldOpen && it.name.slice(i, i + gradestr.length) == gradestr)
+		{
+			it.name = (it.name[i - 1] == '\b' && it.name.slice(i + gradestr.length, i + gradestr.length + 2) == " \b") ?
+				it.name.slice(0, i - 1) + it.name.slice(i + gradestr.length + 2) :
+				it.name.slice(0, i) + it.name.slice(i + gradestr.length);
+			return;
+		}
 	}
 }
 
@@ -1363,6 +1455,19 @@ function itemNameHighlight(div, it)
 }
 
 
+function itemMinDamage(it)
+{
+	const min = ITEMS_INFO.get(it.baseName.toUpperCase()).damage[0];
+	const max = ITEMS_INFO.get(it.baseName.toUpperCase()).damage[1];
+	return min + (it.grade > GRADE_NORMAL ? Math.max(1, Math.ceil(max * GRADE_BONUS[it.grade] * 0.01)) : 0);
+}
+function itemMaxDamage(it)
+{
+	const max = ITEMS_INFO.get(it.baseName.toUpperCase()).damage[1];
+	return max + (it.grade > GRADE_NORMAL ? Math.max(1, Math.ceil(max * GRADE_BONUS[it.grade] * 0.01)) : 0);
+}
+
+
 function addHoverboxToItem(div, it)
 {
 	const hoverbox = document.createElement("div");
@@ -1370,6 +1475,7 @@ function addHoverboxToItem(div, it)
 
 	//name
 	const nameDiv = document.createElement("div");
+	nameDiv.classList.add("item-box-name");
 	addEditableFieldAndHoverboxTo(nameDiv, displayItemName(it.name),	(_text, _input) => {
 																			_text.innerText = userFriendlyName(it.name);
 																			_input.style.width = `${_text.offsetWidth}px`;
@@ -1409,6 +1515,15 @@ function addHoverboxToItem(div, it)
 		bonusDiv.classList.add("highlight-lightPurple");
 		dynamicallyExpand(bonusDiv);
 		hoverbox.appendChild(bonusDiv);
+	}
+
+	//damage range
+	if (TYPE_TO_CATEGORY[ITEMS_INFO.get(it.baseName.toUpperCase()).type] == CATEGORY_WEAPON)
+	{
+		const damageDiv = document.createElement("div");
+		damageDiv.classList.add("item-box-damage");
+		damageDiv.innerText = `Attack Damage : ${itemMinDamage(it)} - ${itemMaxDamage(it)}`;
+		hoverbox.appendChild(damageDiv);
 	}
 
 	//effects
@@ -1534,12 +1649,10 @@ function addEditableFieldAndHoverboxTo(div, initText, enterFunc, exitFunc, hover
 	div.appendChild(hoverbox);
 }
 
-//TODO text might be too large
 //TODO TODO TODO attack descriptions have effects and things too...
 //TODO TODO TODO also unarmed attacks
 function initStatsInvSkillsGold()
 {
-	//TODO WHERE LEFT OFF dont create some inv divs
 	const player_statsInvSkillGold_div = document.getElementById("player-statsInvSkillGold-tab");
 	for ([playerTabMap, map] of [[PLAYER_TAB.statsDivs, STATS_BOUNDS], [PLAYER_TAB.invDivs, INV_BOUNDS], [PLAYER_TAB.skillsGoldDivs, SKILLS_GOLD_BOUNDS]])
 	{
@@ -3280,6 +3393,7 @@ const ITEMTYPES_ARMS = new Set([14, 15, 16, 17, 18, 19, 20, 23, 24, 25, 26, 30, 
 const ATTACKSPEED_STR_INT = new Map([["SLOWEST", 0], ["SLOW", 1], ["NORMAL", 2], ["FAST", 3], ["FASTEST", 4]]);
 
 const GRADE_STR_INT = new Map([["", 0], ["SUPERIOR", 1], ["EXCEPTIONAL", 2], ["FLAWLESS", 3]]);
+const GRADE_INT_STR = ["", "Superior", "Exceptional", "Flawless"];
 
 const RANK_ITEM_RARITY_MULTIPLIER = [1.0, 5.0, 10.0];
 const RANK_POWER_MULTIPLIER = [1.0, 2.0, 4.0];
