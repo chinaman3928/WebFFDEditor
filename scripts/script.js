@@ -538,7 +538,7 @@ const FAME_NAMES = [
 	"Mythic",
 	"Immortal",
 	"Demigod",
-	"UNATTAINABLE"
+	"Unattainable"
 ];
 
 // const OG_EQUIP_SLOTS = 10;
@@ -1785,6 +1785,51 @@ function addEditableFieldAndHoverboxTo(div, initText, enterFunc, exitFunc, hover
 	div.appendChild(hoverbox);
 }
 
+
+function changeRenownAndPropagate(newVal, p, nameDiv, renownDiv, fameDiv, nextRenownDiv, skillpointsDiv)
+{
+	if (1 <= newVal && newVal <= 20 && newVal != p.fameRank)
+	{
+		const oldRenown = p.fameRank;
+		if (newVal > p.fameRank)
+		{
+			renownDiv.querySelector("span").innerText = p.fameRank = newVal;
+			nameDiv; //TODO TODO TODO need to update
+			fameDiv.querySelector(".hoverbox").innerText = fameDiv.querySelector("span").innerText = p.fame = FAME_GATE[p.fameRank - 1];
+			nextRenownDiv.innerText = FAME_GATE[p.fameRank];
+			skillpointsDiv.querySelector("span").innerText = (p.unusedSkillPoints += 4 * (newVal - oldRenown));
+		}
+		else
+		{
+			//uh oh - how are you going to deal with negative skillpoints?
+		}
+
+		//TODO PROPAGATE to requirements
+	}
+}
+function changeFameAndPropagate(newVal, p, nameDiv, renownDiv, fameDiv, nextRenownDiv, skillpointsDiv)
+{
+	if (newVal >= 0 && newVal != p.fame)
+	{
+		const oldRenown = p.fameRank;
+		if (newVal > p.fame)
+		{
+			fameDiv.querySelector("span").innerText = p.fame = newVal;
+			while(p.fameRank < 20 && p.fame >= FAME_GATE[p.fameRank]) ++p.fameRank;
+			renownDiv.querySelector(".hoverbox").innerText = renownDiv.querySelector("span").innerText = p.fameRank;
+			nameDiv; //TODO TODO TODO need to update
+			nextRenownDiv.innerText = FAME_GATE[p.fameRank];
+			skillpointsDiv.querySelector("span").innerText = (p.unusedSkillPoints += 4 * (p.fameRank - oldRenown));
+		}
+		else
+		{
+
+		}
+
+		//TODO PROPAGATE to requirements
+	}
+}
+
 //TODO TODO TODO attack descriptions have effects and things too...
 //TODO TODO TODO also unarmed attacks
 function initStatsInvSkillsGold()
@@ -1804,6 +1849,7 @@ function initStatsInvSkillsGold()
 
 	computeEquippedEffects();
 	computeCharacterEffects();
+	//REQUIREMENTS - should probably pull into its own function
 	//because i cant do this before computing everything woops
 	for (let reqDiv of player_statsInvSkillGold_div.querySelectorAll(".item-box-req"))
 	{
@@ -1837,8 +1883,8 @@ function initStatsInvSkillsGold()
 	PLAYER_TAB.statsDivs.get("LEVEL").innerText = p.level;
 	PLAYER_TAB.statsDivs.get("EXPERIENCE").innerText = p.experience;
 	PLAYER_TAB.statsDivs.get("NEXT_LEVEL").innerText = charExperienceGate(p);
-	PLAYER_TAB.statsDivs.get("RENOWN").innerText = p.fameRank;
-	PLAYER_TAB.statsDivs.get("FAME").innerText = p.fame;
+	// PLAYER_TAB.statsDivs.get("RENOWN").innerText = p.fameRank;
+	// PLAYER_TAB.statsDivs.get("FAME").innerText = p.fame;
 	PLAYER_TAB.statsDivs.get("NEXT_RENOWN").innerText = charFameGate(p);
 	PLAYER_TAB.statsDivs.get("STRENGTH_STR").innerText = "Strength";
 	PLAYER_TAB.statsDivs.get("DEXTERITY_STR").innerText = "Dexterity";
@@ -1853,6 +1899,28 @@ function initStatsInvSkillsGold()
 	PLAYER_TAB.statsDivs.get("LIFE_STR").innerText = "Life";
 	PLAYER_TAB.statsDivs.get("STAMINA_STR").innerText = "Stamina";
 	PLAYER_TAB.statsDivs.get("MANA_STR").innerText = "Mana";
+
+	//renown and fame
+	//really you could let them increase and decrease arbitrariyl, but for now happy increase case
+	addEditableFieldAndHoverboxTo(PLAYER_TAB.statsDivs.get("RENOWN"),	p.fameRank,
+																		(_text, _input) => {
+																			_input.value = p.fameRank;
+																		},
+																		(_text, _input) => {
+																			const newVal = parseInt(_input.value.trim());
+																			changeRenownAndPropagate(newVal, p, PLAYER_TAB.statsDivs.get("NAME"), PLAYER_TAB.statsDivs.get("RENOWN"), PLAYER_TAB.statsDivs.get("FAME"), PLAYER_TAB.statsDivs.get("NEXT_RENOWN"), PLAYER_TAB.skillsGoldDivs.get("POINTS"));
+																		},
+																		() => {return `${p.fameRank}`;});
+	addEditableFieldAndHoverboxTo(PLAYER_TAB.statsDivs.get("FAME"),	p.fame,
+																	(_text, _input) => {
+																		_input.value = p.fame;
+																	},
+																	(_text, _input) => {
+																		const newVal = parseInt(_input.value.trim());
+																		changeFameAndPropagate(newVal, p, PLAYER_TAB.statsDivs.get("NAME"), PLAYER_TAB.statsDivs.get("RENOWN"), PLAYER_TAB.statsDivs.get("FAME"), PLAYER_TAB.statsDivs.get("NEXT_RENOWN"), PLAYER_TAB.skillsGoldDivs.get("POINTS"));
+																	},
+																	() => {return `${p.fame}`;})
+
 
 	for (const [div, func, attr, perc, flat] of [	["STRENGTH",	charStrength,	"strength",		EFFECT_PERCENT_STRENGTH,	EFFECT_STRENGTH],
 													["DEXTERITY",	charDexterity,	"dexterity",	EFFECT_PERCENT_DEXTERITY,	EFFECT_DEXTERITY],
