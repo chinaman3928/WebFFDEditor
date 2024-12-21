@@ -210,9 +210,13 @@ html {
   background-color: #C600FE;
 }
 
-/* .highlight-red {} */
+.highlight-red {
+  background-color: #EE0000;
+}
 
-/* .highlight-green {} */
+.highlight-green {
+  background-color: #00CE4D;
+}
 
 /* .highlight-darkRed {} */
 

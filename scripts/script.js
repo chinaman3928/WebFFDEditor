@@ -758,6 +758,62 @@ const QUEST_MASTERQUEST = 6;
 const QUEST_ALL = 7;
 
 
+const STAT_STRENGTH = 0;
+const STAT_DEXTERITY = 1;
+const STAT_VITALITY = 2;
+const STAT_MAGIC = 3;
+const STAT_LEVEL = 4;
+const STAT_RENOWN = 5;
+const STAT_LINEAGE = 6;
+const STAT_SKILL_SWORD = 7;
+const STAT_SKILL_CLUB = 8;
+const STAT_SKILL_HAMMER = 9;
+const STAT_SKILL_AXE = 10;
+const STAT_SKILL_SPEAR = 11;
+const STAT_SKILL_STAFF = 12;
+const STAT_SKILL_POLEARM = 13;
+const STAT_SKILL_BOW = 14;
+const STAT_SKILL_CRITICALSTRIKE = 15;
+const STAT_SKILL_SPELLCASTING = 16;
+const STAT_SKILL_DUALWIELD = 17;
+const STAT_SKILL_SHIELD = 18;
+const STAT_SKILL_ATTACKMAGIC = 19;
+const STAT_SKILL_DEFENSEMAGIC = 20;
+const STAT_SKILL_CHARMMAGIC = 21;
+const STAT_ALL = 22;
+
+const STAT_STR_INT = new Map([
+	["STRENGTH", 0], ["DEXTERITY", 1], ["VITALITY", 2], ["MAGIC", 3], ["LEVEL", 4], ["RENOWN", 5], ["LINEAGE", 6], ["SKILLSWORD", 7], 
+	["SKILLCLUB", 8], ["SKILLHAMMER", 9], ["SKILLAXE", 10], ["SKILLSPEAR", 11], ["SKILLSTAFF", 12], ["SKILLPOLEARM", 13], ["SKILLBOW", 14], 
+	["SKILLCRITICALSTRIKE", 15], ["SKILLSPELLCASTING", 16], ["SKILLDUALWIELD", 17], ["SKILLSHIELD", 18], ["SKILLATTACKMAGIC", 19], ["SKILLDEFENSEMAGIC", 20], ["SKILLCHARMMAGIC", 21]
+]);
+
+const STAT_INT_STR = [
+	"Strength",
+	"Dexterity",
+    "Vitality",
+    "Magic",
+    "Level",
+    "Renown",
+    "Lineage",
+    "Sword Skill",
+    "Club & Mace Skill",
+    "Hammer Skill",
+    "Axe Skill",
+    "Spear Skill",
+    "Staff Skill",
+	"Polearm Skill",
+    "Bow & Crossbow Skill",
+    "Critical Strike Skill",
+    "Spell Casting Skill",
+    "Dual-Wielding Skill",
+    "Shield Battle Skill",
+    "Attack Magic Skill",
+    "Defense Magic Skill",
+    "Charm Magic Skill"
+];
+
+
 //left top right bottom
 const STATS_BOUNDS = new Map([["NAME", [94, 56, 414, 92]], ["LEVEL", [55, 123, 139, 158]], ["EXPERIENCE", [158, 123, 298, 158]],
 	["NEXT_LEVEL", [317, 123, 455, 158]], ["RENOWN", [55, 189, 139, 224]], ["FAME", [158, 189, 298, 224]], ["NEXT_RENOWN", [317, 189, 455, 224]],
@@ -964,12 +1020,18 @@ function handleGradeSelect(iconDiv, it, gradeSelect)
 	}
 
 	it.grade = newGrade;
-	if (TYPE_TO_CATEGORY[ITEMS_INFO.get(it.baseName.toUpperCase()).type] == CATEGORY_WEAPON)
+
+	// updating damage / defense / ...
+	switch (TYPE_TO_CATEGORY[ITEMS_INFO.get(it.baseName.toUpperCase()).type])
 	{
-		iconDiv.querySelector(".item-box-damage").innerText = innerText = `Attack Damage : ${itemMinDamage(it)} - ${itemMaxDamage(it)}`;
+		case CATEGORY_WEAPON:
+			iconDiv.querySelector(".item-box-damage").innerText = innerText = `Attack Damage : ${weaponMinDamage(it)} - ${weaponMaxDamage(it)}`;
+			break;
+		case CATEGORY_ARMOR:
+			iconDiv.querySelector(".item-box-defense").innerText = innerText = `Defense : ${armorDefense(it)}`;
+			break;
 	}
 	// propogate damage to character stats;
-
 }
 
 function addGradeToItemName(it, newGrade)
@@ -1455,16 +1517,22 @@ function itemNameHighlight(div, it)
 }
 
 
-function itemMinDamage(it)
+function weaponMinDamage(it)
 {
 	const min = ITEMS_INFO.get(it.baseName.toUpperCase()).damage[0];
 	const max = ITEMS_INFO.get(it.baseName.toUpperCase()).damage[1];
 	return min + (it.grade > GRADE_NORMAL ? Math.max(1, Math.ceil(max * GRADE_BONUS[it.grade] * 0.01)) : 0);
 }
-function itemMaxDamage(it)
+function weaponMaxDamage(it)
 {
 	const max = ITEMS_INFO.get(it.baseName.toUpperCase()).damage[1];
 	return max + (it.grade > GRADE_NORMAL ? Math.max(1, Math.ceil(max * GRADE_BONUS[it.grade] * 0.01)) : 0);
+}
+
+function armorDefense(it)
+{
+	const beforeBonus = it.grade > GRADE_NORMAL ? ITEMS_INFO.get(it.baseName.toUpperCase()).armor[1] : it.armorBonus;
+	return beforeBonus + (it.grade > GRADE_NORMAL ? Math.max(1, Math.ceil(beforeBonus * GRADE_BONUS[it.grade] * 0.01)) : 0);
 }
 
 
@@ -1517,13 +1585,23 @@ function addHoverboxToItem(div, it)
 		hoverbox.appendChild(bonusDiv);
 	}
 
-	//damage range
-	if (TYPE_TO_CATEGORY[ITEMS_INFO.get(it.baseName.toUpperCase()).type] == CATEGORY_WEAPON)
+	//damage / defense / ...
+	const itType = ITEMS_INFO.get(it.baseName.toUpperCase()).type;
+	const itCategory = TYPE_TO_CATEGORY[itType]; 
+	switch (itCategory)
 	{
-		const damageDiv = document.createElement("div");
-		damageDiv.classList.add("item-box-damage");
-		damageDiv.innerText = `Attack Damage : ${itemMinDamage(it)} - ${itemMaxDamage(it)}`;
-		hoverbox.appendChild(damageDiv);
+		case CATEGORY_WEAPON:
+			const damageDiv = document.createElement("div");
+			damageDiv.classList.add("item-box-damage");
+			damageDiv.innerText = `Attack Damage : ${weaponMinDamage(it)} - ${weaponMaxDamage(it)}`;
+			hoverbox.appendChild(damageDiv);
+			break;
+		case CATEGORY_ARMOR:
+			const defenseDiv = document.createElement("div");
+			defenseDiv.classList.add("item-box-defense");
+			defenseDiv.innerText = `Defense : ${armorDefense(it)}`;
+			hoverbox.appendChild(defenseDiv);
+			break;
 	}
 
 	//effects
@@ -1549,7 +1627,8 @@ function addHoverboxToItem(div, it)
 																					const newVal = _input.value.trim();
 																					e.value = parseFloat(newVal);
 																					_text.innerText = `${Math.abs(Math.trunc(e.value))}`;
-																					//TODO WHERE LEFT OFF need to change the entire line, not just the span								
+																					//TODO WHERE LEFT OFF need to change the entire line, not just the span		
+																					//ALSO NEED TO UPDATE EVERYWHERE (LIKE IN STATS)						
 																				},
 																				() => {
 																					return "hoverbox text";
@@ -1559,7 +1638,64 @@ function addHoverboxToItem(div, it)
 			hoverbox.appendChild(div);
 		}
 	}
+
+	// RELIES ON COMPUTNG EFFECTS, but this function occurrs in that function! moved out to after computeEquippedEffects() and computeCharacterEffects()
+	//requirements
+	const requireStats = ITEMS_INFO.get(it.baseName.toUpperCase()).requireStats;
+	const requireVals = ITEMS_INFO.get(it.baseName.toUpperCase()).requireVals;
+	for (let i = 0; i < requireStats.length; ++i)
+	{
+		const reqDiv = document.createElement("div");
+		reqDiv.classList.add("item-box-req");
+		reqDiv.itemBoxReq_stat = requireStats[i];
+		reqDiv.itemBoxReq_val = requireVals[i];
+		reqDiv.itemBoxReq_type = itType;
+		hoverbox.appendChild(reqDiv);
+	}
+
 	div.appendChild(hoverbox);
+}
+
+//TODO TODO TODO but i wonder if there is more consistency when the game actually decides whether you can equip
+//dont shoot the translator: the ingame item hover func only passes allowReduce = type != TYPE_SPELL
+//and also, the ingame item hover func doesnt say lineage cant be reduced, but this func says it cant 
+function meetsRequirements(p, stat, val, allowReduce)
+{
+	if (allowReduce && stat != STAT_RENOWN & stat != STAT_LINEAGE)
+	{
+		const redreq = Math.min(75, charNetEffect(p, EFFECT_PERCENT_ITEM_REQUIREMENTS));
+		val = Math.trunc(val - val * redreq * 0.01);
+	}
+
+	if (stat > STAT_LINEAGE)
+	{
+		if (charNetSkill(p, stat - STAT_SKILL_SWORD) < val) return false;
+	}
+	else switch (stat)
+	{
+		case STAT_STRENGTH:
+			if (charStrength(p) < val)	return false;
+			break;
+		case STAT_DEXTERITY:
+			if (charDexterity(p) < val) return false;
+			break;
+		case STAT_VITALITY:
+			if (charVitality(p) < val) 	return false;
+			break;
+		case STAT_MAGIC:
+			if (charMagic(p) < val) 	return false;
+			break;
+		case STAT_LEVEL:
+			if (p.level < val) 			return false;
+			break;
+		case STAT_RENOWN:
+			if (p.fameRank < val) 		return false;
+			break;
+		case STAT_LINEAGE:
+			if (p.lineage < val) 		return false;
+			break;
+	}
+	return true;
 }
 
 
@@ -1668,6 +1804,29 @@ function initStatsInvSkillsGold()
 
 	computeEquippedEffects();
 	computeCharacterEffects();
+	//because i cant do this before computing everything woops
+	for (let reqDiv of player_statsInvSkillGold_div.querySelectorAll(".item-box-req"))
+	{
+		let val = reqDiv.itemBoxReq_val;
+		const itCategory = TYPE_TO_CATEGORY[reqDiv.itemBoxReq_type]; 
+		if (itCategory == CATEGORY_WEAPON || itCategory == CATEGORY_ARMOR || itCategory == CATEGORY_JEWELRY)
+		{
+			const redreq = Math.min(75, charNetEffect(robj.player, EFFECT_PERCENT_ITEM_REQUIREMENTS));
+			if (reqDiv.itemBoxReq_stat != STAT_RENOWN) val = Math.trunc(val - val * redreq * 0.01);
+		}
+
+		if (reqDiv.itemBoxReq_stat == STAT_RENOWN)
+			reqDiv.innerText = `Requires Renown of ${FAME_NAMES[val]}`;
+		else if (reqDiv.itemBoxReq_stat == STAT_LEVEL)
+			reqDiv.innerText = `Requires Level ${val}`;
+		else
+			reqDiv.innerText = `Requires ${val} ${STAT_INT_STR[reqDiv.itemBoxReq_stat]}`;
+
+		if (meetsRequirements(robj.player, reqDiv.itemBoxReq_stat, reqDiv.itemBoxReq_val, reqDiv.itemBoxReq_type != TYPE_SPELL))
+			reqDiv.classList.add("highlight-green");
+		else
+			reqDiv.classList.add("highlight-red");
+	}
 	
 	//TODO but consider that the displayed number might not be whats used in game
 	//TODO there is a petstatsmenu.cpp, how is that different? how about other monsters?
@@ -3395,6 +3554,7 @@ const ATTACKSPEED_STR_INT = new Map([["SLOWEST", 0], ["SLOW", 1], ["NORMAL", 2],
 const GRADE_STR_INT = new Map([["", 0], ["SUPERIOR", 1], ["EXCEPTIONAL", 2], ["FLAWLESS", 3]]);
 const GRADE_INT_STR = ["", "Superior", "Exceptional", "Flawless"];
 
+const RANK_REQS_MULTIPLIER = [1.0, 1.5, 2.0];
 const RANK_ITEM_RARITY_MULTIPLIER = [1.0, 5.0, 10.0];
 const RANK_POWER_MULTIPLIER = [1.0, 2.0, 4.0];
 const RANK_LEVEL_OFFSET = [0, 12, 30];
@@ -3419,7 +3579,8 @@ function defaultizeItemTemplate(it)
 	if (it.toHitBonus === undefined)		it.toHitBonus = 0;
 	if (it.sockets === undefined)			it.sockets = 0;
 	if (it.speed === undefined)				it.speed = ATTACKSPEED_STR_INT.get("NORMAL");
-	if (it.requires === undefined)			it.requires = [];
+											// it.requireStats; dont defaultize; use it directly
+											// it.requireVals;  dont defaultize; use it directly
 	if (it.grade === undefined)				it.grade = GRADE_STR_INT.get("");
 	if (it.icon === undefined)				it.icon = "";
 	if (it.iconWidth === undefined)			it.iconWidth = INV_SLOT_SIZE;
@@ -3446,7 +3607,8 @@ function undefineItemTemplate(it)
 	it.toHitBonus = undefined;			
 	it.sockets = undefined;				
 	it.speed = undefined;				
-	it.requires = undefined;
+	it.requireStats = [];
+	it.requireVals = [];
 	it.grade = undefined;				
 	it.icon = undefined;		
 	it.iconWidth = undefined;
@@ -3488,6 +3650,9 @@ function addTemplateItem(it)
 			it2.damage[0] = it2.damage[0] * RANK_POWER_MULTIPLIER[rank];
 			it2.damage[1] = it2.damage[1] * RANK_POWER_MULTIPLIER[rank];
 		}
+
+		for (let i = 0; i < it2.requireVals.length; ++i)
+			it2.requireVals[i] = Math.trunc(it2.requireVals[i] * RANK_REQS_MULTIPLIER[rank]);
 
 		if (it2.rarity !== undefined)
 			it2.rarity = it2.rarity < 1000 ? Math.min(999, it2.rarity * RANK_ITEM_RARITY_MULTIPLIER[rank]) : it2.rarity;
@@ -3561,7 +3726,8 @@ async function parseItemsDat(datFile)
 		toHitBonus: undefined,			//0
 		sockets: undefined,				//0
 		speed: undefined,				//KAttackNormal
-		requires: undefined,
+		requireStats: [],
+		requireVals: [],
 		grade: undefined,				//KGradeNormal
 		icon: undefined,				//""
 		unique: undefined,				//false
@@ -3634,7 +3800,19 @@ async function parseItemsDat(datFile)
 				const upper = tokens[1].toUpperCase();
 				it.speed = ATTACKSPEED_STR_INT.has(upper) ? ATTACKSPEED_STR_INT.get(upper) : ATTACKSPEED_STR_INT.get("NORMAL");
 			}
-			//TODO requires...
+			else if (tokens[0].slice(1, -1) == "REQUIRES")
+			{
+				if (tokens.length < 3)
+				{
+					ERR_MSGS.push(`items.dat: The line before ${i} has too few tokens (Which? For your security I can't know).`);
+					return;
+				}
+				const stat =  STAT_STR_INT.has(tokens[1].toUpperCase()) ? STAT_STR_INT.get(tokens[1].toUpperCase()) : 0;
+				const val = parseInt(tokens[2], 10);// * RANK_REQS_MULTIPLIER[__THERANK]; 
+				it.requireStats.push(stat);
+				it.requireVals.push(val);
+
+			}
 			else if (it.grade === undefined && tokens[0].slice(1, -1) == "GRADE")
 			{
 				const upper = tokens[1].toUpperCase();
@@ -3659,7 +3837,7 @@ async function parseItemsDat(datFile)
 				it.rarity = parseInt(tokens[1], 10);
 			else if (it.fishingRarity === undefined && tokens[0].slice(1, -1) == "FISHING_RARITY")
 				it.fishingRarity = parseInt(tokens[1], 10);
-			else if (it.minimumDepth === undefined && tokens[0].slice(1, -1) == "MINIMUM_DEPTH")
+			else if (it.minimumDepth === undefined && tokens[0].slice(1, -1) == "MINIMUM_DEPTH") //TODO also spills into reqs
 				it.minimumDepth = parseInt(tokens[1], 10);
 			else if (it.maximumDepth === undefined && tokens[0].slice(1, -1) == "MAXIMUM_DEPTH")
 				it.maximumDepth = parseInt(tokens[1], 10);
