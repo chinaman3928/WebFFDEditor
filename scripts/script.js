@@ -538,7 +538,7 @@ const FAME_NAMES = [
 	"Mythic",
 	"Immortal",
 	"Demigod",
-	"Unattainable"
+	"UNATTAINABLE"
 ];
 
 // const OG_EQUIP_SLOTS = 10;
@@ -3672,13 +3672,15 @@ function addTemplateItem(it)
 
 			if (rank == 2)
 			{
-				const renown = Math.max(0, Math.min(10, Math.trunc((it2.minimumDepth + 15) / 7))) + 9;
-				//TODO add renown req
+				const renown = Math.min(Math.max(0, Math.min(10, Math.trunc((it2.minimumDepth - 15) / 7))) + 9);
+				it2.requireStats.push(STAT_RENOWN);
+				it2.requireVals.push(renown);
 			}
 			else if (rank == 1)
 			{
-				const renown = Math.max(0, Math.min(10, Math.trunc((it2.minimumDepth - 3) / 10)) + 4);
-				//TODO add renown req
+				const renown = Math.min(20, Math.max(0, Math.min(10, Math.trunc((it2.minimumDepth - 15) / 10)) + 4));
+				it2.requireStats.push(STAT_RENOWN);
+				it2.requireVals.push(renown);
 			}
 		}
 
