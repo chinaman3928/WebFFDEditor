@@ -955,25 +955,24 @@ const PLAYER_TAB =
 };
 
 
-function itemGradeRank(iconDiv, it)
+function itemGradeRank(iconDiv, it, graderankDiv, hoverbox)
 {
-	const itemGradeDiv = document.createElement("div");
-	itemGradeDiv.style.cursor = "pointer";
-	itemGradeDiv.classList.add("grade-rank-icon");
+	graderankDiv.style.cursor = "pointer";
+	graderankDiv.classList.add("grade-rank-icon");
 
 	const star = document.createElement("img");
 	star.src = "img/goldstar.png";
 	star.classList.add("grade-rank-icon");
 	star.style.width = "100%";
-	itemGradeDiv.appendChild(star);
-	if (it.grade == GRADE_NORMAL) star.style.opacity = "0.55";
+	graderankDiv.appendChild(star);
+	if (it.grade == GRADE_NORMAL) star.classList.add("graderank-transparent");
 
 	//TODO yea but if you name an item with {ELite Legendary} it'll trick this thing into thinking ranked
 	const rank = document.createElement("img");
 	rank.src = "img/elite.png";
 	rank.style.width = "100%";
 	rank.classList.add("grade-rank-icon");
-	itemGradeDiv.appendChild(rank);
+	graderankDiv.appendChild(rank);
 	let the_rank = 0;
 	for (let i = 1 /*deliberate*/; i < RANK_INT_STR.length; ++i)
 		if (it.baseName.length > RANK_INT_STR[i].length && it.baseName.slice(0, RANK_INT_STR[i].length) == RANK_INT_STR[i])
@@ -981,10 +980,10 @@ function itemGradeRank(iconDiv, it)
 			the_rank = i;
 			break;
 		}
-	if (!the_rank) rank.style.opacity = "0.55";
+	if (!the_rank) rank.classList.add("graderank-transparent");
 
-	itemGradeDiv.style.height = `${32 * 10000 / (parseFloat(iconDiv.style.height) * 640)}%`;
-	itemGradeDiv.style.aspectRatio = 1;
+	graderankDiv.style.height = `${32 * 10000 / (parseFloat(iconDiv.style.height) * 640)}%`;
+	graderankDiv.style.aspectRatio = 1;
 
 	const gradeSelect = document.createElement("select");
 	gradeSelect.classList.add("hoverbox");
@@ -993,16 +992,16 @@ function itemGradeRank(iconDiv, it)
 								<option value=${GRADE_EXCEPTIONAL}>Exceptional</option> 
 								<option value=${GRADE_FLAWLESS}>Flawless</option> `;
 	gradeSelect.value = it.grade;
-	itemGradeDiv.appendChild(gradeSelect);
+	graderankDiv.appendChild(gradeSelect);
 
-	itemGradeDiv.addEventListener("click", () => {gradeSelect.style.display = "block"; gradeSelect.focus();});
-	gradeSelect.addEventListener("blur", () => {gradeSelect.style.display = "none";});
-	gradeSelect.addEventListener("change", () => {handleGradeSelect(iconDiv, it, gradeSelect);});
+	graderankDiv.addEventListener("click", () => {gradeSelect.style.display = "block"; gradeSelect.focus(); graderankDiv.classList.add(graderankDiv.classList.contains("lock") ? "lock2" : "lock"); hoverbox.classList.add(hoverbox.classList.contains("lock") ? "lock2" : "lock");});
+	gradeSelect.addEventListener("blur", () => {gradeSelect.style.display = "none"; graderankDiv.classList.remove(graderankDiv.classList.contains("lock2") ? "lock2" : "lock"); hoverbox.classList.remove(hoverbox.classList.contains("lock2") ? "lock2" : "lock");});
+	gradeSelect.addEventListener("change", () => {handleGradeSelect(iconDiv, it, gradeSelect, star);});
 
-	iconDiv.appendChild(itemGradeDiv);
+	iconDiv.appendChild(graderankDiv);
 }
 
-function handleGradeSelect(iconDiv, it, gradeSelect)
+function handleGradeSelect(iconDiv, it, gradeSelect, star)
 {
 	const newGrade = parseInt(gradeSelect.value);
 	if (newGrade == it.grade) return;
@@ -1010,15 +1009,15 @@ function handleGradeSelect(iconDiv, it, gradeSelect)
 	if (newGrade == GRADE_NORMAL)
 	{
 		removeGradeFromItemName(it);
-		iconDiv.querySelector(".item-box-name").innerHTML = displayItemName(it.name);
-		// goldstar change;
+		iconDiv.querySelector(".item-box-name").querySelector("span").innerHTML = displayItemName(it.name);
+		star.classList.add("graderank-transparent");
 	}
 	else
 	{
 		if (it.grade == GRADE_NORMAL) addGradeToItemName(it, newGrade);
 		else                          it.name = it.name.replace(GRADE_INT_STR[it.grade], GRADE_INT_STR[newGrade]); //TODO this is simple and dumb replacement
-		iconDiv.querySelector(".item-box-name").innerHTML = displayItemName(it.name);
-		// goldstar change;
+		iconDiv.querySelector(".item-box-name").querySelector("span").innerHTML = displayItemName(it.name);
+		star.classList.remove("graderank-transparent");
 	}
 
 	it.grade = newGrade;
@@ -1131,9 +1130,12 @@ function computeEquippedEffects()
 			icon.classList.add("center-contained");
 			iconDiv.appendChild(icon);
 
-			itemGradeRank(iconDiv, it);
 			itemHaze(iconDiv, it);
-			addHoverboxToItem(iconDiv, it);
+
+			const graderankDiv = document.createElement("div");
+			const hoverbox = document.createElement("div");
+			itemGradeRank(iconDiv, it, graderankDiv, hoverbox);
+			addHoverboxToItem(iconDiv, it, graderankDiv, hoverbox);
 		}
 		else
 		{
@@ -1157,9 +1159,12 @@ function computeEquippedEffects()
 			document.getElementById("player-statsInvSkillGold-tab").appendChild(iconDiv);
 			PLAYER_TAB.invDivs.set(it.slotIndex, iconDiv);
 
-			itemGradeRank(iconDiv, it);
 			itemHaze(iconDiv, it);
-			addHoverboxToItem(iconDiv, it);
+
+			const graderankDiv = document.createElement("div");
+			const hoverbox = document.createElement("div");
+			itemGradeRank(iconDiv, it, graderankDiv, hoverbox);
+			addHoverboxToItem(iconDiv, it, graderankDiv, hoverbox);
 		}
 	}
 }
@@ -1538,9 +1543,8 @@ function armorDefense(it)
 }
 
 
-function addHoverboxToItem(div, it)
+function addHoverboxToItem(div, it, graderankDiv, hoverbox)
 {
-	const hoverbox = document.createElement("div");
 	hoverbox.classList.add("hoverbox");
 
 	//name
@@ -1551,12 +1555,14 @@ function addHoverboxToItem(div, it)
 																			_input.style.width = `${_text.offsetWidth}px`;
 																			_input.value = userFriendlyName(it.name);
 																			hoverbox.classList.add(hoverbox.classList.contains("lock") ? "lock2" : "lock");
+																			graderankDiv.classList.add(graderankDiv.classList.contains("lock") ? "lock2" : "lock");
 																		},
 																		(_text, _input) => {
 																			const newVal = _input.value;
 																			it.name = escapeUserFriendlyName(newVal);
 																			_text.innerHTML = displayItemName(it.name);
 																			hoverbox.classList.remove(hoverbox.classList.contains("lock2") ? "lock2" : "lock");
+																			graderankDiv.classList.remove(graderankDiv.classList.contains("lock2") ? "lock2" : "lock");
 																		},
 																		() => {
 																			return "hoverbox text";
@@ -1576,12 +1582,14 @@ function addHoverboxToItem(div, it)
 																		_input.style.width = `${_text.offsetWidth}px`;
 																		_input.value = it.damageBonusValue[i];
 																		hoverbox.classList.add(hoverbox.classList.contains("lock") ? "lock2" : "lock");
+																		graderankDiv.classList.add(graderankDiv.classList.contains("lock") ? "lock2" : "lock");
 																	},
 																	(_text, _input) => {
 																		const newVal = _input.value.trim();
 																		it.damageBonusValue[i] = parseInt(newVal);
 																		_text.innerText = it.damageBonusValue[i];
 																		hoverbox.classList.remove(hoverbox.classList.contains("lock2") ? "lock2" : "lock");
+																		graderankDiv.classList.remove(graderankDiv.classList.contains("lock2") ? "lock2" : "lock");
 																	},
 																	() => {
 																		return "hoverbox text";
@@ -1630,6 +1638,7 @@ function addHoverboxToItem(div, it)
 																					_input.value = e.value;
 																					console.log("adding lock" + DEBUGCNTR++);
 																					hoverbox.classList.add(hoverbox.classList.contains("lock") ? "lock2" : "lock");
+																					graderankDiv.classList.add(graderankDiv.classList.contains("lock") ? "lock2" : "lock");
 																				},
 																				(_text, _input) => {
 																					const newVal = _input.value.trim();
@@ -1637,6 +1646,7 @@ function addHoverboxToItem(div, it)
 																					_text.innerText = `${Math.abs(Math.trunc(e.value))}`;
 																					console.log("removing lock" + DEBUGCNTR++)
 																					hoverbox.classList.remove(hoverbox.classList.contains("lock2") ? "lock2" : "lock");
+																					graderankDiv.classList.remove(graderankDiv.classList.contains("lock2") ? "lock2" : "lock");
 																					//TODO WHERE LEFT OFF need to change the entire line, not just the span		
 																					//ALSO NEED TO UPDATE EVERYWHERE (LIKE IN STATS)						
 																				},

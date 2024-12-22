@@ -146,6 +146,22 @@ html {
   color: #BD8AFF;
 }
 
+.lock .graderank-transparent {
+  display: block;
+}
+
+.center-container:hover .graderank-transparent {
+  display: block;
+}
+
+.graderank-transparent {
+  opacity: 0.5;
+  display: none;
+}
+/* .graderank-opaque {
+  
+} */
+
 .hoverbox {
   display: none;
   position: absolute;
