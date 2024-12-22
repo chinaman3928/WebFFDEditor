@@ -162,6 +162,10 @@ html {
   z-index: 10;
 }
 
+.lock {
+  display: block;
+}
+
 .center-container:hover > .hoverbox {
   display: block;
 }

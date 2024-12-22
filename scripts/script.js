@@ -1,3 +1,5 @@
+DEBUGCNTR = 0
+
 //TODO xArray() uses platform endianness, cant force to little
 //TODO aha! but dont force it to little in fact, you should do an endianness check and use accordingly
 // but for now i will assume little endian
@@ -1548,11 +1550,13 @@ function addHoverboxToItem(div, it)
 																			_text.innerText = userFriendlyName(it.name);
 																			_input.style.width = `${_text.offsetWidth}px`;
 																			_input.value = userFriendlyName(it.name);
+																			hoverbox.classList.add(hoverbox.classList.contains("lock") ? "lock2" : "lock");
 																		},
 																		(_text, _input) => {
 																			const newVal = _input.value;
 																			it.name = escapeUserFriendlyName(newVal);
 																			_text.innerHTML = displayItemName(it.name);
+																			hoverbox.classList.remove(hoverbox.classList.contains("lock2") ? "lock2" : "lock");
 																		},
 																		() => {
 																			return "hoverbox text";
@@ -1571,11 +1575,13 @@ function addHoverboxToItem(div, it)
 		addEditableFieldAndHoverboxTo(span, it.damageBonusValue[i], (_text, _input) => {
 																		_input.style.width = `${_text.offsetWidth}px`;
 																		_input.value = it.damageBonusValue[i];
+																		hoverbox.classList.add(hoverbox.classList.contains("lock") ? "lock2" : "lock");
 																	},
 																	(_text, _input) => {
 																		const newVal = _input.value.trim();
 																		it.damageBonusValue[i] = parseInt(newVal);
 																		_text.innerText = it.damageBonusValue[i];
+																		hoverbox.classList.remove(hoverbox.classList.contains("lock2") ? "lock2" : "lock");
 																	},
 																	() => {
 																		return "hoverbox text";
@@ -1622,11 +1628,15 @@ function addHoverboxToItem(div, it)
 			addEditableFieldAndHoverboxTo(div.querySelector("span"), valStr,	(_text, _input) => {
 																					_input.style.width = `${_text.offsetWidth}px`;
 																					_input.value = e.value;
+																					console.log("adding lock" + DEBUGCNTR++);
+																					hoverbox.classList.add(hoverbox.classList.contains("lock") ? "lock2" : "lock");
 																				},
 																				(_text, _input) => {
 																					const newVal = _input.value.trim();
 																					e.value = parseFloat(newVal);
 																					_text.innerText = `${Math.abs(Math.trunc(e.value))}`;
+																					console.log("removing lock" + DEBUGCNTR++)
+																					hoverbox.classList.remove(hoverbox.classList.contains("lock2") ? "lock2" : "lock");
 																					//TODO WHERE LEFT OFF need to change the entire line, not just the span		
 																					//ALSO NEED TO UPDATE EVERYWHERE (LIKE IN STATS)						
 																				},
@@ -1732,7 +1742,8 @@ function addEditableFieldAndHoverboxTo(div, initText, enterFunc, exitFunc, hover
 	hoverbox.innerText = hoverboxFunc();
 
 	function enterFuncGenerator(enterFunc) {
-		return () => {
+		return (e) => {
+			e.preventDefault(); //otherwise, triggers a blur on the input and it never appears
 			enterFunc(text, input);
 			text.hidden = true;
 			input.hidden = false;
@@ -1771,7 +1782,7 @@ function addEditableFieldAndHoverboxTo(div, initText, enterFunc, exitFunc, hover
 		};
 	}
 
-	text.addEventListener("click", enterFuncGenerator(enterFunc));
+	text.addEventListener("mousedown", enterFuncGenerator(enterFunc));
 	input.addEventListener("keydown", (e) => {
 		if (e.key === "Enter" || e.key === "Escape") { //TODO escape should exit
 			exitFuncGenerator(exitFunc)();
