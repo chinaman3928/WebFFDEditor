@@ -1901,42 +1901,51 @@ function changeSkillPointsAndPropagate(c, skills, skillPointsDiv)
 
 function changeLevelAndPropagate(c, level, levelDiv, experienceDiv, nextLevelDiv, staminaDiv, manaDiv, hpDiv, statPointsDiv, skillPointsDiv /*, requirements!!!!!!!*/)
 {
-	if (1 > level || level > 99) return;
-	const delta = level - c.level;
+	if (c.level == level || 1 > level || level > 99) return;
 	if (level > c.level)
-	{
-		c.level = level;
-		levelDiv.querySelector(".hoverbox").innerText = levelDiv.querySelector("span").innerText = c.level;
-		c.experience = EXPERIENCE_GATE[c.level - 1];
-		experienceDiv.querySelector(".hoverbox").innerText = experienceDiv.querySelector("span").innerText = c.experience;
-		nextLevelDiv.innerText = EXPERIENCE_GATE[c.level];            
-	}
+		changeExperienceAndPropagate(c, EXPERIENCE_GATE[level - 1], levelDiv, experienceDiv, nextLevelDiv, staminaDiv, manaDiv, hpDiv, statPointsDiv, skillPointsDiv /*, requirements!!!!!!!*/);   
 	else
+		; //TODO
+}
+function changeExperienceAndPropagate(c, experience, levelDiv, experienceDiv, nextLevelDiv, staminaDiv, manaDiv, hpDiv, statPointsDiv, skillPointsDiv /*, requirements!!!!!!!*/)
+{
+	if (experience >= 0 && c.experience == experience) return;
+
+	const oldLevel = c.level;
+	if (experience > c.experience)
+	{
+		experienceDiv.querySelector(".hoverbox").innerText = experienceDiv.querySelector("span").innerText = c.experience = experience;
+		while (c.level < 99 && experience >= EXPERIENCE_GATE[c.level]) ++c.level;
+		if (c.level > oldLevel)
+		{
+			levelDiv.querySelector(".hoverbox").innerText = levelDiv.querySelector("span").innerText = c.level;
+			nextLevelDiv.innerText = EXPERIENCE_GATE[c.level];
+
+			const delta = c.level - oldLevel;
+		
+			changeBaseMaxStaminaAndPropagate(c, c.maxStamina + delta, staminaDiv);
+			//does leveling up refill stamina to max?
+		
+			changeBaseMaxManaAndPropagate(c, c.maxMana + delta, manaDiv);
+			//does leveling up refill mana to max?
+		
+			//but does not change any attribute
+			// propagateAttack(); //CCharacter::ToHit( void )
+		
+			//NOTE this is the overriding method in CPlayer! in general you may want CCharacter or even CMonster bleugh!
+			changeBaseMaxHPAndPropagate(c, c.maxHp + 4*delta, hpDiv); //etc like the others
+		
+			//pets auto skill;
+			changeStatPointsAndPropagate(c, c.unusedStatPoints + 5*delta, statPointsDiv);
+			changeSkillPointsAndPropagate(c, c.unusedSkillPoints + 2*delta, skillPointsDiv);
+		
+			//propagateRequirements();!!!!!!!!!!!!!1
+		}
+	}
+	else if (experience < c.experience)
 	{
 		; //TODO
 	}
-
-	changeBaseMaxStaminaAndPropagate(c, c.maxStamina + delta, staminaDiv);
-	//does leveling up refill stamina to max?
-
-	changeBaseMaxManaAndPropagate(c, c.maxMana + delta, manaDiv);
-	//does leveling up refill mana to max?
-
-	//but does not change any attribute
-	// propagateAttack(); //CCharacter::ToHit( void )
-
-	//NOTE this is the overriding method in CPlayer! in general you may want CCharacter or even CMonster bleugh!
-	changeBaseMaxHPAndPropagate(c, c.maxHp + 4*delta, hpDiv); //etc like the others
-
-	//pets atuo skill;
-	changeStatPointsAndPropagate(c, c.unusedStatPoints + 5*delta, statPointsDiv);
-	changeSkillPointsAndPropagate(c, c.unusedSkillPoints + 2*delta, skillPointsDiv);
-
-	//propagateRequirements();!!!!!!!!!!!!!1
-}
-function changeExperienceAndPropagate()
-{
-
 }
 
 function changeRenownAndPropagate(newVal, c, nameDiv, renownDiv, fameDiv, nextRenownDiv, skillpointsDiv)
@@ -1946,7 +1955,7 @@ function changeRenownAndPropagate(newVal, c, nameDiv, renownDiv, fameDiv, nextRe
 		const oldRenown = c.fameRank;
 		if (newVal > c.fameRank)
 		{
-			renownDiv.querySelector("span").innerText = c.fameRank = newVal;
+			renownDiv.querySelector(".hoverbox").innerText = renownDiv.querySelector("span").innerText = c.fameRank = newVal;
 			nameDiv; //TODO TODO TODO need to update
 			fameDiv.querySelector(".hoverbox").innerText = fameDiv.querySelector("span").innerText = c.fame = FAME_GATE[c.fameRank - 1];
 			nextRenownDiv.innerText = FAME_GATE[c.fameRank];
@@ -1967,14 +1976,17 @@ function changeFameAndPropagate(newVal, c, nameDiv, renownDiv, fameDiv, nextReno
 		const oldRenown = c.fameRank;
 		if (newVal > c.fame)
 		{
-			fameDiv.querySelector("span").innerText = c.fame = newVal;
+			fameDiv.querySelector(".hoverbox").innerText = fameDiv.querySelector("span").innerText = c.fame = newVal;
 			while(c.fameRank < 20 && c.fame >= FAME_GATE[c.fameRank]) ++c.fameRank;
-			renownDiv.querySelector(".hoverbox").innerText = renownDiv.querySelector("span").innerText = c.fameRank;
-			nameDiv; //TODO TODO TODO need to update
-			nextRenownDiv.innerText = FAME_GATE[c.fameRank];
-			skillpointsDiv.querySelector("span").innerText = (c.unusedSkillPoints += 4 * (c.fameRank - oldRenown));
+			if (c.fameRank > oldRenown)
+			{
+				renownDiv.querySelector(".hoverbox").innerText = renownDiv.querySelector("span").innerText = c.fameRank;
+				nameDiv; //TODO TODO TODO need to update
+				nextRenownDiv.innerText = FAME_GATE[c.fameRank];
+				skillpointsDiv.querySelector("span").innerText = (c.unusedSkillPoints += 4 * (c.fameRank - oldRenown));
+			}
 		}
-		else
+		else if (newVal < c.fame)
 		{
 
 		}
@@ -2071,7 +2083,7 @@ function initStatsInvSkillsGold()
 											},
 											(_text, _input) => {
 												const newVal = parseInt(_input.value.trim());
-												changeLevelAndPropagate(p, newVal, levelDiv, expDiv, nextLevelDiv, staminaDiv, manaDiv, hpDiv, statPointsDiv, skillPointsDiv, /*requirements!!!!!!!*/)
+												changeLevelAndPropagate(p, newVal, levelDiv, expDiv, nextLevelDiv, staminaDiv, manaDiv, hpDiv, statPointsDiv, skillPointsDiv, /*requirements!!!!!!!*/);
 											},
 											() => {return `${p.level}`});
     addEditableFieldAndHoverboxTo(expDiv,	p.experience,
@@ -2080,7 +2092,7 @@ function initStatsInvSkillsGold()
 											},
 											(_text, _input) => {
 												const newVal = parseInt(_input.value.trim());
-												changeExperienceAndPropagate();	
+												changeExperienceAndPropagate(p, newVal, levelDiv, expDiv, nextLevelDiv, staminaDiv, manaDiv, hpDiv, statPointsDiv, skillPointsDiv, /*requirements!!!!!!!*/);
 											},
 											() => {return `${p.experience}`;})
 
