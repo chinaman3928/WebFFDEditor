@@ -1767,7 +1767,7 @@ function addEditableFieldAndHoverboxTo(div, initText, enterFunc, exitFunc, hover
 			input.hidden = true;
 			text.hidden = false;
 			hoverbox.classList.remove("hoverbox-enter");
-			hoverbox.innerText = hoverboxFunc();
+			//hoverbox.innerText = hoverboxFunc();         i put this in the propagate funcs
 		};
 	}
 	function checkInputGenerator() {
@@ -1807,18 +1807,150 @@ function addEditableFieldAndHoverboxTo(div, initText, enterFunc, exitFunc, hover
 }
 
 
-function changeRenownAndPropagate(newVal, p, nameDiv, renownDiv, fameDiv, nextRenownDiv, skillpointsDiv)
+
+
+function changeBaseStrengthAndPropagate(c, strength, strengthDiv)
 {
-	if (1 <= newVal && newVal <= 20 && newVal != p.fameRank)
+	//TODO validate
+	c.strength = strength;
+	strengthDiv.querySelector("span").innerText = charStrength(c);
+	strengthDiv.querySelector(".hoverbox").innerText = `${c.strength} + ${charNetEffect(c, EFFECT_PERCENT_STRENGTH)}% [${Math.ceil(charNetEffect(c, EFFECT_PERCENT_STRENGTH) * 0.01 * c.strength)}] + ${Math.trunc(charNetEffect(c, EFFECT_STRENGTH))}`;
+	//other propagates
+	//including requirements, but consider that an ancestor might also call requirements later?
+}
+
+function changeBaseDexterityAndPropagate(c, dexterity, dexterityDiv)
+{
+	//TODO validate
+	c.dexterity = dexterity;
+	dexterityDiv.querySelector("span").innerText = charDexterity(c);
+	dexterityDiv.querySelector(".hoverbox").innerText = `${c.dexterity} + ${charNetEffect(c, EFFECT_PERCENT_DEXTERITY)}% [${Math.ceil(charNetEffect(c, EFFECT_PERCENT_DEXTERITY) * 0.01 * c.dexterity)}] + ${Math.trunc(charNetEffect(c, EFFECT_DEXTERITY))}`;
+	//other propagates
+	//including requirements, but consider that an ancestor might also call requirements later?
+}
+
+function changeBaseVitalityAndPropagate(c, vitality, vitalityDiv)
+{
+	//TODO validate
+	c.vitality = vitality;
+	vitalityDiv.querySelector("span").innerText = charVitality(c);
+	vitalityDiv.querySelector(".hoverbox").innerText = `${c.vitality} + ${charNetEffect(c, EFFECT_PERCENT_VITALITY)}% [${Math.ceil(charNetEffect(c, EFFECT_PERCENT_VITALITY) * 0.01 * c.vitality)}] + ${Math.trunc(charNetEffect(c, EFFECT_VITALITY))}`;
+	//other propagates
+	//including requirements, but consider that an ancestor might also call requirements later?
+}
+
+function changeBaseMagicAndPropagate(c, magic, magicDiv)
+{
+	//TODO validate
+	c.magic = magic;
+	magicDiv.querySelector("span").innerText = charMagic(c);
+	magicDiv.querySelector(".hoverbox").innerText = `${c.magic} + ${charNetEffect(c, EFFECT_PERCENT_MAGIC)}% [${Math.ceil(charNetEffect(c, EFFECT_PERCENT_MAGIC) * 0.01 * c.magic)}] + ${Math.trunc(charNetEffect(c, EFFECT_MAGIC))}`;
+	//other propagates
+	//including requirements, but consider that an ancestor might also call requirements later?
+}
+
+
+
+function changeBaseMaxStaminaAndPropagate(c, stamina, staminaDiv)
+{
+	//TODO validation
+	if (stamina < 0) return;
+	c.maxStamina = stamina;
+	staminaDiv.querySelector("span").innerText = charMaxStamina(c);
+	staminaDiv.querySelector(".hoverbox").innerText = `${c.maxStamina} + ${charNetEffect(c, EFFECT_PERCENT_STAMINA)}% [${Math.ceil(charNetEffect(c, EFFECT_PERCENT_STAMINA) * 0.01 * c.maxStamina)}] + ${Math.trunc(charNetEffect(c, EFFECT_MAX_STAMINA))}`;
+}
+
+function changeBaseMaxManaAndPropagate(c, mana, manaDiv)
+{
+	//TODO validation
+	if (mana < 0) return;
+	c.maxMana = mana;
+	manaDiv.querySelector("span").innerText = charMaxMana(c);
+	manaDiv.querySelector(".hoverbox").innerText = `${c.maxMana} + ${charNetEffect(c, EFFECT_PERCENT_MANA)}% [${Math.ceil(charNetEffect(c, EFFECT_PERCENT_MANA) * 0.01 * c.maxMana)}] + ${Math.trunc(charNetEffect(c, EFFECT_MAX_MANA))}`;
+}
+
+//change attack and propagate() {}
+
+function changeBaseMaxHPAndPropagate(c, hp, hpDiv)
+{
+	//TODO validation
+	c.maxHp = hp;
+	hpDiv.querySelector("span").innerText = charMaxHP(c);
+	hpDiv.querySelector(".hoverbox").innerText = `${c.maxHp} + ${charNetEffect(c, EFFECT_PERCENT_H_P)}% [${Math.ceil(charNetEffect(c, EFFECT_PERCENT_H_P) * 0.01 * c.maxHp)}] + ${Math.trunc(charNetEffect(c, EFFECT_MAX_HP))}`;
+}
+
+function changeStatPointsAndPropagate(c, stats, statPointsDiv)
+{
+	//TODO validation
+	c.unusedStatPoints = stats;
+	statPointsDiv.querySelector("span").innerText = stats;
+	statPointsDiv.querySelector(".hoverbox").innerText = stats;
+}
+
+function changeSkillPointsAndPropagate(c, skills, skillPointsDiv)
+{
+	//TODO validation
+	c.unusedSkillPoints = skills;
+	skillPointsDiv.querySelector("span").innerText = skills;
+	skillPointsDiv.querySelector(".hoverbox").innerText = skills;
+}
+
+
+//propagate requirements() {}
+
+
+function changeLevelAndPropagate(c, level, levelDiv, experienceDiv, nextLevelDiv, staminaDiv, manaDiv, hpDiv, statPointsDiv, skillPointsDiv /*, requirements!!!!!!!*/)
+{
+	if (1 > level || level > 99) return;
+	const delta = level - c.level;
+	if (level > c.level)
 	{
-		const oldRenown = p.fameRank;
-		if (newVal > p.fameRank)
+		c.level = level;
+		levelDiv.querySelector(".hoverbox").innerText = levelDiv.querySelector("span").innerText = c.level;
+		c.experience = EXPERIENCE_GATE[c.level - 1];
+		experienceDiv.querySelector(".hoverbox").innerText = experienceDiv.querySelector("span").innerText = c.experience;
+		nextLevelDiv.innerText = EXPERIENCE_GATE[c.level];            
+	}
+	else
+	{
+		; //TODO
+	}
+
+	changeBaseMaxStaminaAndPropagate(c, c.maxStamina + delta, staminaDiv);
+	//does leveling up refill stamina to max?
+
+	changeBaseMaxManaAndPropagate(c, c.maxMana + delta, manaDiv);
+	//does leveling up refill mana to max?
+
+	//but does not change any attribute
+	// propagateAttack(); //CCharacter::ToHit( void )
+
+	//NOTE this is the overriding method in CPlayer! in general you may want CCharacter or even CMonster bleugh!
+	changeBaseMaxHPAndPropagate(c, c.maxHp + 4*delta, hpDiv); //etc like the others
+
+	//pets atuo skill;
+	changeStatPointsAndPropagate(c, c.unusedStatPoints + 5*delta, statPointsDiv);
+	changeSkillPointsAndPropagate(c, c.unusedSkillPoints + 2*delta, skillPointsDiv);
+
+	//propagateRequirements();!!!!!!!!!!!!!1
+}
+function changeExperienceAndPropagate()
+{
+
+}
+
+function changeRenownAndPropagate(newVal, c, nameDiv, renownDiv, fameDiv, nextRenownDiv, skillpointsDiv)
+{
+	if (1 <= newVal && newVal <= 20 && newVal != c.fameRank)
+	{
+		const oldRenown = c.fameRank;
+		if (newVal > c.fameRank)
 		{
-			renownDiv.querySelector("span").innerText = p.fameRank = newVal;
+			renownDiv.querySelector("span").innerText = c.fameRank = newVal;
 			nameDiv; //TODO TODO TODO need to update
-			fameDiv.querySelector(".hoverbox").innerText = fameDiv.querySelector("span").innerText = p.fame = FAME_GATE[p.fameRank - 1];
-			nextRenownDiv.innerText = FAME_GATE[p.fameRank];
-			skillpointsDiv.querySelector("span").innerText = (p.unusedSkillPoints += 4 * (newVal - oldRenown));
+			fameDiv.querySelector(".hoverbox").innerText = fameDiv.querySelector("span").innerText = c.fame = FAME_GATE[c.fameRank - 1];
+			nextRenownDiv.innerText = FAME_GATE[c.fameRank];
+			skillpointsDiv.querySelector("span").innerText = (c.unusedSkillPoints += 4 * (newVal - oldRenown));
 		}
 		else
 		{
@@ -1828,19 +1960,19 @@ function changeRenownAndPropagate(newVal, p, nameDiv, renownDiv, fameDiv, nextRe
 		//TODO PROPAGATE to requirements
 	}
 }
-function changeFameAndPropagate(newVal, p, nameDiv, renownDiv, fameDiv, nextRenownDiv, skillpointsDiv)
+function changeFameAndPropagate(newVal, c, nameDiv, renownDiv, fameDiv, nextRenownDiv, skillpointsDiv)
 {
-	if (newVal >= 0 && newVal != p.fame)
+	if (newVal >= 0 && newVal != c.fame)
 	{
-		const oldRenown = p.fameRank;
-		if (newVal > p.fame)
+		const oldRenown = c.fameRank;
+		if (newVal > c.fame)
 		{
-			fameDiv.querySelector("span").innerText = p.fame = newVal;
-			while(p.fameRank < 20 && p.fame >= FAME_GATE[p.fameRank]) ++p.fameRank;
-			renownDiv.querySelector(".hoverbox").innerText = renownDiv.querySelector("span").innerText = p.fameRank;
+			fameDiv.querySelector("span").innerText = c.fame = newVal;
+			while(c.fameRank < 20 && c.fame >= FAME_GATE[c.fameRank]) ++c.fameRank;
+			renownDiv.querySelector(".hoverbox").innerText = renownDiv.querySelector("span").innerText = c.fameRank;
 			nameDiv; //TODO TODO TODO need to update
-			nextRenownDiv.innerText = FAME_GATE[p.fameRank];
-			skillpointsDiv.querySelector("span").innerText = (p.unusedSkillPoints += 4 * (p.fameRank - oldRenown));
+			nextRenownDiv.innerText = FAME_GATE[c.fameRank];
+			skillpointsDiv.querySelector("span").innerText = (c.unusedSkillPoints += 4 * (c.fameRank - oldRenown));
 		}
 		else
 		{
@@ -1899,85 +2031,114 @@ function initStatsInvSkillsGold()
 	//TODO there is a petstatsmenu.cpp, how is that different? how about other monsters?
 	//TODO TODO TODO Invenctory::EffectValue is probably different from Character::EffectValue?
 	const p = robj.player;
-	PLAYER_TAB.statsDivs.get("NAME").innerText = robj.player.lineage > 0 ?	`${p.name} the ${FAME_NAMES[p.fameRank]} (${romanNumeral(p.lineage)})` :
-																			`${p.name} the ${FAME_NAMES[p.fameRank]}`;
-	PLAYER_TAB.statsDivs.get("LEVEL").innerText = p.level;
-	PLAYER_TAB.statsDivs.get("EXPERIENCE").innerText = p.experience;
-	PLAYER_TAB.statsDivs.get("NEXT_LEVEL").innerText = charExperienceGate(p);
-	// PLAYER_TAB.statsDivs.get("RENOWN").innerText = p.fameRank;
-	// PLAYER_TAB.statsDivs.get("FAME").innerText = p.fame;
-	PLAYER_TAB.statsDivs.get("NEXT_RENOWN").innerText = charFameGate(p);
+	const nameDiv = PLAYER_TAB.statsDivs.get("NAME"); nameDiv.innerText = robj.player.lineage > 0 ? `${p.name} the ${FAME_NAMES[p.fameRank]} (${romanNumeral(p.lineage)})` :
+																									`${p.name} the ${FAME_NAMES[p.fameRank]}`;
+	const levelDiv = PLAYER_TAB.statsDivs.get("LEVEL"); //levelDiv.innerText = p.level;
+	const expDiv = PLAYER_TAB.statsDivs.get("EXPERIENCE"); //expDiv.innerText = p.experience;
+	const nextLevelDiv = PLAYER_TAB.statsDivs.get("NEXT_LEVEL"); nextLevelDiv.innerText = charExperienceGate(p);
+	const renownDiv = PLAYER_TAB.statsDivs.get("RENOWN"); //.innerText = p.fameRank;
+	const fameDiv = PLAYER_TAB.statsDivs.get("FAME"); //.innerText = p.fame;
+	const nextRenownDiv = PLAYER_TAB.statsDivs.get("NEXT_RENOWN"); nextRenownDiv.innerText = charFameGate(p);
 	PLAYER_TAB.statsDivs.get("STRENGTH_STR").innerText = "Strength";
 	PLAYER_TAB.statsDivs.get("DEXTERITY_STR").innerText = "Dexterity";
 	PLAYER_TAB.statsDivs.get("VITALITY_STR").innerText = "Vitality";
 	PLAYER_TAB.statsDivs.get("MAGIC_STR").innerText = "Magic";
 	PLAYER_TAB.statsDivs.get("DAMAGE_STR").innerText = "Damage";
-	PLAYER_TAB.statsDivs.get("DAMAGE").innerText = charDamageStr(p);
+	const dmgDiv = PLAYER_TAB.statsDivs.get("DAMAGE"); dmgDiv.innerText = charDamageStr(p);
 	PLAYER_TAB.statsDivs.get("ATTACK_STR").innerText = "Attack";
-	PLAYER_TAB.statsDivs.get("ATTACK").innerText = "charAttack(p)";
+	const attackDiv = PLAYER_TAB.statsDivs.get("ATTACK"); attackDiv.innerText = "charAttack(p)";
 	PLAYER_TAB.statsDivs.get("DEFENSE_STR").innerText = "Defense";
-	PLAYER_TAB.statsDivs.get("DEFENSE").innerText = charDefense(p);
+	const defenseDiv = PLAYER_TAB.statsDivs.get("DEFENSE"); defenseDiv.innerText = charDefense(p);
 	PLAYER_TAB.statsDivs.get("LIFE_STR").innerText = "Life";
 	PLAYER_TAB.statsDivs.get("STAMINA_STR").innerText = "Stamina";
 	PLAYER_TAB.statsDivs.get("MANA_STR").innerText = "Mana";
 
+	const strengthDiv = PLAYER_TAB.statsDivs.get("STRENGTH");
+	const dexterityDiv = PLAYER_TAB.statsDivs.get("DEXTERITY");
+	const vitalityDiv = PLAYER_TAB.statsDivs.get("VITALITY");
+	const magicDiv = PLAYER_TAB.statsDivs.get("MAGIC");
+	const hpDiv = PLAYER_TAB.statsDivs.get("LIFE");
+	const staminaDiv = PLAYER_TAB.statsDivs.get("STAMINA");
+	const manaDiv = PLAYER_TAB.statsDivs.get("MANA");
+
+	const statPointsDiv = PLAYER_TAB.statsDivs.get("POINTS")
+	const skillPointsDiv = PLAYER_TAB.skillsGoldDivs.get("POINTS");
+
+	//level and experience
+	addEditableFieldAndHoverboxTo(levelDiv,	p.level,
+											(_text, _input) => {
+												_input.value = p.level;
+											},
+											(_text, _input) => {
+												const newVal = parseInt(_input.value.trim());
+												changeLevelAndPropagate(p, newVal, levelDiv, expDiv, nextLevelDiv, staminaDiv, manaDiv, hpDiv, statPointsDiv, skillPointsDiv, /*requirements!!!!!!!*/)
+											},
+											() => {return `${p.level}`});
+    addEditableFieldAndHoverboxTo(expDiv,	p.experience,
+											(_text, _input) => {
+												_input.value = p.experience;
+											},
+											(_text, _input) => {
+												const newVal = parseInt(_input.value.trim());
+												changeExperienceAndPropagate();	
+											},
+											() => {return `${p.experience}`;})
+
 	//renown and fame
-	//really you could let them increase and decrease arbitrariyl, but for now happy increase case
-	addEditableFieldAndHoverboxTo(PLAYER_TAB.statsDivs.get("RENOWN"),	p.fameRank,
-																		(_text, _input) => {
-																			_input.value = p.fameRank;
-																		},
-																		(_text, _input) => {
-																			const newVal = parseInt(_input.value.trim());
-																			changeRenownAndPropagate(newVal, p, PLAYER_TAB.statsDivs.get("NAME"), PLAYER_TAB.statsDivs.get("RENOWN"), PLAYER_TAB.statsDivs.get("FAME"), PLAYER_TAB.statsDivs.get("NEXT_RENOWN"), PLAYER_TAB.skillsGoldDivs.get("POINTS"));
-																		},
-																		() => {return `${p.fameRank}`;});
-	addEditableFieldAndHoverboxTo(PLAYER_TAB.statsDivs.get("FAME"),	p.fame,
-																	(_text, _input) => {
-																		_input.value = p.fame;
-																	},
-																	(_text, _input) => {
-																		const newVal = parseInt(_input.value.trim());
-																		changeFameAndPropagate(newVal, p, PLAYER_TAB.statsDivs.get("NAME"), PLAYER_TAB.statsDivs.get("RENOWN"), PLAYER_TAB.statsDivs.get("FAME"), PLAYER_TAB.statsDivs.get("NEXT_RENOWN"), PLAYER_TAB.skillsGoldDivs.get("POINTS"));
-																	},
-																	() => {return `${p.fame}`;})
+	//really you could let them increase and decrease arbitrarily, but for now happy increase case
+	addEditableFieldAndHoverboxTo(renownDiv,	p.fameRank,
+												(_text, _input) => {
+													_input.value = p.fameRank;
+												},
+												(_text, _input) => {
+													const newVal = parseInt(_input.value.trim());
+													changeRenownAndPropagate(newVal, p, nameDiv, renownDiv, fameDiv, nextRenownDiv, skillPointsDiv);
+												},
+												() => {return `${p.fameRank}`;});
+	addEditableFieldAndHoverboxTo(fameDiv,	p.fame,
+											(_text, _input) => {
+												_input.value = p.fame;
+											},
+											(_text, _input) => {
+												const newVal = parseInt(_input.value.trim());
+												changeFameAndPropagate(newVal, p, nameDiv, renownDiv, fameDiv, nextRenownDiv, skillPointsDiv);
+											},
+											() => {return `${p.fame}`;})
 
 
-	for (const [div, func, attr, perc, flat] of [	["STRENGTH",	charStrength,	"strength",		EFFECT_PERCENT_STRENGTH,	EFFECT_STRENGTH],
-													["DEXTERITY",	charDexterity,	"dexterity",	EFFECT_PERCENT_DEXTERITY,	EFFECT_DEXTERITY],
-													["VITALITY",	charVitality,	"vitality",		EFFECT_PERCENT_VITALITY, 	EFFECT_VITALITY],
-													["MAGIC",		charMagic,		"magic",		EFFECT_PERCENT_MAGIC, 		EFFECT_MAGIC],
-													["LIFE",		charMaxHP,		"maxHp", 		EFFECT_PERCENT_H_P,			EFFECT_MAX_HP],
-													["STAMINA",		charMaxStamina, "maxStamina",	EFFECT_PERCENT_STAMINA, 	EFFECT_MAX_STAMINA],
-													["MANA",		charMaxMana,	"maxMana",		EFFECT_PERCENT_MANA,		EFFECT_MAX_MANA]])
+	for (const [div, computeEffect, changeAndPropagate, attr, perc, flat] of [	[strengthDiv,	charStrength,	changeBaseStrengthAndPropagate,		"strength",		EFFECT_PERCENT_STRENGTH,	EFFECT_STRENGTH],
+																				[dexterityDiv,	charDexterity,	changeBaseDexterityAndPropagate,	"dexterity", 	EFFECT_PERCENT_DEXTERITY,	EFFECT_DEXTERITY],
+																				[vitalityDiv,	charVitality,	changeBaseVitalityAndPropagate,		"vitality",		EFFECT_PERCENT_VITALITY, 	EFFECT_VITALITY],
+																				[magicDiv,		charMagic,		changeBaseMagicAndPropagate,		"magic",		EFFECT_PERCENT_MAGIC, 		EFFECT_MAGIC],
+																				[hpDiv,		    charMaxHP,		changeBaseMaxHPAndPropagate, 		"maxHp",		EFFECT_PERCENT_H_P,			EFFECT_MAX_HP],
+																				[staminaDiv,	charMaxStamina, changeBaseMaxStaminaAndPropagate,	"maxStamina",	EFFECT_PERCENT_STAMINA, 	EFFECT_MAX_STAMINA],
+																				[manaDiv,		charMaxMana,	changeBaseMaxManaAndPropagate,		"maxMana",		EFFECT_PERCENT_MANA,		EFFECT_MAX_MANA]])
 	{
-		addEditableFieldAndHoverboxTo(PLAYER_TAB.statsDivs.get(div),	func(p),
-																		(_text, _input) => {
-																			_input.value = p[attr];
-																		},
-																		(_text, _input) => {
-																			const newVal = _input.value.trim();
-																			p[attr] = parseInt(newVal);
-																			_text.innerText = func(p);
-																		},
-																		() => {
-																			return `${p[attr]} + ${charNetEffect(p, perc)}% [${Math.ceil(charNetEffect(p, perc) * 0.01 * p[attr])}] + ${Math.trunc(charNetEffect(p, flat))}`;
-																		});
+		addEditableFieldAndHoverboxTo(div,	computeEffect(p),
+											(_text, _input) => {
+												_input.value = p[attr];
+											},
+											(_text, _input) => {
+												const newVal = parseInt(_input.value.trim());
+												changeAndPropagate(p, newVal, div); //TODO TODO TODO strength dexterity vitality magic need to propagate lmao
+											},
+											() => {
+												return `${p[attr]} + ${charNetEffect(p, perc)}% [${Math.ceil(charNetEffect(p, perc) * 0.01 * p[attr])}] + ${Math.trunc(charNetEffect(p, flat))}`;
+											});
 	}
 
 	PLAYER_TAB.statsDivs.get("POINTS_STR").innerText = "Points Remaining";
-	addEditableFieldAndHoverboxTo(PLAYER_TAB.statsDivs.get("POINTS"),	p.unusedStatPoints,
-																		(_text, _input) => {
-																			_input.value = p.unusedStatPoints;
-																		},
-																		(_text, _input) => {
-																			const newVal = _input.value.trim();
-																			p.unusedStatPoints = parseInt(newVal);
-																			_text.innerText = p.unusedStatPoints;
-																		},
-																		() => {
-																			return p.unusedStatPoints;
-																		});
+	addEditableFieldAndHoverboxTo(statPointsDiv,	p.unusedStatPoints,
+													(_text, _input) => {
+														_input.value = p.unusedStatPoints;
+													},
+													(_text, _input) => {
+														const newVal = parseInt(_input.value.trim());
+														changeStatPointsAndPropagate(p, newVal, statPointsDiv);
+													},
+													() => {
+														return p.unusedStatPoints;
+													});
 	//inv
 
 
