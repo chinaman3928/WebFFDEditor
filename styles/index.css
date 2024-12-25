@@ -257,3 +257,21 @@ html {
 }
 
 /* .highlight-black {} */
+
+.respec-stats-button {
+  /* width: 12.9557%; */
+  height: 3.90625%;
+  position: absolute;
+  top: calc(615 / 640 * 100%);
+  left: calc(256 / 1536 * 100%);
+  transform: translate(-50%, -50%);
+}
+.respec-skills-button {
+  /* width: 12.9557%; */
+  height: 3.90625%;
+  position: absolute;
+  top: calc(615 / 640 * 100%);
+  left: calc(1300 / 1536 * 100%);         /*1280 = 2*512 + 256  but it doesnt look very good, so add a bit*/
+  transform: translate(-50%, -50%);
+}
+

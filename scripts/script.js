@@ -1249,11 +1249,30 @@ function charDamageStr(c)
 
 }
 
+
+
+
+// CharacterDescrptions (template dat) have a m_ToHitBonus too but i think thats only for monsters
+//   otherwise, Character::m_ToHitBonus is the constructor val (unless pet transforms)
+// pSubGroup = pMasterGroup->GetSubDataGroup( "TOHIT" );
+// if( pSubGroup != NULL )
+// {
+// 	ToHitBonus = (int32)atoi( pSubGroup->Item( 0 ).c_str() );
+// 	ToHitBonus = (int32)( (float32)ToHitBonus * KRankToHitMultiplier[Rank] );
+// }
+
+//here is for ItemDescription
+// pSubGroup = pMasterGroup->GetSubDataGroup( "TOHITBONUS" );
+// if( pSubGroup != NULL )
+// {
+// 	pItem->SetToHitBonus( (uint32)( atof( pSubGroup->Item( 0 ).c_str() ) * KRankPowerMultiplier[Rank] ) );
+// }
+
 //TODO TODO TODO WHERE LEFT OFF. also: damage.
 function charAttack(c)
 {
 	//AttackDescriptions have tohitbonus
-	//  unarmed: 0 unless <- monsters.dat "UNARMED_ATTACK"
+	//  unarmed: 0 (player) unless <- monsters.dat "UNARMED_ATTACK"
 	//  armed:   <- items have tohitbonus, 0 unless <- ItemDescription.toHitBonus <- TOHITBONUS in items.dat
 	let attack = 50 + Math.trunc(charDexterity(c) / 2) + c.level +
 		c.toHitBonus + (__activeWeapon ? charNetSkill(c, TYPE_TO_SKILL[__activeWeapon.type]) : 0) + (__currentAttack ? __currentAttack.toHitBonus : 0);
@@ -1676,7 +1695,7 @@ function addHoverboxToItem(div, it, graderankDiv, hoverbox)
 	div.appendChild(hoverbox);
 }
 
-//TODO TODO TODO but i wonder if there is more consistency when the game actually decides whether you can equip
+//TODO TODO TODO but i wonder if there is more inconsistency when the game actually decides whether you can equip
 //dont shoot the translator: the ingame item hover func only passes allowReduce = type != TYPE_SPELL
 //and also, the ingame item hover func doesnt say lineage cant be reduced, but this func says it cant 
 function meetsRequirements(p, stat, val, allowReduce)
@@ -1807,48 +1826,111 @@ function addEditableFieldAndHoverboxTo(div, initText, enterFunc, exitFunc, hover
 }
 
 
+const NO_REQS = null;
+
+//DISCARDS SHRINE OF LEARNING and other manual edits - you should warn them about that TODO
+function respecStatsAndPropagate(c, strengthDiv, dexterityDiv, vitalityDiv, magicDiv, dmgDiv, attackDiv, defenseDiv, staminaDiv, hpDiv, manaDiv, statPointsDiv, reqs)
+{
+	changeBaseStrengthAndPropagate(c, 25, strengthDiv, dmgDiv, NO_REQS);
+	changeBaseDexterityAndPropagate(c, 20, dexterityDiv, attackDiv, defenseDiv, NO_REQS);
+	changeBaseVitalityAndPropagate(c, 25, vitalityDiv, hpDiv, staminaDiv, NO_REQS);
+	changeBaseMagicAndPropagate(c, 10, magicDiv, manaDiv, NO_REQS);
+	changeStatPointsAndPropagate(c, c.level * 5 - 5, statPointsDiv);
+	propagateRequirements(c, reqs);
+}
+
+//DISCARDS SHRINE OF LEARNING and other manual edits - you should warn them about that TODO
+function respecSkillsAndPropagate(c, skillDivs, skillpointsDiv)
+{
+	for (let s = 0; s < SKILL_ALL; changeBaseSkillAndPropagate(c, s, 0, skillDivs[s++]));
+	changeSkillPointsAndPropagate(c, c.level * 2 - 2  +  c.fameRank * 4 - 4, skillpointsDiv);
+}
+
+function changeBaseSkillAndPropagate(c, skill, newVal, skillDiv)
+{
+	//TODO validate
+	c.skills[skill] = newVal;
+	skillDiv.querySelector("span").innerText = charNetSkill(c, skill);
+	skillDiv.querySelector(".hoverbox").innerText = `${c.skills[skill]} + ${charNetEffect(c, skill)}`;
+
+	if (skill <= SKILL_BOW)
+	{
+		//propagate to damage;
+		//propagate to attack;
+	}
+	else switch (skill)
+	{
+		//TODO THE REST PROPAGATE in hitherto unseen ways
+		case SKILL_CRITICAL_STRIKE:
+		case SKILL_SPELLCASTING:
+		case SKILL_DUAL_WIELD:
+		case SKILL_SHIELD:
+		case SKILL_ATTACK_MAGIC:
+		case SKILL_DEFENSE_MAGIC:
+		case SKILL_CHARM_MAGIC:
+		case SKILL_ALL:
+			;
+	}
+}
 
 
-function changeBaseStrengthAndPropagate(c, strength, strengthDiv)
+function changeBaseStrengthAndPropagate(c, strength, strengthDiv, dmgDiv, reqs)
 {
 	//TODO validate
 	c.strength = strength;
 	strengthDiv.querySelector("span").innerText = charStrength(c);
 	strengthDiv.querySelector(".hoverbox").innerText = `${c.strength} + ${charNetEffect(c, EFFECT_PERCENT_STRENGTH)}% [${Math.ceil(charNetEffect(c, EFFECT_PERCENT_STRENGTH) * 0.01 * c.strength)}] + ${Math.trunc(charNetEffect(c, EFFECT_STRENGTH))}`;
 	//other propagates
+
 	//including requirements, but consider that an ancestor might also call requirements later?
+	propagateRequirements(c, reqs);
 }
 
-function changeBaseDexterityAndPropagate(c, dexterity, dexterityDiv)
+function changeBaseDexterityAndPropagate(c, dexterity, dexterityDiv, attackDiv, defenseDiv, reqs)
 {
 	//TODO validate
+	const old = charDexterity(c);
 	c.dexterity = dexterity;
 	dexterityDiv.querySelector("span").innerText = charDexterity(c);
 	dexterityDiv.querySelector(".hoverbox").innerText = `${c.dexterity} + ${charNetEffect(c, EFFECT_PERCENT_DEXTERITY)}% [${Math.ceil(charNetEffect(c, EFFECT_PERCENT_DEXTERITY) * 0.01 * c.dexterity)}] + ${Math.trunc(charNetEffect(c, EFFECT_DEXTERITY))}`;
 	//other propagates
+	//PROPAGATE TO DEFENSE DIRECTLY
+	defenseDiv.innerText = parseInt(defenseDiv.innerText) - Math.trunc(old / 5) + Math.trunc(charDexterity(c) / 5);
+	//propagate to attack, but doesnt change any attribute
+
 	//including requirements, but consider that an ancestor might also call requirements later?
+	propagateRequirements(c, reqs);
 }
 
-function changeBaseVitalityAndPropagate(c, vitality, vitalityDiv)
+function changeBaseVitalityAndPropagate(c, vitality, vitalityDiv, hpDiv, staminaDiv, reqs)
 {
 	//TODO validate
+	const old = charVitality(c);
 	c.vitality = vitality;
 	vitalityDiv.querySelector("span").innerText = charVitality(c);
 	vitalityDiv.querySelector(".hoverbox").innerText = `${c.vitality} + ${charNetEffect(c, EFFECT_PERCENT_VITALITY)}% [${Math.ceil(charNetEffect(c, EFFECT_PERCENT_VITALITY) * 0.01 * c.vitality)}] + ${Math.trunc(charNetEffect(c, EFFECT_VITALITY))}`;
 	//other propagates
+	changeBaseMaxStaminaAndPropagate(c, c.maxStamina + 2*(charVitality(c) - old), staminaDiv);
+	changeBaseMaxHPAndPropagate(c, c.maxHp + 4*(charVitality(c) - old), hpDiv);
+
 	//including requirements, but consider that an ancestor might also call requirements later?
+	propagateRequirements(c, reqs);
 }
 
-function changeBaseMagicAndPropagate(c, magic, magicDiv)
+function changeBaseMagicAndPropagate(c, magic, magicDiv, manaDiv, reqs)
 {
 	//TODO validate
+	const old = charMagic(c);
 	c.magic = magic;
 	magicDiv.querySelector("span").innerText = charMagic(c);
 	magicDiv.querySelector(".hoverbox").innerText = `${c.magic} + ${charNetEffect(c, EFFECT_PERCENT_MAGIC)}% [${Math.ceil(charNetEffect(c, EFFECT_PERCENT_MAGIC) * 0.01 * c.magic)}] + ${Math.trunc(charNetEffect(c, EFFECT_MAGIC))}`;
 	//other propagates
-	//including requirements, but consider that an ancestor might also call requirements later?
-}
+	changeBaseMaxManaAndPropagate(c, c.maxMana + 2*(charMagic(c) - old), manaDiv);
+	//TODO propagate spell damage etc
 
+	//including requirements, but consider that an ancestor might also call requirements later?
+	propagateRequirements(c, reqs);
+}
 
 
 function changeBaseMaxStaminaAndPropagate(c, stamina, staminaDiv)
@@ -1896,18 +1978,15 @@ function changeSkillPointsAndPropagate(c, skills, skillPointsDiv)
 }
 
 
-//propagate requirements() {}
-
-
-function changeLevelAndPropagate(c, level, levelDiv, experienceDiv, nextLevelDiv, staminaDiv, manaDiv, hpDiv, statPointsDiv, skillPointsDiv /*, requirements!!!!!!!*/)
+function changeLevelAndPropagate(c, level, levelDiv, experienceDiv, nextLevelDiv, staminaDiv, manaDiv, hpDiv, statPointsDiv, skillPointsDiv, reqs)
 {
 	if (c.level == level || 1 > level || level > 99) return;
 	if (level > c.level)
-		changeExperienceAndPropagate(c, EXPERIENCE_GATE[level - 1], levelDiv, experienceDiv, nextLevelDiv, staminaDiv, manaDiv, hpDiv, statPointsDiv, skillPointsDiv /*, requirements!!!!!!!*/);   
+		changeExperienceAndPropagate(c, EXPERIENCE_GATE[level - 1], levelDiv, experienceDiv, nextLevelDiv, staminaDiv, manaDiv, hpDiv, statPointsDiv, skillPointsDiv, reqs);   
 	else
 		; //TODO
 }
-function changeExperienceAndPropagate(c, experience, levelDiv, experienceDiv, nextLevelDiv, staminaDiv, manaDiv, hpDiv, statPointsDiv, skillPointsDiv /*, requirements!!!!!!!*/)
+function changeExperienceAndPropagate(c, experience, levelDiv, experienceDiv, nextLevelDiv, staminaDiv, manaDiv, hpDiv, statPointsDiv, skillPointsDiv, reqs)
 {
 	if (experience >= 0 && c.experience == experience) return;
 
@@ -1938,17 +2017,16 @@ function changeExperienceAndPropagate(c, experience, levelDiv, experienceDiv, ne
 			//pets auto skill;
 			changeStatPointsAndPropagate(c, c.unusedStatPoints + 5*delta, statPointsDiv);
 			changeSkillPointsAndPropagate(c, c.unusedSkillPoints + 2*delta, skillPointsDiv);
-		
-			//propagateRequirements();!!!!!!!!!!!!!1
 		}
 	}
 	else if (experience < c.experience)
 	{
 		; //TODO
 	}
+	propagateRequirements(c, reqs);
 }
 
-function changeRenownAndPropagate(newVal, c, nameDiv, renownDiv, fameDiv, nextRenownDiv, skillpointsDiv)
+function changeRenownAndPropagate(newVal, c, nameDiv, renownDiv, fameDiv, nextRenownDiv, skillpointsDiv, reqs)
 {
 	if (1 <= newVal && newVal <= 20 && newVal != c.fameRank)
 	{
@@ -1963,13 +2041,12 @@ function changeRenownAndPropagate(newVal, c, nameDiv, renownDiv, fameDiv, nextRe
 		}
 		else
 		{
-			//uh oh - how are you going to deal with negative skillpoints?
+			//uh oh - how are you going to deal with negative?
 		}
-
-		//TODO PROPAGATE to requirements
+		propagateRequirements(c, reqs);
 	}
 }
-function changeFameAndPropagate(newVal, c, nameDiv, renownDiv, fameDiv, nextRenownDiv, skillpointsDiv)
+function changeFameAndPropagate(newVal, c, nameDiv, renownDiv, fameDiv, nextRenownDiv, skillpointsDiv, reqs)
 {
 	if (newVal >= 0 && newVal != c.fame)
 	{
@@ -1988,10 +2065,39 @@ function changeFameAndPropagate(newVal, c, nameDiv, renownDiv, fameDiv, nextReno
 		}
 		else if (newVal < c.fame)
 		{
+			//uh oh - how are you going to deal with negative?
+		}
+		propagateRequirements(c, reqs);
+	}
+}
 
+//TODO TODO TODO there might be a mismatch between the ingame hoverbox showings and the actual equippability 
+// and even between this function's setup and the meetsRequirement() call
+//divWithAllTheItems: can be NO_REQS, in which case this function does nothing
+function propagateRequirements(c, divWithAllTheItems)
+//assumes itemBoxReq_stat itemBoxReq_val itemBoxReq_type
+{
+	for (let reqDiv of divWithAllTheItems?.querySelectorAll(".item-box-req") || [])
+	{
+		let val = reqDiv.itemBoxReq_val;
+		const itCategory = TYPE_TO_CATEGORY[reqDiv.itemBoxReq_type]; 
+		if (itCategory == CATEGORY_WEAPON || itCategory == CATEGORY_ARMOR || itCategory == CATEGORY_JEWELRY)
+		{
+			const redreq = Math.min(75, charNetEffect(c, EFFECT_PERCENT_ITEM_REQUIREMENTS));
+			if (reqDiv.itemBoxReq_stat != STAT_RENOWN) val = Math.trunc(val - val * redreq * 0.01);
 		}
 
-		//TODO PROPAGATE to requirements
+		if (reqDiv.itemBoxReq_stat == STAT_RENOWN)
+			reqDiv.innerText = `Requires Renown of ${FAME_NAMES[val]}`;
+		else if (reqDiv.itemBoxReq_stat == STAT_LEVEL)
+			reqDiv.innerText = `Requires Level ${val}`;
+		else
+			reqDiv.innerText = `Requires ${val} ${STAT_INT_STR[reqDiv.itemBoxReq_stat]}`;
+
+		if (meetsRequirements(c, reqDiv.itemBoxReq_stat, reqDiv.itemBoxReq_val, reqDiv.itemBoxReq_type != TYPE_SPELL))
+			{ reqDiv.classList.remove("highlight-red"); reqDiv.classList.add("highlight-green"); }
+		else
+			{ reqDiv.classList.remove("highlight-green"); reqDiv.classList.add("highlight-red"); }
 	}
 }
 
@@ -2010,39 +2116,16 @@ function initStatsInvSkillsGold()
 		}
 	}
 
+	const p = robj.player;
 	//TODO but consider that the displayed number might not be whats used in game
 
 	computeEquippedEffects();
 	computeCharacterEffects();
-	//REQUIREMENTS - should probably pull into its own function
-	//because i cant do this before computing everything woops
-	for (let reqDiv of player_statsInvSkillGold_div.querySelectorAll(".item-box-req"))
-	{
-		let val = reqDiv.itemBoxReq_val;
-		const itCategory = TYPE_TO_CATEGORY[reqDiv.itemBoxReq_type]; 
-		if (itCategory == CATEGORY_WEAPON || itCategory == CATEGORY_ARMOR || itCategory == CATEGORY_JEWELRY)
-		{
-			const redreq = Math.min(75, charNetEffect(robj.player, EFFECT_PERCENT_ITEM_REQUIREMENTS));
-			if (reqDiv.itemBoxReq_stat != STAT_RENOWN) val = Math.trunc(val - val * redreq * 0.01);
-		}
-
-		if (reqDiv.itemBoxReq_stat == STAT_RENOWN)
-			reqDiv.innerText = `Requires Renown of ${FAME_NAMES[val]}`;
-		else if (reqDiv.itemBoxReq_stat == STAT_LEVEL)
-			reqDiv.innerText = `Requires Level ${val}`;
-		else
-			reqDiv.innerText = `Requires ${val} ${STAT_INT_STR[reqDiv.itemBoxReq_stat]}`;
-
-		if (meetsRequirements(robj.player, reqDiv.itemBoxReq_stat, reqDiv.itemBoxReq_val, reqDiv.itemBoxReq_type != TYPE_SPELL))
-			reqDiv.classList.add("highlight-green");
-		else
-			reqDiv.classList.add("highlight-red");
-	}
+	propagateRequirements(p, player_statsInvSkillGold_div);
 	
 	//TODO but consider that the displayed number might not be whats used in game
 	//TODO there is a petstatsmenu.cpp, how is that different? how about other monsters?
 	//TODO TODO TODO Invenctory::EffectValue is probably different from Character::EffectValue?
-	const p = robj.player;
 	const nameDiv = PLAYER_TAB.statsDivs.get("NAME"); nameDiv.innerText = robj.player.lineage > 0 ? `${p.name} the ${FAME_NAMES[p.fameRank]} (${romanNumeral(p.lineage)})` :
 																									`${p.name} the ${FAME_NAMES[p.fameRank]}`;
 	const levelDiv = PLAYER_TAB.statsDivs.get("LEVEL"); //levelDiv.innerText = p.level;
@@ -2083,7 +2166,7 @@ function initStatsInvSkillsGold()
 											},
 											(_text, _input) => {
 												const newVal = parseInt(_input.value.trim());
-												changeLevelAndPropagate(p, newVal, levelDiv, expDiv, nextLevelDiv, staminaDiv, manaDiv, hpDiv, statPointsDiv, skillPointsDiv, /*requirements!!!!!!!*/);
+												changeLevelAndPropagate(p, newVal, levelDiv, expDiv, nextLevelDiv, staminaDiv, manaDiv, hpDiv, statPointsDiv, skillPointsDiv, player_statsInvSkillGold_div);
 											},
 											() => {return `${p.level}`});
     addEditableFieldAndHoverboxTo(expDiv,	p.experience,
@@ -2092,7 +2175,7 @@ function initStatsInvSkillsGold()
 											},
 											(_text, _input) => {
 												const newVal = parseInt(_input.value.trim());
-												changeExperienceAndPropagate(p, newVal, levelDiv, expDiv, nextLevelDiv, staminaDiv, manaDiv, hpDiv, statPointsDiv, skillPointsDiv, /*requirements!!!!!!!*/);
+												changeExperienceAndPropagate(p, newVal, levelDiv, expDiv, nextLevelDiv, staminaDiv, manaDiv, hpDiv, statPointsDiv, skillPointsDiv, player_statsInvSkillGold_div);
 											},
 											() => {return `${p.experience}`;})
 
@@ -2104,7 +2187,7 @@ function initStatsInvSkillsGold()
 												},
 												(_text, _input) => {
 													const newVal = parseInt(_input.value.trim());
-													changeRenownAndPropagate(newVal, p, nameDiv, renownDiv, fameDiv, nextRenownDiv, skillPointsDiv);
+													changeRenownAndPropagate(newVal, p, nameDiv, renownDiv, fameDiv, nextRenownDiv, skillPointsDiv, player_statsInvSkillGold_div);
 												},
 												() => {return `${p.fameRank}`;});
 	addEditableFieldAndHoverboxTo(fameDiv,	p.fame,
@@ -2113,26 +2196,26 @@ function initStatsInvSkillsGold()
 											},
 											(_text, _input) => {
 												const newVal = parseInt(_input.value.trim());
-												changeFameAndPropagate(newVal, p, nameDiv, renownDiv, fameDiv, nextRenownDiv, skillPointsDiv);
+												changeFameAndPropagate(newVal, p, nameDiv, renownDiv, fameDiv, nextRenownDiv, skillPointsDiv, player_statsInvSkillGold_div);
 											},
 											() => {return `${p.fame}`;})
 
 
-	for (const [div, computeEffect, changeAndPropagate, attr, perc, flat] of [	[strengthDiv,	charStrength,	changeBaseStrengthAndPropagate,		"strength",		EFFECT_PERCENT_STRENGTH,	EFFECT_STRENGTH],
-																				[dexterityDiv,	charDexterity,	changeBaseDexterityAndPropagate,	"dexterity", 	EFFECT_PERCENT_DEXTERITY,	EFFECT_DEXTERITY],
-																				[vitalityDiv,	charVitality,	changeBaseVitalityAndPropagate,		"vitality",		EFFECT_PERCENT_VITALITY, 	EFFECT_VITALITY],
-																				[magicDiv,		charMagic,		changeBaseMagicAndPropagate,		"magic",		EFFECT_PERCENT_MAGIC, 		EFFECT_MAGIC],
-																				[hpDiv,		    charMaxHP,		changeBaseMaxHPAndPropagate, 		"maxHp",		EFFECT_PERCENT_H_P,			EFFECT_MAX_HP],
-																				[staminaDiv,	charMaxStamina, changeBaseMaxStaminaAndPropagate,	"maxStamina",	EFFECT_PERCENT_STAMINA, 	EFFECT_MAX_STAMINA],
-																				[manaDiv,		charMaxMana,	changeBaseMaxManaAndPropagate,		"maxMana",		EFFECT_PERCENT_MANA,		EFFECT_MAX_MANA]])
+	for (const [args, computeEffect, changeAndPropagate, attr, perc, flat] of [	[[strengthDiv, dmgDiv, player_statsInvSkillGold_div],					charStrength,	changeBaseStrengthAndPropagate,		"strength",		EFFECT_PERCENT_STRENGTH,	EFFECT_STRENGTH],
+																				[[dexterityDiv, attackDiv, defenseDiv, player_statsInvSkillGold_div],	charDexterity,	changeBaseDexterityAndPropagate,	"dexterity", 	EFFECT_PERCENT_DEXTERITY,	EFFECT_DEXTERITY],
+																				[[vitalityDiv, hpDiv, staminaDiv, player_statsInvSkillGold_div],		charVitality,	changeBaseVitalityAndPropagate,		"vitality",		EFFECT_PERCENT_VITALITY, 	EFFECT_VITALITY],
+																				[[magicDiv, manaDiv, player_statsInvSkillGold_div],						charMagic,		changeBaseMagicAndPropagate,		"magic",		EFFECT_PERCENT_MAGIC, 		EFFECT_MAGIC],
+																				[[hpDiv],		    													charMaxHP,		changeBaseMaxHPAndPropagate, 		"maxHp",		EFFECT_PERCENT_H_P,			EFFECT_MAX_HP],
+																				[[staminaDiv],															charMaxStamina, changeBaseMaxStaminaAndPropagate,	"maxStamina",	EFFECT_PERCENT_STAMINA, 	EFFECT_MAX_STAMINA],
+																				[[manaDiv],																charMaxMana,	changeBaseMaxManaAndPropagate,		"maxMana",		EFFECT_PERCENT_MANA,		EFFECT_MAX_MANA]])
 	{
-		addEditableFieldAndHoverboxTo(div,	computeEffect(p),
+		addEditableFieldAndHoverboxTo(args[0],	computeEffect(p),
 											(_text, _input) => {
 												_input.value = p[attr];
 											},
 											(_text, _input) => {
 												const newVal = parseInt(_input.value.trim());
-												changeAndPropagate(p, newVal, div); //TODO TODO TODO strength dexterity vitality magic need to propagate lmao
+												changeAndPropagate(p, newVal, ...args); //TODO TODO TODO strength dexterity vitality magic need to propagate lmao
 											},
 											() => {
 												return `${p[attr]} + ${charNetEffect(p, perc)}% [${Math.ceil(charNetEffect(p, perc) * 0.01 * p[attr])}] + ${Math.trunc(charNetEffect(p, flat))}`;
@@ -2151,10 +2234,17 @@ function initStatsInvSkillsGold()
 													() => {
 														return p.unusedStatPoints;
 													});
+	const respecStatsButton = document.createElement("button");
+	respecStatsButton.innerText = "Respec Stats";
+	respecStatsButton.classList.add("respec-stats-button");
+	respecStatsButton.addEventListener("click", () => {respecStatsAndPropagate(p, strengthDiv, dexterityDiv, vitalityDiv, magicDiv, dmgDiv, attackDiv, defenseDiv, staminaDiv, hpDiv, manaDiv, statPointsDiv, player_statsInvSkillGold_div);});
+	player_statsInvSkillGold_div.appendChild(respecStatsButton);
+
 	//inv
 
-
 	//skills
+	//TODO THE HOVERBOX IS NOT UPDATED CORRECTLY - AND I DONT KNOW IF ANYTHING IS
+	const skillDivs = [];
 	let i = 0;
 	for (div of PLAYER_TAB.skillsGoldDivs.values())
 	{
@@ -2164,6 +2254,7 @@ function initStatsInvSkillsGold()
 		const skill = i >> 1;
 		if (i++ % 2 == 0)
 		{
+			skillDivs.push(div);
 			addEditableFieldAndHoverboxTo(div,	charNetSkill(p, skill),
 												(_text, _input) => {
 													_input.value = p.skills[skill];
@@ -2181,18 +2272,22 @@ function initStatsInvSkillsGold()
 			div.innerText = `${SKILLS_INT_STR[skill]} Skill`;
 	}
 	PLAYER_TAB.skillsGoldDivs.get("POINTS_STR").innerText = "Points Remaining";
-	addEditableFieldAndHoverboxTo(PLAYER_TAB.skillsGoldDivs.get("POINTS"),	robj.player.unusedSkillPoints,
-																			(_text, _input) => {
-																				_input.value = robj.player.unusedSkillPoints;
-																			},
-																			(_text, _input) => {
-																				const newVal = _input.value.trim();
-																				robj.player.unusedSkillPoints = parseInt(newVal);
-																				_text.innerText = robj.player.unusedSkillPoints;
-																			},
-																			() => {
-																				return robj.player.unusedSkillPoints;
-																			});
+	addEditableFieldAndHoverboxTo(skillPointsDiv,	robj.player.unusedSkillPoints,
+													(_text, _input) => {
+														_input.value = p.unusedSkillPoints;
+													},
+													(_text, _input) => {
+														const newVal = parseInt(_input.value.trim());
+														changeSkillPointsAndPropagate(p, newVal, skillPointsDiv);
+													},
+													() => {
+														return p.unusedSkillPoints;
+													});
+	const respecSkillsButton = document.createElement("button");
+	respecSkillsButton.innerText = "Respec Skills";
+    respecSkillsButton.classList.add("respec-skills-button");
+	respecSkillsButton.addEventListener("click", () => {respecSkillsAndPropagate(p, skillDivs, skillPointsDiv);});
+	player_statsInvSkillGold_div.appendChild(respecSkillsButton);
 
 	//gold
 	//TODO WHERE LEFT OFF probably allow passing in False into slots where N/A, like hoverbox here or text/input for inventory icons
