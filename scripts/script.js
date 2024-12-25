@@ -1851,7 +1851,7 @@ function changeBaseSkillAndPropagate(c, skill, newVal, skillDiv)
 	//TODO validate
 	c.skills[skill] = newVal;
 	skillDiv.querySelector("span").innerText = charNetSkill(c, skill);
-	skillDiv.querySelector(".hoverbox").innerText = `${c.skills[skill]} + ${charNetEffect(c, skill)}`;
+	skillDiv.querySelector(".hoverbox").innerText = `${c.skills[skill]} + ${charNetEffect(c, EFFECT_SKILL_SWORD + skill)}`;
 
 	if (skill <= SKILL_BOW)
 	{
