@@ -2255,6 +2255,31 @@ function initStatsInvSkillsGold()
 		if (i++ % 2 == 0)
 		{
 			skillDivs.push(div);
+
+			const inc = document.createElement("img");
+			inc.src = "img/skillIncrementUnclicked.png";
+			inc.classList.add("skill-increment-unclicked");
+			inc.style.top = `${(84 + 32*skill) / 640.0 * 100}%`;
+			player_statsInvSkillGold_div.appendChild(inc);
+
+			const _inc = document.createElement("img");
+			_inc.src = "img/skillIncrementClicked.png";
+			_inc.classList.add("skill-increment-clicked");
+			_inc.style.top = `${(84 + 32*skill) / 640.0 * 100}%`;
+			player_statsInvSkillGold_div.appendChild(_inc);
+
+			const dec = document.createElement("img");
+			dec.src = "img/skillDecrementUnclicked.png";
+			dec.classList.add("skill-decrement-unclicked");
+			dec.style.top = `${(84 + 32*skill) / 640.0 * 100}%`;
+			player_statsInvSkillGold_div.appendChild(dec);
+
+			const _dec = document.createElement("img");
+			_dec.src = "img/skillDecrementClicked.png";
+			_dec.classList.add("skill-decrement-clicked");
+			_dec.style.top = `${(84 + 32*skill) / 640.0 * 100}%`;
+			player_statsInvSkillGold_div.appendChild(_dec);
+
 			addEditableFieldAndHoverboxTo(div,	charNetSkill(p, skill),
 												(_text, _input) => {
 													_input.value = p.skills[skill];
@@ -2283,11 +2308,14 @@ function initStatsInvSkillsGold()
 													() => {
 														return p.unusedSkillPoints;
 													});
+
 	const respecSkillsButton = document.createElement("button");
 	respecSkillsButton.innerText = "Respec Skills";
     respecSkillsButton.classList.add("respec-skills-button");
 	respecSkillsButton.addEventListener("click", () => {respecSkillsAndPropagate(p, skillDivs, skillPointsDiv);});
 	player_statsInvSkillGold_div.appendChild(respecSkillsButton);
+
+	
 
 	//gold
 	//TODO WHERE LEFT OFF probably allow passing in False into slots where N/A, like hoverbox here or text/input for inventory icons

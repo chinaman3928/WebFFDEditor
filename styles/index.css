@@ -275,3 +275,32 @@ html {
   transform: translate(-50%, -50%);
 }
 
+.skill-increment-unclicked, .skill-increment-clicked {
+  position: absolute;
+  cursor: pointer;
+  width: calc(26 / 1536 * 100%);
+  height: calc(25 / 615 * 100%);
+  left: calc(1132 / 1536 * 100%); /*1132 = 108+512+512*/
+  /*right: do it programatically*/
+}
+.skill-increment-unclicked {
+  z-index: 1;
+}
+.skill-increment-unclicked:hover {
+  opacity: 0;
+}
+
+.skill-decrement-unclicked, .skill-decrement-clicked {
+  position: absolute;
+  cursor: pointer;
+  width: calc(26 / 1536 * 100%);
+  height: calc(25 / 615 * 100%);
+  left: calc(1106 / 1536 * 100%); /*1132 = 108+512+512*/
+  /*right: do it programatically*/
+}
+.skill-decrement-unclicked {
+  z-index: 1;
+}
+.skill-decrement-unclicked:hover {
+  opacity: 0;
+}
