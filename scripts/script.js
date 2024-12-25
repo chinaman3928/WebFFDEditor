@@ -2101,6 +2101,42 @@ function propagateRequirements(c, divWithAllTheItems)
 	}
 }
 
+function addIncrementDecrementPair(div, stat_or_skill, top, left /*, functions...*/)
+//stat_or_skill: "stat" means top/left is for the inc, and then dec is immediately to the right
+//              "skill" means top/left is for the inc, and then dec is immediately to the left
+//top/left are in pixels of the entire 1536x640 tab
+{
+	const isSkill = stat_or_skill == "skill";
+
+	const inc = document.createElement("img");
+	inc.src = "img/incrementUnclicked.png";
+	inc.classList.add("increment-unclicked");
+	inc.style.top = `${top / 640.0 * 100}%`;
+	inc.style.left = `${left / 1536.0 * 100}%`;
+	div.appendChild(inc);
+
+	const _inc = document.createElement("img");
+	_inc.src = "img/incrementClicked.png";
+	_inc.classList.add("increment-clicked");
+	_inc.style.top = `${top / 640.0 * 100}%`;
+	_inc.style.left = `${left / 1536.0 * 100}%`;
+	div.appendChild(_inc);
+
+	const dec = document.createElement("img");
+	dec.src = "img/decrementUnclicked.png";
+	dec.classList.add("decrement-unclicked");
+	dec.style.top = `${top / 640.0 * 100}%`;
+	dec.style.left = isSkill ? `${(left - 26) / 1536.0 * 100}%` : `${(left + 26) / 1536.0 * 100}%`;
+	div.appendChild(dec);
+
+	const _dec = document.createElement("img");
+	_dec.src = "img/decrementClicked.png";
+	_dec.classList.add("decrement-clicked");
+	_dec.style.top = `${top / 640.0 * 100}%`;
+	_dec.style.left = isSkill ? `${(left - 26) / 1536.0 * 100}%` : `${(left + 26) / 1536.0 * 100}%`;
+	div.appendChild(_dec);
+}
+
 //TODO TODO TODO attack descriptions have effects and things too...
 //TODO TODO TODO also unarmed attacks
 function initStatsInvSkillsGold()
@@ -2201,6 +2237,14 @@ function initStatsInvSkillsGold()
 											() => {return `${p.fame}`;})
 
 
+
+	addIncrementDecrementPair(player_statsInvSkillGold_div, "stat", 259, 234 /*, functions...*/);
+	addIncrementDecrementPair(player_statsInvSkillGold_div, "stat", 338, 234 /*, functions...*/);
+	addIncrementDecrementPair(player_statsInvSkillGold_div, "stat", 419, 234 /*, functions...*/);
+	addIncrementDecrementPair(player_statsInvSkillGold_div, "stat", 497, 234 /*, functions...*/);
+
+
+
 	for (const [args, computeEffect, changeAndPropagate, attr, perc, flat] of [	[[strengthDiv, dmgDiv, player_statsInvSkillGold_div],					charStrength,	changeBaseStrengthAndPropagate,		"strength",		EFFECT_PERCENT_STRENGTH,	EFFECT_STRENGTH],
 																				[[dexterityDiv, attackDiv, defenseDiv, player_statsInvSkillGold_div],	charDexterity,	changeBaseDexterityAndPropagate,	"dexterity", 	EFFECT_PERCENT_DEXTERITY,	EFFECT_DEXTERITY],
 																				[[vitalityDiv, hpDiv, staminaDiv, player_statsInvSkillGold_div],		charVitality,	changeBaseVitalityAndPropagate,		"vitality",		EFFECT_PERCENT_VITALITY, 	EFFECT_VITALITY],
@@ -2256,29 +2300,7 @@ function initStatsInvSkillsGold()
 		{
 			skillDivs.push(div);
 
-			const inc = document.createElement("img");
-			inc.src = "img/skillIncrementUnclicked.png";
-			inc.classList.add("skill-increment-unclicked");
-			inc.style.top = `${(84 + 32*skill) / 640.0 * 100}%`;
-			player_statsInvSkillGold_div.appendChild(inc);
-
-			const _inc = document.createElement("img");
-			_inc.src = "img/skillIncrementClicked.png";
-			_inc.classList.add("skill-increment-clicked");
-			_inc.style.top = `${(84 + 32*skill) / 640.0 * 100}%`;
-			player_statsInvSkillGold_div.appendChild(_inc);
-
-			const dec = document.createElement("img");
-			dec.src = "img/skillDecrementUnclicked.png";
-			dec.classList.add("skill-decrement-unclicked");
-			dec.style.top = `${(84 + 32*skill) / 640.0 * 100}%`;
-			player_statsInvSkillGold_div.appendChild(dec);
-
-			const _dec = document.createElement("img");
-			_dec.src = "img/skillDecrementClicked.png";
-			_dec.classList.add("skill-decrement-clicked");
-			_dec.style.top = `${(84 + 32*skill) / 640.0 * 100}%`;
-			player_statsInvSkillGold_div.appendChild(_dec);
+			addIncrementDecrementPair(player_statsInvSkillGold_div, "skill", 84 + 32*skill, 108 + 2*512 /*, functions...*/);
 
 			addEditableFieldAndHoverboxTo(div,	charNetSkill(p, skill),
 												(_text, _input) => {
