@@ -2391,10 +2391,10 @@ function initStatsInvSkillsGold()
 											() => {return `${p.fame}`;})
 
 
-	for (const [args, computeEffect, changeAndPropagate, attr, perc, flat] of [	[[strengthDiv, dmgDiv, statIncrementButtons[0], player_statsInvSkillGold_div],					charStrength,	changeBaseStrengthAndPropagate,		"strength",		EFFECT_PERCENT_STRENGTH,	EFFECT_STRENGTH],
-																				[[dexterityDiv, attackDiv, defenseDiv, statIncrementButtons[1], player_statsInvSkillGold_div],	charDexterity,	changeBaseDexterityAndPropagate,	"dexterity", 	EFFECT_PERCENT_DEXTERITY,	EFFECT_DEXTERITY],
-																				[[vitalityDiv, hpDiv, staminaDiv, statIncrementButtons[2], player_statsInvSkillGold_div],		charVitality,	changeBaseVitalityAndPropagate,		"vitality",		EFFECT_PERCENT_VITALITY, 	EFFECT_VITALITY],
-																				[[magicDiv, manaDiv, statIncrementButtons[3], player_statsInvSkillGold_div],					charMagic,		changeBaseMagicAndPropagate,		"magic",		EFFECT_PERCENT_MAGIC, 		EFFECT_MAGIC],
+	for (const [args, computeEffect, changeAndPropagate, attr, perc, flat] of [	[[strengthDiv, dmgDiv, statDecrementButtons[0], player_statsInvSkillGold_div],					charStrength,	changeBaseStrengthAndPropagate,		"strength",		EFFECT_PERCENT_STRENGTH,	EFFECT_STRENGTH],
+																				[[dexterityDiv, attackDiv, defenseDiv, statDecrementButtons[1], player_statsInvSkillGold_div],	charDexterity,	changeBaseDexterityAndPropagate,	"dexterity", 	EFFECT_PERCENT_DEXTERITY,	EFFECT_DEXTERITY],
+																				[[vitalityDiv, hpDiv, staminaDiv, statDecrementButtons[2], player_statsInvSkillGold_div],		charVitality,	changeBaseVitalityAndPropagate,		"vitality",		EFFECT_PERCENT_VITALITY, 	EFFECT_VITALITY],
+																				[[magicDiv, manaDiv, statDecrementButtons[3], player_statsInvSkillGold_div],					charMagic,		changeBaseMagicAndPropagate,		"magic",		EFFECT_PERCENT_MAGIC, 		EFFECT_MAGIC],
 																				[[hpDiv],		    																			charMaxHP,		changeBaseMaxHPAndPropagate, 		"maxHp",		EFFECT_PERCENT_H_P,			EFFECT_MAX_HP],
 																				[[staminaDiv],																					charMaxStamina, changeBaseMaxStaminaAndPropagate,	"maxStamina",	EFFECT_PERCENT_STAMINA, 	EFFECT_MAX_STAMINA],
 																				[[manaDiv],																						charMaxMana,	changeBaseMaxManaAndPropagate,		"maxMana",		EFFECT_PERCENT_MANA,		EFFECT_MAX_MANA]])
