@@ -238,6 +238,11 @@ html {
   background-size: 100% 100%, 100% 100%;
 }
 
+.red-border {
+  background-image: url("../img/erroricon.png");
+  background-size: 100% 100%;
+}
+
 .highlight-lightPurple {
   background-color: #C600FE;
 }
