@@ -1569,6 +1569,7 @@ function armorDefense(it)
 
 function addHoverboxToItem(div, it, graderankDiv, hoverbox)
 {
+	div.classList.add("item-div");
 	hoverbox.classList.add("hoverbox");
 
 	//name
@@ -2133,27 +2134,33 @@ function changeFameAndPropagate(newVal, c, nameDiv, renownDiv, fameDiv, nextReno
 function propagateRequirements(c, divWithAllTheItems)
 //assumes itemBoxReq_stat itemBoxReq_val itemBoxReq_type
 {
-	for (let reqDiv of divWithAllTheItems?.querySelectorAll(".item-box-req") || [])
+	for (let itemDiv of divWithAllTheItems?.querySelectorAll(".item-div") || [])
 	{
-		let val = reqDiv.itemBoxReq_val;
-		const itCategory = TYPE_TO_CATEGORY[reqDiv.itemBoxReq_type]; 
-		if (itCategory == CATEGORY_WEAPON || itCategory == CATEGORY_ARMOR || itCategory == CATEGORY_JEWELRY)
+		let unmetRequirement = false;
+		for (let reqDiv of itemDiv.querySelectorAll(".item-box-req"))
 		{
-			const redreq = Math.min(75, charNetEffect(c, EFFECT_PERCENT_ITEM_REQUIREMENTS));
-			if (reqDiv.itemBoxReq_stat != STAT_RENOWN) val = Math.trunc(val - val * redreq * 0.01);
+			let val = reqDiv.itemBoxReq_val;
+			const itCategory = TYPE_TO_CATEGORY[reqDiv.itemBoxReq_type]; 
+			if (itCategory == CATEGORY_WEAPON || itCategory == CATEGORY_ARMOR || itCategory == CATEGORY_JEWELRY)
+			{
+				const redreq = Math.min(75, charNetEffect(c, EFFECT_PERCENT_ITEM_REQUIREMENTS));
+				if (reqDiv.itemBoxReq_stat != STAT_RENOWN) val = Math.trunc(val - val * redreq * 0.01);
+			}
+
+			if (reqDiv.itemBoxReq_stat == STAT_RENOWN)
+				reqDiv.innerText = `Requires Renown of ${FAME_NAMES[val]}`;
+			else if (reqDiv.itemBoxReq_stat == STAT_LEVEL)
+				reqDiv.innerText = `Requires Level ${val}`;
+			else
+				reqDiv.innerText = `Requires ${val} ${STAT_INT_STR[reqDiv.itemBoxReq_stat]}`;
+
+			if (meetsRequirements(c, reqDiv.itemBoxReq_stat, reqDiv.itemBoxReq_val, reqDiv.itemBoxReq_type != TYPE_SPELL))
+				{ reqDiv.classList.remove("highlight-red"); reqDiv.classList.add("highlight-green"); }
+			else
+				{ reqDiv.classList.remove("highlight-green"); reqDiv.classList.add("highlight-red"); unmetRequirement = true; }
 		}
-
-		if (reqDiv.itemBoxReq_stat == STAT_RENOWN)
-			reqDiv.innerText = `Requires Renown of ${FAME_NAMES[val]}`;
-		else if (reqDiv.itemBoxReq_stat == STAT_LEVEL)
-			reqDiv.innerText = `Requires Level ${val}`;
-		else
-			reqDiv.innerText = `Requires ${val} ${STAT_INT_STR[reqDiv.itemBoxReq_stat]}`;
-
-		if (meetsRequirements(c, reqDiv.itemBoxReq_stat, reqDiv.itemBoxReq_val, reqDiv.itemBoxReq_type != TYPE_SPELL))
-			{ reqDiv.classList.remove("highlight-red"); reqDiv.classList.add("highlight-green"); }
-		else
-			{ reqDiv.classList.remove("highlight-green"); reqDiv.classList.add("highlight-red"); }
+		if (unmetRequirement) itemDiv.classList.add("red-border");
+		else				  itemDiv.classList.remove("red-border");
 	}
 }
 
