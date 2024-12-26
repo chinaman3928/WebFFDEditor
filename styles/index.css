@@ -260,18 +260,20 @@ html {
 
 .respec-stats-button {
   /* width: 12.9557%; */
-  height: 3.90625%;
-  position: absolute;
-  top: calc(615 / 640 * 100%);
   left: calc(256 / 1536 * 100%);
-  transform: translate(-50%, -50%);
 }
 .respec-skills-button {
   /* width: 12.9557%; */
+  left: calc(1300 / 1536 * 100%);         /*1280 = 2*512 + 256  but it doesnt look very good, so add a bit*/
+}
+.respec-stats-button, .respec-skills-button {
+  cursor: pointer;
+  background-color: black;
+  color: white;
+  opacity: 0.85;
   height: 3.90625%;
   position: absolute;
   top: calc(615 / 640 * 100%);
-  left: calc(1300 / 1536 * 100%);         /*1280 = 2*512 + 256  but it doesnt look very good, so add a bit*/
   transform: translate(-50%, -50%);
 }
 
@@ -284,7 +286,7 @@ html {
 .increment-unclicked {
   z-index: 1;
 }
-.increment-unclicked:hover {
+.increment-unclicked.ungrayed:hover {
   opacity: 0;
 }
 
@@ -297,6 +299,18 @@ html {
 .decrement-unclicked {
   z-index: 1;
 }
-.decrement-unclicked:hover {
+.decrement-unclicked.ungrayed:hover {
   opacity: 0;
+}
+
+.difficulty-select {
+  position: absolute;
+  cursor: pointer;
+  top: calc(21 / 640 * 100%);
+  left: calc(772 / 1536 * 100%); /*772 = 512 + 260*/
+  transform: translate(-50%, -50%);
+
+  background-color: black;
+  color: white;
+  opacity: 0.85;
 }

@@ -157,6 +157,11 @@ MONSTERS_INFO = new Map();
 ITEMS_INFO = new Map();
 SPELLS_INFO = new Map();
 
+const DIFFICULTY_PAGE = 0;
+const DIFFICULTY_ADVENTURER = 1;
+const DIFFICULTY_HERO = 2;
+const DIFFICULTY_LEGEND = 3;
+
 //TODO this is og only
 const EXPERIENCE_GATE =
 [
@@ -1828,37 +1833,74 @@ function addEditableFieldAndHoverboxTo(div, initText, enterFunc, exitFunc, hover
 
 const NO_REQS = null;
 
-//DISCARDS SHRINE OF LEARNING and other manual edits - you should warn them about that TODO
-function respecStatsAndPropagate(c, strengthDiv, dexterityDiv, vitalityDiv, magicDiv, dmgDiv, attackDiv, defenseDiv, staminaDiv, hpDiv, manaDiv, statPointsDiv, reqs)
+
+function propagateToIncrementButtons(ungray, buttons)
+//for the statpoint and skillpoint functions - ungray iff there are points to spend
 {
-	changeBaseStrengthAndPropagate(c, 25, strengthDiv, dmgDiv, NO_REQS);
-	changeBaseDexterityAndPropagate(c, 20, dexterityDiv, attackDiv, defenseDiv, NO_REQS);
-	changeBaseVitalityAndPropagate(c, 25, vitalityDiv, hpDiv, staminaDiv, NO_REQS);
-	changeBaseMagicAndPropagate(c, 10, magicDiv, manaDiv, NO_REQS);
-	changeStatPointsAndPropagate(c, c.level * 5 - 5, statPointsDiv);
+	if (!buttons.length || (ungray && buttons[0].classList.contains("ungrayed")) || (!ungray && !buttons[0].classList.contains("ungrayed")))
+		return;
+	for (const inc of buttons)
+	{
+		if (ungray)
+		{
+			inc.classList.add("ungrayed");
+			inc.src = "img/incrementUnclicked.png";
+		}
+		else
+		{
+			inc.classList.remove("ungrayed");
+			inc.src = "img/gray_incrementUnclicked.png";
+		}
+	}
+}
+
+function propagateToDecrementButton(ungray, dec)
+//for the stat and skill functions - ungray iff that stat/skill can be decremented
+{
+	if (ungray && !dec.classList.contains("ungrayed"))
+	{
+		dec.classList.add("ungrayed");
+		dec.src = "img/decrementUnclicked.png";
+	}
+	else if (!ungray && dec.classList.contains("ungrayed"))
+	{
+		dec.classList.remove("ungrayed");
+		dec.src = "img/gray_decrementUnclicked.png";
+	}
+}
+
+
+//DISCARDS SHRINE OF LEARNING and other manual edits - you should warn them about that TODO
+function respecStatsAndPropagate(c, strengthDiv, dexterityDiv, vitalityDiv, magicDiv, dmgDiv, attackDiv, defenseDiv, staminaDiv, hpDiv, manaDiv, statPointsDiv, strengthDec, dexterityDec, vitalityDec, magicDec, statIncrementButtons, reqs)
+{
+	changeBaseStrengthAndPropagate(c, 25, strengthDiv, dmgDiv, strengthDec, NO_REQS);
+	changeBaseDexterityAndPropagate(c, 20, dexterityDiv, attackDiv, defenseDiv, dexterityDec, NO_REQS);
+	changeBaseVitalityAndPropagate(c, 25, vitalityDiv, hpDiv, staminaDiv, vitalityDec, NO_REQS);
+	changeBaseMagicAndPropagate(c, 10, magicDiv, manaDiv, magicDec, NO_REQS);
+	changeStatPointsAndPropagate(c, c.level * 5 - 5, statPointsDiv, statIncrementButtons);
 	propagateRequirements(c, reqs);
 }
 
 //DISCARDS SHRINE OF LEARNING and other manual edits - you should warn them about that TODO
-function respecSkillsAndPropagate(c, skillDivs, skillpointsDiv)
+function respecSkillsAndPropagate(c, skillDivs, skillpointsDiv, skillIncrementButtons, skillDecrementButtons)
 {
-	for (let s = 0; s < SKILL_ALL; changeBaseSkillAndPropagate(c, s, 0, skillDivs[s++]));
-	changeSkillPointsAndPropagate(c, c.level * 2 - 2  +  c.fameRank * 4 - 4, skillpointsDiv);
+	for (let s = 0; s < SKILL_ALL; changeBaseSkillAndPropagate(c, s, 0, skillDivs[s], skillDecrementButtons[s++]));
+	changeSkillPointsAndPropagate(c, c.level * 2 - 2  +  c.fameRank * 4 - 4, skillpointsDiv, skillIncrementButtons);
 }
 
-function changeBaseSkillAndPropagate(c, skill, newVal, skillDiv)
+function changeBaseSkillAndPropagate(c, whichSkill, newVal, skillDiv, dec)
 {
 	//TODO validate
-	c.skills[skill] = newVal;
-	skillDiv.querySelector("span").innerText = charNetSkill(c, skill);
-	skillDiv.querySelector(".hoverbox").innerText = `${c.skills[skill]} + ${charNetEffect(c, EFFECT_SKILL_SWORD + skill)}`;
+	c.skills[whichSkill] = newVal;
+	skillDiv.querySelector("span").innerText = charNetSkill(c, whichSkill);
+	skillDiv.querySelector(".hoverbox").innerText = `${c.skills[whichSkill]} + ${charNetEffect(c, EFFECT_SKILL_SWORD + whichSkill)}`;
 
-	if (skill <= SKILL_BOW)
+	if (whichSkill <= SKILL_BOW)
 	{
 		//propagate to damage;
 		//propagate to attack;
 	}
-	else switch (skill)
+	else switch (whichSkill)
 	{
 		//TODO THE REST PROPAGATE in hitherto unseen ways
 		case SKILL_CRITICAL_STRIKE:
@@ -1871,10 +1913,12 @@ function changeBaseSkillAndPropagate(c, skill, newVal, skillDiv)
 		case SKILL_ALL:
 			;
 	}
+
+	propagateToDecrementButton(newVal > 0, dec);
 }
 
 
-function changeBaseStrengthAndPropagate(c, strength, strengthDiv, dmgDiv, reqs)
+function changeBaseStrengthAndPropagate(c, strength, strengthDiv, dmgDiv, strengthDec, reqs)
 {
 	//TODO validate
 	c.strength = strength;
@@ -1882,11 +1926,13 @@ function changeBaseStrengthAndPropagate(c, strength, strengthDiv, dmgDiv, reqs)
 	strengthDiv.querySelector(".hoverbox").innerText = `${c.strength} + ${charNetEffect(c, EFFECT_PERCENT_STRENGTH)}% [${Math.ceil(charNetEffect(c, EFFECT_PERCENT_STRENGTH) * 0.01 * c.strength)}] + ${Math.trunc(charNetEffect(c, EFFECT_STRENGTH))}`;
 	//other propagates
 
+	propagateToDecrementButton(strength > 25, strengthDec);
+
 	//including requirements, but consider that an ancestor might also call requirements later?
 	propagateRequirements(c, reqs);
 }
 
-function changeBaseDexterityAndPropagate(c, dexterity, dexterityDiv, attackDiv, defenseDiv, reqs)
+function changeBaseDexterityAndPropagate(c, dexterity, dexterityDiv, attackDiv, defenseDiv, dexterityDec, reqs)
 {
 	//TODO validate
 	const old = charDexterity(c);
@@ -1898,11 +1944,13 @@ function changeBaseDexterityAndPropagate(c, dexterity, dexterityDiv, attackDiv, 
 	defenseDiv.innerText = parseInt(defenseDiv.innerText) - Math.trunc(old / 5) + Math.trunc(charDexterity(c) / 5);
 	//propagate to attack, but doesnt change any attribute
 
+	propagateToDecrementButton(dexterity > 20, dexterityDec);
+
 	//including requirements, but consider that an ancestor might also call requirements later?
 	propagateRequirements(c, reqs);
 }
 
-function changeBaseVitalityAndPropagate(c, vitality, vitalityDiv, hpDiv, staminaDiv, reqs)
+function changeBaseVitalityAndPropagate(c, vitality, vitalityDiv, hpDiv, staminaDiv, vitalityDec, reqs)
 {
 	//TODO validate
 	const old = charVitality(c);
@@ -1913,11 +1961,13 @@ function changeBaseVitalityAndPropagate(c, vitality, vitalityDiv, hpDiv, stamina
 	changeBaseMaxStaminaAndPropagate(c, c.maxStamina + 2*(charVitality(c) - old), staminaDiv);
 	changeBaseMaxHPAndPropagate(c, c.maxHp + 4*(charVitality(c) - old), hpDiv);
 
+	propagateToDecrementButton(vitality > 25, vitalityDec);
+
 	//including requirements, but consider that an ancestor might also call requirements later?
 	propagateRequirements(c, reqs);
 }
 
-function changeBaseMagicAndPropagate(c, magic, magicDiv, manaDiv, reqs)
+function changeBaseMagicAndPropagate(c, magic, magicDiv, manaDiv, magicDec, reqs)
 {
 	//TODO validate
 	const old = charMagic(c);
@@ -1927,6 +1977,8 @@ function changeBaseMagicAndPropagate(c, magic, magicDiv, manaDiv, reqs)
 	//other propagates
 	changeBaseMaxManaAndPropagate(c, c.maxMana + 2*(charMagic(c) - old), manaDiv);
 	//TODO propagate spell damage etc
+
+	propagateToDecrementButton(magic > 10, magicDec);
 
 	//including requirements, but consider that an ancestor might also call requirements later?
 	propagateRequirements(c, reqs);
@@ -1961,32 +2013,36 @@ function changeBaseMaxHPAndPropagate(c, hp, hpDiv)
 	hpDiv.querySelector(".hoverbox").innerText = `${c.maxHp} + ${charNetEffect(c, EFFECT_PERCENT_H_P)}% [${Math.ceil(charNetEffect(c, EFFECT_PERCENT_H_P) * 0.01 * c.maxHp)}] + ${Math.trunc(charNetEffect(c, EFFECT_MAX_HP))}`;
 }
 
-function changeStatPointsAndPropagate(c, stats, statPointsDiv)
+function changeStatPointsAndPropagate(c, stats, statPointsDiv, statIncrementButtons)
 {
 	//TODO validation
 	c.unusedStatPoints = stats;
 	statPointsDiv.querySelector("span").innerText = stats;
 	statPointsDiv.querySelector(".hoverbox").innerText = stats;
+
+	propagateToIncrementButtons(stats > 0, statIncrementButtons);
 }
 
-function changeSkillPointsAndPropagate(c, skills, skillPointsDiv)
+function changeSkillPointsAndPropagate(c, skills, skillPointsDiv, skillIncrementButtons)
 {
 	//TODO validation
 	c.unusedSkillPoints = skills;
 	skillPointsDiv.querySelector("span").innerText = skills;
 	skillPointsDiv.querySelector(".hoverbox").innerText = skills;
+
+	propagateToIncrementButtons(skills > 0, skillIncrementButtons);
 }
 
 
-function changeLevelAndPropagate(c, level, levelDiv, experienceDiv, nextLevelDiv, staminaDiv, manaDiv, hpDiv, statPointsDiv, skillPointsDiv, reqs)
+function changeLevelAndPropagate(c, level, levelDiv, experienceDiv, nextLevelDiv, staminaDiv, manaDiv, hpDiv, statPointsDiv, skillPointsDiv, statIncrementButtons, skillIncrementButtons, reqs)
 {
 	if (c.level == level || 1 > level || level > 99) return;
 	if (level > c.level)
-		changeExperienceAndPropagate(c, EXPERIENCE_GATE[level - 1], levelDiv, experienceDiv, nextLevelDiv, staminaDiv, manaDiv, hpDiv, statPointsDiv, skillPointsDiv, reqs);   
+		changeExperienceAndPropagate(c, EXPERIENCE_GATE[level - 1], levelDiv, experienceDiv, nextLevelDiv, staminaDiv, manaDiv, hpDiv, statPointsDiv, skillPointsDiv, statIncrementButtons, skillIncrementButtons, reqs);   
 	else
 		; //TODO
 }
-function changeExperienceAndPropagate(c, experience, levelDiv, experienceDiv, nextLevelDiv, staminaDiv, manaDiv, hpDiv, statPointsDiv, skillPointsDiv, reqs)
+function changeExperienceAndPropagate(c, experience, levelDiv, experienceDiv, nextLevelDiv, staminaDiv, manaDiv, hpDiv, statPointsDiv, skillPointsDiv, statIncrementButtons, skillIncrementButtons, reqs)
 {
 	if (experience >= 0 && c.experience == experience) return;
 
@@ -2015,8 +2071,8 @@ function changeExperienceAndPropagate(c, experience, levelDiv, experienceDiv, ne
 			changeBaseMaxHPAndPropagate(c, c.maxHp + 4*delta, hpDiv); //etc like the others
 		
 			//pets auto skill;
-			changeStatPointsAndPropagate(c, c.unusedStatPoints + 5*delta, statPointsDiv);
-			changeSkillPointsAndPropagate(c, c.unusedSkillPoints + 2*delta, skillPointsDiv);
+			changeStatPointsAndPropagate(c, c.unusedStatPoints + 5*delta, statPointsDiv, statIncrementButtons);
+			changeSkillPointsAndPropagate(c, c.unusedSkillPoints + 2*delta, skillPointsDiv, skillIncrementButtons);
 		}
 	}
 	else if (experience < c.experience)
@@ -2026,18 +2082,18 @@ function changeExperienceAndPropagate(c, experience, levelDiv, experienceDiv, ne
 	propagateRequirements(c, reqs);
 }
 
-function changeRenownAndPropagate(newVal, c, nameDiv, renownDiv, fameDiv, nextRenownDiv, skillpointsDiv, reqs)
+function changeRenownAndPropagate(newVal, c, nameDiv, renownDiv, fameDiv, nextRenownDiv, skillpointsDiv, skillIncrementButtons, reqs)
 {
 	if (1 <= newVal && newVal <= 20 && newVal != c.fameRank)
 	{
-		const oldRenown = c.fameRank;
+		const delta = newVal - c.fameRank;
 		if (newVal > c.fameRank)
 		{
 			renownDiv.querySelector(".hoverbox").innerText = renownDiv.querySelector("span").innerText = c.fameRank = newVal;
 			nameDiv; //TODO TODO TODO need to update
 			fameDiv.querySelector(".hoverbox").innerText = fameDiv.querySelector("span").innerText = c.fame = FAME_GATE[c.fameRank - 1];
 			nextRenownDiv.innerText = FAME_GATE[c.fameRank];
-			skillpointsDiv.querySelector("span").innerText = (c.unusedSkillPoints += 4 * (newVal - oldRenown));
+			changeSkillPointsAndPropagate(c, c.unusedSkillPoints + 4 * delta, skillpointsDiv, skillIncrementButtons);
 		}
 		else
 		{
@@ -2046,7 +2102,7 @@ function changeRenownAndPropagate(newVal, c, nameDiv, renownDiv, fameDiv, nextRe
 		propagateRequirements(c, reqs);
 	}
 }
-function changeFameAndPropagate(newVal, c, nameDiv, renownDiv, fameDiv, nextRenownDiv, skillpointsDiv, reqs)
+function changeFameAndPropagate(newVal, c, nameDiv, renownDiv, fameDiv, nextRenownDiv, skillpointsDiv, skillIncrementButtons, reqs)
 {
 	if (newVal >= 0 && newVal != c.fame)
 	{
@@ -2060,7 +2116,7 @@ function changeFameAndPropagate(newVal, c, nameDiv, renownDiv, fameDiv, nextReno
 				renownDiv.querySelector(".hoverbox").innerText = renownDiv.querySelector("span").innerText = c.fameRank;
 				nameDiv; //TODO TODO TODO need to update
 				nextRenownDiv.innerText = FAME_GATE[c.fameRank];
-				skillpointsDiv.querySelector("span").innerText = (c.unusedSkillPoints += 4 * (c.fameRank - oldRenown));
+				changeSkillPointsAndPropagate(c, c.unusedSkillPoints + 4 * (c.fameRank - oldRenown), skillpointsDiv, skillIncrementButtons);
 			}
 		}
 		else if (newVal < c.fame)
@@ -2101,16 +2157,83 @@ function propagateRequirements(c, divWithAllTheItems)
 	}
 }
 
-function addIncrementDecrementPair(div, stat_or_skill, top, left /*, functions...*/)
+//TODO also the hoverboxing and span editing
+//TODO also the hoverboxing and span editing
+//TODO also the hoverboxing and span editing
+//TODO also the hoverboxing and span editing
+//TODO also the hoverboxing and span editing
+//TODO also the hoverboxing and span editing
+//TODO also the hoverboxing and span editing
+//TODO also the hoverboxing and span editingv
+function addAllIncrementDecrementPairs(c, addTo, strengthDiv, dexterityDiv, vitalityDiv, magicDiv, dmgDiv, attackDiv, defenseDiv, hpDiv, staminaDiv, manaDiv, statPointsDiv, skillDivs, skillPointsDiv, reqs)
+//returns [statIncrementButtons, statDecrementButtons, skillIncrementButtons, skillDecrementButtons]
+{
+	//stats
+	const statIncrementButtons = [];
+	const statDecrementButtons = [];
+	addIncrementDecrementPair(addTo, "stat", 259, 234, statIncrementButtons, statDecrementButtons); //strength
+	addIncrementDecrementPair(addTo, "stat", 338, 234, statIncrementButtons, statDecrementButtons); //dexterity
+	addIncrementDecrementPair(addTo, "stat", 419, 234, statIncrementButtons, statDecrementButtons); //vitality
+	addIncrementDecrementPair(addTo, "stat", 497, 234, statIncrementButtons, statDecrementButtons); //magic
+
+	let _i = 0;
+	for (const [attr, changeAndPropagate, args] of [	["strength",  changeBaseStrengthAndPropagate,  [strengthDiv, dmgDiv]],
+														["dexterity", changeBaseDexterityAndPropagate, [dexterityDiv, attackDiv, defenseDiv]],
+														["vitality",  changeBaseVitalityAndPropagate,  [vitalityDiv, hpDiv, staminaDiv]],
+														["magic",     changeBaseMagicAndPropagate,     [magicDiv, manaDiv]]])
+	{
+		const i = _i;
+		statIncrementButtons[i].addEventListener("click", () => {
+			if (!statIncrementButtons[i].classList.contains("ungrayed")) return;
+			changeAndPropagate(c, c[attr] + 1, ...args, statDecrementButtons[i], reqs);
+			changeStatPointsAndPropagate(c, c.unusedStatPoints - 1, statPointsDiv, statIncrementButtons);
+		});
+		statDecrementButtons[i].addEventListener("click", () => {
+			if (!statDecrementButtons[i].classList.contains("ungrayed")) return;
+			changeAndPropagate(c, c[attr] - 1, ...args, statDecrementButtons[i], reqs);
+			changeStatPointsAndPropagate(c, c.unusedStatPoints + 1, statPointsDiv, statIncrementButtons);
+		});
+		++_i;
+	}
+	
+	//skills
+	const skillIncrementButtons = [];
+	const skillDecrementButtons = [];
+	for (let s = 0; s < SKILL_ALL; ++s)
+	{
+		addIncrementDecrementPair(addTo, "skill", 84 + 32*s, 108 + 2*512, skillIncrementButtons, skillDecrementButtons);
+	}
+
+	for (let s = 0; s < SKILL_ALL; ++s)
+	{
+		skillIncrementButtons[s].addEventListener("click", () => {
+			if (!skillIncrementButtons[s].classList.contains("ungrayed")) return;
+			changeBaseSkillAndPropagate(c, s, c.skills[s] + 1, skillDivs[s], skillDecrementButtons[s]);
+			changeSkillPointsAndPropagate(c, c.unusedSkillPoints - 1, skillPointsDiv, skillIncrementButtons);
+		});
+		skillDecrementButtons[s].addEventListener("click", () => {
+			if (!skillDecrementButtons[s].classList.contains("ungrayed")) return;
+			changeBaseSkillAndPropagate(c, s, c.skills[s] - 1, skillDivs[s], skillDecrementButtons[s]);
+			changeSkillPointsAndPropagate(c, c.unusedSkillPoints + 1, skillPointsDiv, skillIncrementButtons);
+		});
+	}
+
+	return [statIncrementButtons, statDecrementButtons, skillIncrementButtons, skillDecrementButtons];
+}
+
+
+function addIncrementDecrementPair(div, stat_or_skill, top, left, addIncs, addDecs)
 //stat_or_skill: "stat" means top/left is for the inc, and then dec is immediately to the right
 //              "skill" means top/left is for the inc, and then dec is immediately to the left
 //top/left are in pixels of the entire 1536x640 tab
+//ASSUMES stat/skill handles ALL the ungraying/graying - which means that has to be initialized after this
 {
 	const isSkill = stat_or_skill == "skill";
 
 	const inc = document.createElement("img");
 	inc.src = "img/incrementUnclicked.png";
 	inc.classList.add("increment-unclicked");
+	inc.classList.add("ungrayed");
 	inc.style.top = `${top / 640.0 * 100}%`;
 	inc.style.left = `${left / 1536.0 * 100}%`;
 	div.appendChild(inc);
@@ -2125,6 +2248,7 @@ function addIncrementDecrementPair(div, stat_or_skill, top, left /*, functions..
 	const dec = document.createElement("img");
 	dec.src = "img/decrementUnclicked.png";
 	dec.classList.add("decrement-unclicked");
+	dec.classList.add("ungrayed");
 	dec.style.top = `${top / 640.0 * 100}%`;
 	dec.style.left = isSkill ? `${(left - 26) / 1536.0 * 100}%` : `${(left + 26) / 1536.0 * 100}%`;
 	div.appendChild(dec);
@@ -2135,6 +2259,9 @@ function addIncrementDecrementPair(div, stat_or_skill, top, left /*, functions..
 	_dec.style.top = `${top / 640.0 * 100}%`;
 	_dec.style.left = isSkill ? `${(left - 26) / 1536.0 * 100}%` : `${(left + 26) / 1536.0 * 100}%`;
 	div.appendChild(_dec);
+
+	addIncs.push(inc);
+	addDecs.push(dec);
 }
 
 //TODO TODO TODO attack descriptions have effects and things too...
@@ -2195,6 +2322,26 @@ function initStatsInvSkillsGold()
 	const statPointsDiv = PLAYER_TAB.statsDivs.get("POINTS")
 	const skillPointsDiv = PLAYER_TAB.skillsGoldDivs.get("POINTS");
 
+	const skillDivs = [];
+	let j = 0;
+	for (const div of PLAYER_TAB.skillsGoldDivs.values())
+	{
+		if (j == 2 * OG_SKILLS) break;
+		if (j++ % 2 == 0) skillDivs.push(div);
+	}
+
+	//increment  / decrement buttons
+	const [statIncrementButtons, statDecrementButtons, skillIncrementButtons, skillDecrementButtons] = 
+		addAllIncrementDecrementPairs(p, player_statsInvSkillGold_div, strengthDiv, dexterityDiv, vitalityDiv, magicDiv, dmgDiv, attackDiv, defenseDiv, hpDiv, staminaDiv, manaDiv, statPointsDiv, skillDivs, skillPointsDiv, player_statsInvSkillGold_div);
+
+	if (p.unusedStatPoints <= 0) propagateToIncrementButtons(false, statIncrementButtons);
+	if (p.unusedSkillPoints <= 0) propagateToIncrementButtons(false, skillIncrementButtons);
+	if (p.strength  <= 25) propagateToDecrementButton(false, statDecrementButtons[0]);
+	if (p.dexterity <= 20) propagateToDecrementButton(false, statDecrementButtons[1]);
+	if (p.vitality  <= 25) propagateToDecrementButton(false, statDecrementButtons[2]);
+	if (p.magic     <= 10) propagateToDecrementButton(false, statDecrementButtons[3]);
+	for (let s = 0; s < SKILL_ALL; ++s) if (p.skills[s] <= 0) propagateToDecrementButton(false, skillDecrementButtons[s]);
+
 	//level and experience
 	addEditableFieldAndHoverboxTo(levelDiv,	p.level,
 											(_text, _input) => {
@@ -2202,7 +2349,7 @@ function initStatsInvSkillsGold()
 											},
 											(_text, _input) => {
 												const newVal = parseInt(_input.value.trim());
-												changeLevelAndPropagate(p, newVal, levelDiv, expDiv, nextLevelDiv, staminaDiv, manaDiv, hpDiv, statPointsDiv, skillPointsDiv, player_statsInvSkillGold_div);
+												changeLevelAndPropagate(p, newVal, levelDiv, expDiv, nextLevelDiv, staminaDiv, manaDiv, hpDiv, statPointsDiv, skillPointsDiv, statIncrementButtons, skillIncrementButtons, player_statsInvSkillGold_div);
 											},
 											() => {return `${p.level}`});
     addEditableFieldAndHoverboxTo(expDiv,	p.experience,
@@ -2211,7 +2358,7 @@ function initStatsInvSkillsGold()
 											},
 											(_text, _input) => {
 												const newVal = parseInt(_input.value.trim());
-												changeExperienceAndPropagate(p, newVal, levelDiv, expDiv, nextLevelDiv, staminaDiv, manaDiv, hpDiv, statPointsDiv, skillPointsDiv, player_statsInvSkillGold_div);
+												changeExperienceAndPropagate(p, newVal, levelDiv, expDiv, nextLevelDiv, staminaDiv, manaDiv, hpDiv, statPointsDiv, skillPointsDiv, statIncrementButtons, skillIncrementButtons, player_statsInvSkillGold_div);
 											},
 											() => {return `${p.experience}`;})
 
@@ -2223,7 +2370,7 @@ function initStatsInvSkillsGold()
 												},
 												(_text, _input) => {
 													const newVal = parseInt(_input.value.trim());
-													changeRenownAndPropagate(newVal, p, nameDiv, renownDiv, fameDiv, nextRenownDiv, skillPointsDiv, player_statsInvSkillGold_div);
+													changeRenownAndPropagate(newVal, p, nameDiv, renownDiv, fameDiv, nextRenownDiv, skillPointsDiv, skillIncrementButtons, player_statsInvSkillGold_div);
 												},
 												() => {return `${p.fameRank}`;});
 	addEditableFieldAndHoverboxTo(fameDiv,	p.fame,
@@ -2232,26 +2379,18 @@ function initStatsInvSkillsGold()
 											},
 											(_text, _input) => {
 												const newVal = parseInt(_input.value.trim());
-												changeFameAndPropagate(newVal, p, nameDiv, renownDiv, fameDiv, nextRenownDiv, skillPointsDiv, player_statsInvSkillGold_div);
+												changeFameAndPropagate(newVal, p, nameDiv, renownDiv, fameDiv, nextRenownDiv, skillPointsDiv, skillIncrementButtons, player_statsInvSkillGold_div);
 											},
 											() => {return `${p.fame}`;})
 
 
-
-	addIncrementDecrementPair(player_statsInvSkillGold_div, "stat", 259, 234 /*, functions...*/);
-	addIncrementDecrementPair(player_statsInvSkillGold_div, "stat", 338, 234 /*, functions...*/);
-	addIncrementDecrementPair(player_statsInvSkillGold_div, "stat", 419, 234 /*, functions...*/);
-	addIncrementDecrementPair(player_statsInvSkillGold_div, "stat", 497, 234 /*, functions...*/);
-
-
-
-	for (const [args, computeEffect, changeAndPropagate, attr, perc, flat] of [	[[strengthDiv, dmgDiv, player_statsInvSkillGold_div],					charStrength,	changeBaseStrengthAndPropagate,		"strength",		EFFECT_PERCENT_STRENGTH,	EFFECT_STRENGTH],
-																				[[dexterityDiv, attackDiv, defenseDiv, player_statsInvSkillGold_div],	charDexterity,	changeBaseDexterityAndPropagate,	"dexterity", 	EFFECT_PERCENT_DEXTERITY,	EFFECT_DEXTERITY],
-																				[[vitalityDiv, hpDiv, staminaDiv, player_statsInvSkillGold_div],		charVitality,	changeBaseVitalityAndPropagate,		"vitality",		EFFECT_PERCENT_VITALITY, 	EFFECT_VITALITY],
-																				[[magicDiv, manaDiv, player_statsInvSkillGold_div],						charMagic,		changeBaseMagicAndPropagate,		"magic",		EFFECT_PERCENT_MAGIC, 		EFFECT_MAGIC],
-																				[[hpDiv],		    													charMaxHP,		changeBaseMaxHPAndPropagate, 		"maxHp",		EFFECT_PERCENT_H_P,			EFFECT_MAX_HP],
-																				[[staminaDiv],															charMaxStamina, changeBaseMaxStaminaAndPropagate,	"maxStamina",	EFFECT_PERCENT_STAMINA, 	EFFECT_MAX_STAMINA],
-																				[[manaDiv],																charMaxMana,	changeBaseMaxManaAndPropagate,		"maxMana",		EFFECT_PERCENT_MANA,		EFFECT_MAX_MANA]])
+	for (const [args, computeEffect, changeAndPropagate, attr, perc, flat] of [	[[strengthDiv, dmgDiv, statIncrementButtons[0], player_statsInvSkillGold_div],					charStrength,	changeBaseStrengthAndPropagate,		"strength",		EFFECT_PERCENT_STRENGTH,	EFFECT_STRENGTH],
+																				[[dexterityDiv, attackDiv, defenseDiv, statIncrementButtons[1], player_statsInvSkillGold_div],	charDexterity,	changeBaseDexterityAndPropagate,	"dexterity", 	EFFECT_PERCENT_DEXTERITY,	EFFECT_DEXTERITY],
+																				[[vitalityDiv, hpDiv, staminaDiv, statIncrementButtons[2], player_statsInvSkillGold_div],		charVitality,	changeBaseVitalityAndPropagate,		"vitality",		EFFECT_PERCENT_VITALITY, 	EFFECT_VITALITY],
+																				[[magicDiv, manaDiv, statIncrementButtons[3], player_statsInvSkillGold_div],					charMagic,		changeBaseMagicAndPropagate,		"magic",		EFFECT_PERCENT_MAGIC, 		EFFECT_MAGIC],
+																				[[hpDiv],		    																			charMaxHP,		changeBaseMaxHPAndPropagate, 		"maxHp",		EFFECT_PERCENT_H_P,			EFFECT_MAX_HP],
+																				[[staminaDiv],																					charMaxStamina, changeBaseMaxStaminaAndPropagate,	"maxStamina",	EFFECT_PERCENT_STAMINA, 	EFFECT_MAX_STAMINA],
+																				[[manaDiv],																						charMaxMana,	changeBaseMaxManaAndPropagate,		"maxMana",		EFFECT_PERCENT_MANA,		EFFECT_MAX_MANA]])
 	{
 		addEditableFieldAndHoverboxTo(args[0],	computeEffect(p),
 											(_text, _input) => {
@@ -2273,24 +2412,35 @@ function initStatsInvSkillsGold()
 													},
 													(_text, _input) => {
 														const newVal = parseInt(_input.value.trim());
-														changeStatPointsAndPropagate(p, newVal, statPointsDiv);
+														changeStatPointsAndPropagate(p, newVal, statPointsDiv, statIncrementButtons);
 													},
 													() => {
 														return p.unusedStatPoints;
 													});
+										
 	const respecStatsButton = document.createElement("button");
 	respecStatsButton.innerText = "Respec Stats";
 	respecStatsButton.classList.add("respec-stats-button");
-	respecStatsButton.addEventListener("click", () => {respecStatsAndPropagate(p, strengthDiv, dexterityDiv, vitalityDiv, magicDiv, dmgDiv, attackDiv, defenseDiv, staminaDiv, hpDiv, manaDiv, statPointsDiv, player_statsInvSkillGold_div);});
+	respecStatsButton.addEventListener("click", () => {respecStatsAndPropagate(p, strengthDiv, dexterityDiv, vitalityDiv, magicDiv, dmgDiv, attackDiv, defenseDiv, staminaDiv, hpDiv, manaDiv, statPointsDiv,
+		statDecrementButtons[0], statDecrementButtons[1], statDecrementButtons[2], statDecrementButtons[3], statIncrementButtons, player_statsInvSkillGold_div);});
 	player_statsInvSkillGold_div.appendChild(respecStatsButton);
 
 	//inv
+	const difficultySelect = document.createElement("select");
+	// gradeSelect.classList.add("hoverbox");
+	difficultySelect.innerHTML = ` 	<option value=${DIFFICULTY_PAGE}>Page</option> 
+									<option value=${DIFFICULTY_ADVENTURER}>Adventurer</option> 
+									<option value=${DIFFICULTY_HERO}>Hero</option> 
+									<option value=${DIFFICULTY_LEGEND}>Legend</option> `;
+    difficultySelect.classList.add("difficulty-select");
+	difficultySelect.value = p.difficulty;
+	difficultySelect.addEventListener("change", () => {p.difficulty = parseInt(difficultySelect.value);});
+	player_statsInvSkillGold_div.appendChild(difficultySelect);
 
 	//skills
 	//TODO THE HOVERBOX IS NOT UPDATED CORRECTLY - AND I DONT KNOW IF ANYTHING IS
-	const skillDivs = [];
 	let i = 0;
-	for (div of PLAYER_TAB.skillsGoldDivs.values())
+	for (const div of PLAYER_TAB.skillsGoldDivs.values())
 	{
 		if (i == 2 * OG_SKILLS)
 			break;
@@ -2298,18 +2448,13 @@ function initStatsInvSkillsGold()
 		const skill = i >> 1;
 		if (i++ % 2 == 0)
 		{
-			skillDivs.push(div);
-
-			addIncrementDecrementPair(player_statsInvSkillGold_div, "skill", 84 + 32*skill, 108 + 2*512 /*, functions...*/);
-
 			addEditableFieldAndHoverboxTo(div,	charNetSkill(p, skill),
 												(_text, _input) => {
 													_input.value = p.skills[skill];
 												},
 												(_text, _input) => {
-													const newSkill = _input.value.trim();
-													p.skills[skill] = parseInt(newSkill);
-													_text.innerText = charNetSkill(p, skill);
+													const newSkill = parseInt(_input.value.trim());
+													changeBaseSkillAndPropagate(p, skill, newSkill, div, skillDecrementButtons[skill]);
 												},
 												() => {
 													return `${p.skills[skill]} + ${charNetEffect(p, EFFECT_SKILL_SWORD + skill)}`;
@@ -2325,7 +2470,7 @@ function initStatsInvSkillsGold()
 													},
 													(_text, _input) => {
 														const newVal = parseInt(_input.value.trim());
-														changeSkillPointsAndPropagate(p, newVal, skillPointsDiv);
+														changeSkillPointsAndPropagate(p, newVal, skillPointsDiv, skillIncrementButtons);
 													},
 													() => {
 														return p.unusedSkillPoints;
@@ -2334,7 +2479,7 @@ function initStatsInvSkillsGold()
 	const respecSkillsButton = document.createElement("button");
 	respecSkillsButton.innerText = "Respec Skills";
     respecSkillsButton.classList.add("respec-skills-button");
-	respecSkillsButton.addEventListener("click", () => {respecSkillsAndPropagate(p, skillDivs, skillPointsDiv);});
+	respecSkillsButton.addEventListener("click", () => {respecSkillsAndPropagate(p, skillDivs, skillPointsDiv, skillIncrementButtons, skillDecrementButtons);});
 	player_statsInvSkillGold_div.appendChild(respecSkillsButton);
 
 	
