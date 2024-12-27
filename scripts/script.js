@@ -1273,16 +1273,24 @@ function charDamageStr(c)
 // 	pItem->SetToHitBonus( (uint32)( atof( pSubGroup->Item( 0 ).c_str() ) * KRankPowerMultiplier[Rank] ) );
 // }
 
+//c.m_toHitBonus can be set through .dat, and for monsters in other various functions
+
 //TODO TODO TODO WHERE LEFT OFF. also: damage.
 function charAttack(c)
 {
 	//AttackDescriptions have tohitbonus
 	//  unarmed: 0 (player) unless <- monsters.dat "UNARMED_ATTACK"
 	//  armed:   <- items have tohitbonus, 0 unless <- ItemDescription.toHitBonus <- TOHITBONUS in items.dat
+
+	//TODO for now i will set __currentAttack contribution to 0, and hardcode robj.player's SLOT_RIGHTHAND || SLOT_LEFTHAND ONLY for skill bonus
+	const __activeWeapon = robj.player.equippedItems[SLOT_RIGHTHAND] || robj.player.equippedItems[SLOT_LEFTHAND];
+	const __currentAttack = undefined;
+
 	let attack = 50 + Math.trunc(charDexterity(c) / 2) + c.level +
-		c.toHitBonus + (__activeWeapon ? charNetSkill(c, TYPE_TO_SKILL[__activeWeapon.type]) : 0) + (__currentAttack ? __currentAttack.toHitBonus : 0);
+		c.toHitBonus + (__activeWeapon ? charNetSkill(c, TYPE_TO_SKILL[ITEMS_INFO.get(__activeWeapon.baseName.toUpperCase()).type]) : 0) + (__currentAttack ? __currentAttack.toHitBonus : 0);
 	return attack + Math.ceil(charNetEffect(c, EFFECT_PERCENT_TO_HIT_BONUS) * 0.01 * attack) + Math.trunc(charNetEffect(c, EFFECT_TO_HIT_BONUS));
 }
+
 
 function charDefense(c)
 {
@@ -1298,7 +1306,9 @@ function charDefense(c)
 			armor += add + (it.grade > GRADE_NORMAL ? Math.max(1, gradeBonus) : gradeBonus);
 		}
 	}
-	//natural armor TODO WHERE LEFT OFF hardcoding no, probably find an easier way to determine what the pet is
+	c._inventoryArmor = armor;
+	//natural armor TODO WHERE LEFT OFF - what is it?
+	//hardcoding false - you should probably find an easier way to determine what the pet is
 	armor += c.naturalArmor + c.level * 3 * (false && HasMaster() && Master().isPlayer() && !IsSummoned());
 	return armor + Math.ceil(charNetEffect(c,  EFFECT_PERCENT_ARMOR_BONUS) * 0.01 * armor) + Math.trunc(charNetEffect(c, EFFECT_ARMOR_BONUS))
 		+ Math.trunc(charDexterity(c) / 5); //dexterity bonus
@@ -1883,13 +1893,13 @@ function respecStatsAndPropagate(c, strengthDiv, dexterityDiv, vitalityDiv, magi
 }
 
 //DISCARDS SHRINE OF LEARNING and other manual edits - you should warn them about that TODO
-function respecSkillsAndPropagate(c, skillDivs, skillpointsDiv, skillIncrementButtons, skillDecrementButtons)
+function respecSkillsAndPropagate(c, skillDivs, attackDiv, skillpointsDiv, skillIncrementButtons, skillDecrementButtons)
 {
-	for (let s = 0; s < SKILL_ALL; changeBaseSkillAndPropagate(c, s, 0, skillDivs[s], skillDecrementButtons[s++]));
+	for (let s = 0; s < SKILL_ALL; changeBaseSkillAndPropagate(c, s, 0, skillDivs[s], attackDiv, skillDecrementButtons[s++]));
 	changeSkillPointsAndPropagate(c, c.level * 2 - 2  +  c.fameRank * 4 - 4, skillpointsDiv, skillIncrementButtons);
 }
 
-function changeBaseSkillAndPropagate(c, whichSkill, newVal, skillDiv, dec)
+function changeBaseSkillAndPropagate(c, whichSkill, newVal, skillDiv, attackDiv, dec)
 {
 	//TODO validate
 	c.skills[whichSkill] = newVal;
@@ -1899,7 +1909,7 @@ function changeBaseSkillAndPropagate(c, whichSkill, newVal, skillDiv, dec)
 	if (whichSkill <= SKILL_BOW)
 	{
 		//propagate to damage;
-		//propagate to attack;
+		changeToHitBonusAndPropagate(c, c.toHitBonus, attackDiv);
 	}
 	else switch (whichSkill)
 	{
@@ -1918,6 +1928,33 @@ function changeBaseSkillAndPropagate(c, whichSkill, newVal, skillDiv, dec)
 	propagateToDecrementButton(newVal > 0, dec);
 }
 
+
+function changeNaturalArmorAndPropagate(c, newVal, defenseDiv)
+{
+	//TODO validation
+	c.naturalArmor = newVal;
+	defenseDiv.querySelector("span").innerText = charDefense(c);
+	const tot = c.naturalArmor + c._inventoryArmor;
+	defenseDiv.querySelector(".hoverbox").innerText =	`${c.naturalArmor} + ${c._inventoryArmor} = ${tot}\n` + 
+														`${tot} + ${charNetEffect(c, EFFECT_PERCENT_ARMOR_BONUS)}% [${Math.ceil(charNetEffect(c,  EFFECT_PERCENT_ARMOR_BONUS) * 0.01 * tot)}] + ${Math.trunc(charNetEffect(c, EFFECT_ARMOR_BONUS))} + ${Math.trunc(charDexterity(c) / 5)}`;
+}
+
+function changeToHitBonusAndPropagate(c, newVal, attackDiv)
+{
+	//TODO validate
+	c.toHitBonus = newVal;
+	
+	//doesnt go through charAttack()...smells like stinky design
+	//TODO for now i will set __currentAttack contribution to 0, and hardcode robj.player's SLOT_RIGHTHAND || SLOT_LEFTHAND ONLY for skill bonus
+	const __activeWeapon = robj.player.equippedItems[SLOT_RIGHTHAND] || robj.player.equippedItems[SLOT_LEFTHAND];
+	const __currentAttack = undefined;
+	const tot = 50 + Math.trunc(charDexterity(c) / 2) + c.level +
+		c.toHitBonus + (__activeWeapon ? charNetSkill(c, TYPE_TO_SKILL[ITEMS_INFO.get(__activeWeapon.baseName.toUpperCase()).type]) : 0) + (__currentAttack ? __currentAttack.toHitBonus : 0);
+
+	attackDiv.querySelector("span").innerText = tot + Math.ceil(charNetEffect(c, EFFECT_PERCENT_TO_HIT_BONUS) * 0.01 * tot) + Math.trunc(charNetEffect(c, EFFECT_TO_HIT_BONUS));
+	attackDiv.querySelector(".hoverbox").innerText = `${c.toHitBonus} + ${50} + ${Math.trunc(charDexterity(c) / 2)} + ${c.level} + ${(__activeWeapon ? charNetSkill(c, TYPE_TO_SKILL[ITEMS_INFO.get(__activeWeapon.baseName.toUpperCase()).type]) : 0)} + ${(__currentAttack ? __currentAttack.toHitBonus : 0)} = ${tot}\n` +
+													 `${tot} + ${charNetEffect(c, EFFECT_PERCENT_TO_HIT_BONUS)}% [${Math.ceil(charNetEffect(c, EFFECT_PERCENT_TO_HIT_BONUS) * 0.01 * tot)}] + ${Math.trunc(charNetEffect(c, EFFECT_TO_HIT_BONUS))}`;
+}
 
 function changeBaseStrengthAndPropagate(c, strength, strengthDiv, dmgDiv, strengthDec, reqs)
 {
@@ -1940,10 +1977,8 @@ function changeBaseDexterityAndPropagate(c, dexterity, dexterityDiv, attackDiv, 
 	c.dexterity = dexterity;
 	dexterityDiv.querySelector("span").innerText = charDexterity(c);
 	dexterityDiv.querySelector(".hoverbox").innerText = `${c.dexterity} + ${charNetEffect(c, EFFECT_PERCENT_DEXTERITY)}% [${Math.ceil(charNetEffect(c, EFFECT_PERCENT_DEXTERITY) * 0.01 * c.dexterity)}] + ${Math.trunc(charNetEffect(c, EFFECT_DEXTERITY))}`;
-	//other propagates
-	//PROPAGATE TO DEFENSE DIRECTLY
-	defenseDiv.innerText = parseInt(defenseDiv.innerText) - Math.trunc(old / 5) + Math.trunc(charDexterity(c) / 5);
-	//propagate to attack, but doesnt change any attribute
+	changeNaturalArmorAndPropagate(c, c.naturalArmor, defenseDiv);
+	changeToHitBonusAndPropagate(c, c.toHitBonus, attackDiv);
 
 	propagateToDecrementButton(dexterity > 20, dexterityDec);
 
@@ -2035,15 +2070,15 @@ function changeSkillPointsAndPropagate(c, skills, skillPointsDiv, skillIncrement
 }
 
 
-function changeLevelAndPropagate(c, level, levelDiv, experienceDiv, nextLevelDiv, staminaDiv, manaDiv, hpDiv, statPointsDiv, skillPointsDiv, statIncrementButtons, skillIncrementButtons, reqs)
+function changeLevelAndPropagate(c, level, levelDiv, experienceDiv, nextLevelDiv, staminaDiv, manaDiv, hpDiv, attackDiv, statPointsDiv, skillPointsDiv, statIncrementButtons, skillIncrementButtons, reqs)
 {
 	if (c.level == level || 1 > level || level > 99) return;
 	if (level > c.level)
-		changeExperienceAndPropagate(c, EXPERIENCE_GATE[level - 1], levelDiv, experienceDiv, nextLevelDiv, staminaDiv, manaDiv, hpDiv, statPointsDiv, skillPointsDiv, statIncrementButtons, skillIncrementButtons, reqs);   
+		changeExperienceAndPropagate(c, EXPERIENCE_GATE[level - 1], levelDiv, experienceDiv, nextLevelDiv, staminaDiv, manaDiv, hpDiv, attackDiv, statPointsDiv, skillPointsDiv, statIncrementButtons, skillIncrementButtons, reqs);   
 	else
 		; //TODO
 }
-function changeExperienceAndPropagate(c, experience, levelDiv, experienceDiv, nextLevelDiv, staminaDiv, manaDiv, hpDiv, statPointsDiv, skillPointsDiv, statIncrementButtons, skillIncrementButtons, reqs)
+function changeExperienceAndPropagate(c, experience, levelDiv, experienceDiv, nextLevelDiv, staminaDiv, manaDiv, hpDiv, attackDiv, statPointsDiv, skillPointsDiv, statIncrementButtons, skillIncrementButtons, reqs)
 {
 	if (experience >= 0 && c.experience == experience) return;
 
@@ -2065,8 +2100,7 @@ function changeExperienceAndPropagate(c, experience, levelDiv, experienceDiv, ne
 			changeBaseMaxManaAndPropagate(c, c.maxMana + delta, manaDiv);
 			//does leveling up refill mana to max?
 		
-			//but does not change any attribute
-			// propagateAttack(); //CCharacter::ToHit( void )
+			changeToHitBonusAndPropagate(c, c.toHitBonus, attackDiv);
 		
 			//NOTE this is the overriding method in CPlayer! in general you may want CCharacter or even CMonster bleugh!
 			changeBaseMaxHPAndPropagate(c, c.maxHp + 4*delta, hpDiv); //etc like the others
@@ -2215,12 +2249,12 @@ function addAllIncrementDecrementPairs(c, addTo, strengthDiv, dexterityDiv, vita
 	{
 		skillIncrementButtons[s].addEventListener("click", () => {
 			if (!skillIncrementButtons[s].classList.contains("ungrayed")) return;
-			changeBaseSkillAndPropagate(c, s, c.skills[s] + 1, skillDivs[s], skillDecrementButtons[s]);
+			changeBaseSkillAndPropagate(c, s, c.skills[s] + 1, skillDivs[s], attackDiv, skillDecrementButtons[s]);
 			changeSkillPointsAndPropagate(c, c.unusedSkillPoints - 1, skillPointsDiv, skillIncrementButtons);
 		});
 		skillDecrementButtons[s].addEventListener("click", () => {
 			if (!skillDecrementButtons[s].classList.contains("ungrayed")) return;
-			changeBaseSkillAndPropagate(c, s, c.skills[s] - 1, skillDivs[s], skillDecrementButtons[s]);
+			changeBaseSkillAndPropagate(c, s, c.skills[s] - 1, skillDivs[s], attackDiv, skillDecrementButtons[s]);
 			changeSkillPointsAndPropagate(c, c.unusedSkillPoints + 1, skillPointsDiv, skillIncrementButtons);
 		});
 	}
@@ -2311,9 +2345,9 @@ function initStatsInvSkillsGold()
 	PLAYER_TAB.statsDivs.get("DAMAGE_STR").innerText = "Damage";
 	const dmgDiv = PLAYER_TAB.statsDivs.get("DAMAGE"); dmgDiv.innerText = charDamageStr(p);
 	PLAYER_TAB.statsDivs.get("ATTACK_STR").innerText = "Attack";
-	const attackDiv = PLAYER_TAB.statsDivs.get("ATTACK"); attackDiv.innerText = "charAttack(p)";
+	const attackDiv = PLAYER_TAB.statsDivs.get("ATTACK");
 	PLAYER_TAB.statsDivs.get("DEFENSE_STR").innerText = "Defense";
-	const defenseDiv = PLAYER_TAB.statsDivs.get("DEFENSE"); defenseDiv.innerText = charDefense(p);
+	const defenseDiv = PLAYER_TAB.statsDivs.get("DEFENSE");
 	PLAYER_TAB.statsDivs.get("LIFE_STR").innerText = "Life";
 	PLAYER_TAB.statsDivs.get("STAMINA_STR").innerText = "Stamina";
 	PLAYER_TAB.statsDivs.get("MANA_STR").innerText = "Mana";
@@ -2356,7 +2390,7 @@ function initStatsInvSkillsGold()
 											},
 											(_text, _input) => {
 												const newVal = parseInt(_input.value.trim());
-												changeLevelAndPropagate(p, newVal, levelDiv, expDiv, nextLevelDiv, staminaDiv, manaDiv, hpDiv, statPointsDiv, skillPointsDiv, statIncrementButtons, skillIncrementButtons, player_statsInvSkillGold_div);
+												changeLevelAndPropagate(p, newVal, levelDiv, expDiv, nextLevelDiv, staminaDiv, manaDiv, hpDiv, attackDiv, statPointsDiv, skillPointsDiv, statIncrementButtons, skillIncrementButtons, player_statsInvSkillGold_div);
 											},
 											() => {return `${p.level}`});
     addEditableFieldAndHoverboxTo(expDiv,	p.experience,
@@ -2365,7 +2399,7 @@ function initStatsInvSkillsGold()
 											},
 											(_text, _input) => {
 												const newVal = parseInt(_input.value.trim());
-												changeExperienceAndPropagate(p, newVal, levelDiv, expDiv, nextLevelDiv, staminaDiv, manaDiv, hpDiv, statPointsDiv, skillPointsDiv, statIncrementButtons, skillIncrementButtons, player_statsInvSkillGold_div);
+												changeExperienceAndPropagate(p, newVal, levelDiv, expDiv, nextLevelDiv, staminaDiv, manaDiv, hpDiv, attackDiv, statPointsDiv, skillPointsDiv, statIncrementButtons, skillIncrementButtons, player_statsInvSkillGold_div);
 											},
 											() => {return `${p.experience}`;})
 
@@ -2411,6 +2445,39 @@ function initStatsInvSkillsGold()
 												return `${p[attr]} + ${charNetEffect(p, perc)}% [${Math.ceil(charNetEffect(p, perc) * 0.01 * p[attr])}] + ${Math.trunc(charNetEffect(p, flat))}`;
 											});
 	}
+
+	//defense attack damage
+	addEditableFieldAndHoverboxTo(defenseDiv, charDefense(p),
+											(_text, _input) => {
+												_input.value = p.naturalArmor;
+											},
+											(_text, _input) => {
+												const newVal = parseInt(_input.value.trim());
+												changeNaturalArmorAndPropagate(p, newVal, defenseDiv);
+											},
+											() => {
+												const tot = p.naturalArmor + p._inventoryArmor;
+												return	`${p.naturalArmor} + ${p._inventoryArmor} = ${tot}\n` + 
+														`${tot} + ${charNetEffect(p, EFFECT_PERCENT_ARMOR_BONUS)}% [${Math.ceil(charNetEffect(p,  EFFECT_PERCENT_ARMOR_BONUS) * 0.01 * tot)}] + ${Math.trunc(charNetEffect(p, EFFECT_ARMOR_BONUS))} + ${Math.trunc(charDexterity(p) / 5)}`;
+											});
+
+    addEditableFieldAndHoverboxTo(attackDiv, charAttack(p),
+											(_text, _input) => {
+												_input.value = p.toHitBonus;
+											},
+											(_text, _input) => {
+												const newVal = parseInt(_input.value.trim());
+												changeToHitBonusAndPropagate(p, newVal, attackDiv);
+											},
+											() => {
+												//TODO for now i will set __currentAttack contribution to 0, and hardcode robj.player's SLOT_RIGHTHAND || SLOT_LEFTHAND ONLY for skill bonus
+												const __activeWeapon = robj.player.equippedItems[SLOT_RIGHTHAND] || robj.player.equippedItems[SLOT_LEFTHAND];
+												const __currentAttack = undefined;
+												const tot = 50 + Math.trunc(charDexterity(p) / 2) + p.level +
+													p.toHitBonus + (__activeWeapon ? charNetSkill(p, TYPE_TO_SKILL[ITEMS_INFO.get(__activeWeapon.baseName.toUpperCase()).type]) : 0) + (__currentAttack ? __currentAttack.toHitBonus : 0);
+												return	`${p.toHitBonus} + ${50} + ${Math.trunc(charDexterity(p) / 2)} + ${p.level} + ${(__activeWeapon ? charNetSkill(p, TYPE_TO_SKILL[ITEMS_INFO.get(__activeWeapon.baseName.toUpperCase()).type]) : 0)} + ${(__currentAttack ? __currentAttack.toHitBonus : 0)} = ${tot}\n` +
+														`${tot} + ${charNetEffect(p, EFFECT_PERCENT_TO_HIT_BONUS)}% [${Math.ceil(charNetEffect(p, EFFECT_PERCENT_TO_HIT_BONUS) * 0.01 * tot)}] + ${Math.trunc(charNetEffect(p, EFFECT_TO_HIT_BONUS))}`;
+											});
 
 	PLAYER_TAB.statsDivs.get("POINTS_STR").innerText = "Points Remaining";
 	addEditableFieldAndHoverboxTo(statPointsDiv,	p.unusedStatPoints,
@@ -2461,7 +2528,7 @@ function initStatsInvSkillsGold()
 												},
 												(_text, _input) => {
 													const newSkill = parseInt(_input.value.trim());
-													changeBaseSkillAndPropagate(p, skill, newSkill, div, skillDecrementButtons[skill]);
+													changeBaseSkillAndPropagate(p, skill, newSkill, div, attackDiv, skillDecrementButtons[skill]);
 												},
 												() => {
 													return `${p.skills[skill]} + ${charNetEffect(p, EFFECT_SKILL_SWORD + skill)}`;
@@ -2486,7 +2553,7 @@ function initStatsInvSkillsGold()
 	const respecSkillsButton = document.createElement("button");
 	respecSkillsButton.innerText = "Respec Skills";
     respecSkillsButton.classList.add("respec-skills-button");
-	respecSkillsButton.addEventListener("click", () => {respecSkillsAndPropagate(p, skillDivs, skillPointsDiv, skillIncrementButtons, skillDecrementButtons);});
+	respecSkillsButton.addEventListener("click", () => {respecSkillsAndPropagate(p, skillDivs, attackDiv, skillPointsDiv, skillIncrementButtons, skillDecrementButtons);});
 	player_statsInvSkillGold_div.appendChild(respecSkillsButton);
 
 	
