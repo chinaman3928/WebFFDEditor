@@ -1249,9 +1249,62 @@ function charFameGate(c)
 	return FAME_GATE[c.fameRank];
 }
 
-function charDamageStr(c)
-{
 
+function statmenuDamageTransform(c, it, isDualWielding, primary_secondary)
+// returns [minDmg, maxDmg] as used for computing statmenu damage range
+{
+	let ret = [weaponMinDamage(it), weaponMaxDamage(it)];
+	const dual = primary_secondary ? primaryDual : secondaryDual;
+
+	for (let i = 0; i < ret.length; ++i)
+	{		
+		ret[i] += Math.trunc(ret[i] * charStrength(c) * 0.01)
+			+ charNetSkill(c, TYPE_TO_SKILL[ITEMS_INFO.get(it.baseName.toUpperCase()).type]);
+		if (isDualWielding) ret[i] = Math.floor(ret[i] * dual(c));
+		ret[i] += Math.ceil(ret[i] * charNetEffect(c, EFFECT_PERCENT_DAMAGE_BONUS) * 0.01)
+			+ Math.trunc(charNetEffect(c, EFFECT_DAMAGE_BONUS));
+	}
+	return ret;
+}
+
+function charStatmenuDamageRange(c) //-> [int, int] else [undefined, undefined]
+{
+	//MinimumDamage() + CharacterDamage() (only pet) + ElementalDamage() (sum over left and right hand)
+	const lhand = robj.player.equippedItems[SLOT_LEFTHAND];
+	const rhand = robj.player.equippedItems[SLOT_RIGHTHAND];
+
+	////if (!__activeWeapon) do some unarmed STUFF; TODO but too lazy
+	if (!lhand && !rhand) return [undefined, undefined];
+	
+	let lMin = undefined, lMax = undefined, rMin = undefined, rMax = undefined;
+	let min = 0, max = 0;
+	let elementalBonus = 0;
+	if (lhand) //equippedItems attribute only for the player right now
+	{
+		[lMin, lMax] = statmenuDamageTransform(c, lhand, rhand, false);
+		if (!min || lMin < min) min = lMin;
+		if (!max || lMax > max) max = lMax;
+		elementalBonus += lhand.damageBonusValue.reduce((acc, x) => acc + x, 0);
+	}
+	if (rhand)
+	{
+		[rMin, rMax] = statmenuDamageTransform(c, rhand, lhand, true);
+		if (!min || rMin < min) min = rMin;
+		if (!max || rMax > max) max = rMax;
+		elementalBonus += rhand.damageBonusValue.reduce((acc, x) => acc + x, 0);
+	}
+
+	//if (!min[max]) min[max] = __currentAttack.min[max]Damage(); TODO this other condition for if dmg is still 0
+	return [min + elementalBonus, max + elementalBonus];
+}
+
+function secondaryDual(c) //-> double
+{
+	return 0.5 + Math.min(50, 50 - 50.0 / (charNetSkill(c, SKILL_DUAL_WIELD) * 0.05 + 1)) / 100.0;
+}
+function primaryDual(c) //-> double
+{
+	return 0.75 + Math.min(50, 50 - 50.0 / (charNetSkill(c, SKILL_DUAL_WIELD) * 0.05 + 1)) / 200.0;
 }
 
 
@@ -1841,8 +1894,14 @@ function addEditableFieldAndHoverboxTo(div, initText, enterFunc, exitFunc, hover
 	div.appendChild(hoverbox);
 }
 
-
+//for when you want to postpone propagateRequirements() to another time, to avoid redundant computation
 const NO_REQS = null;
+
+function propagateToDamage(c, dmgDiv)
+{
+	dmgDiv.innerText = charStatmenuDamageRange(c);
+	//TODO want to add hoverbox too, but not editable field
+}
 
 
 function propagateToIncrementButtons(ungray, buttons)
@@ -1893,13 +1952,13 @@ function respecStatsAndPropagate(c, strengthDiv, dexterityDiv, vitalityDiv, magi
 }
 
 //DISCARDS SHRINE OF LEARNING and other manual edits - you should warn them about that TODO
-function respecSkillsAndPropagate(c, skillDivs, attackDiv, skillpointsDiv, skillIncrementButtons, skillDecrementButtons)
+function respecSkillsAndPropagate(c, skillDivs, dmgDiv, attackDiv, skillpointsDiv, skillIncrementButtons, skillDecrementButtons)
 {
-	for (let s = 0; s < SKILL_ALL; changeBaseSkillAndPropagate(c, s, 0, skillDivs[s], attackDiv, skillDecrementButtons[s++]));
+	for (let s = 0; s < SKILL_ALL; changeBaseSkillAndPropagate(c, s, 0, skillDivs[s], dmgDiv, attackDiv, skillDecrementButtons[s++]));
 	changeSkillPointsAndPropagate(c, c.level * 2 - 2  +  c.fameRank * 4 - 4, skillpointsDiv, skillIncrementButtons);
 }
 
-function changeBaseSkillAndPropagate(c, whichSkill, newVal, skillDiv, attackDiv, dec)
+function changeBaseSkillAndPropagate(c, whichSkill, newVal, skillDiv, dmgDiv, attackDiv, dec)
 {
 	//TODO validate
 	c.skills[whichSkill] = newVal;
@@ -1908,15 +1967,20 @@ function changeBaseSkillAndPropagate(c, whichSkill, newVal, skillDiv, attackDiv,
 
 	if (whichSkill <= SKILL_BOW)
 	{
-		//propagate to damage;
+		propagateToDamage(c, dmgDiv);
 		changeToHitBonusAndPropagate(c, c.toHitBonus, attackDiv);
 	}
 	else switch (whichSkill)
 	{
 		//TODO THE REST PROPAGATE in hitherto unseen ways
 		case SKILL_CRITICAL_STRIKE:
+			propagateToDamage(c, dmgDiv); //anticipatory
+			break;
 		case SKILL_SPELLCASTING:
+			break;
 		case SKILL_DUAL_WIELD:
+			propagateToDamage(c, dmgDiv);
+			break;
 		case SKILL_SHIELD:
 		case SKILL_ATTACK_MAGIC:
 		case SKILL_DEFENSE_MAGIC:
@@ -1962,7 +2026,7 @@ function changeBaseStrengthAndPropagate(c, strength, strengthDiv, dmgDiv, streng
 	c.strength = strength;
 	strengthDiv.querySelector("span").innerText = charStrength(c);
 	strengthDiv.querySelector(".hoverbox").innerText = `${c.strength} + ${charNetEffect(c, EFFECT_PERCENT_STRENGTH)}% [${Math.ceil(charNetEffect(c, EFFECT_PERCENT_STRENGTH) * 0.01 * c.strength)}] + ${Math.trunc(charNetEffect(c, EFFECT_STRENGTH))}`;
-	//other propagates
+	propagateToDamage(c, dmgDiv);
 
 	propagateToDecrementButton(strength > 25, strengthDec);
 
@@ -2249,12 +2313,12 @@ function addAllIncrementDecrementPairs(c, addTo, strengthDiv, dexterityDiv, vita
 	{
 		skillIncrementButtons[s].addEventListener("click", () => {
 			if (!skillIncrementButtons[s].classList.contains("ungrayed")) return;
-			changeBaseSkillAndPropagate(c, s, c.skills[s] + 1, skillDivs[s], attackDiv, skillDecrementButtons[s]);
+			changeBaseSkillAndPropagate(c, s, c.skills[s] + 1, skillDivs[s], dmgDiv, attackDiv, skillDecrementButtons[s]);
 			changeSkillPointsAndPropagate(c, c.unusedSkillPoints - 1, skillPointsDiv, skillIncrementButtons);
 		});
 		skillDecrementButtons[s].addEventListener("click", () => {
 			if (!skillDecrementButtons[s].classList.contains("ungrayed")) return;
-			changeBaseSkillAndPropagate(c, s, c.skills[s] - 1, skillDivs[s], attackDiv, skillDecrementButtons[s]);
+			changeBaseSkillAndPropagate(c, s, c.skills[s] - 1, skillDivs[s], dmgDiv, attackDiv, skillDecrementButtons[s]);
 			changeSkillPointsAndPropagate(c, c.unusedSkillPoints + 1, skillPointsDiv, skillIncrementButtons);
 		});
 	}
@@ -2343,7 +2407,7 @@ function initStatsInvSkillsGold()
 	PLAYER_TAB.statsDivs.get("VITALITY_STR").innerText = "Vitality";
 	PLAYER_TAB.statsDivs.get("MAGIC_STR").innerText = "Magic";
 	PLAYER_TAB.statsDivs.get("DAMAGE_STR").innerText = "Damage";
-	const dmgDiv = PLAYER_TAB.statsDivs.get("DAMAGE"); dmgDiv.innerText = charDamageStr(p);
+	const dmgDiv = PLAYER_TAB.statsDivs.get("DAMAGE"); dmgDiv.innerText = charStatmenuDamageRange(p);
 	PLAYER_TAB.statsDivs.get("ATTACK_STR").innerText = "Attack";
 	const attackDiv = PLAYER_TAB.statsDivs.get("ATTACK");
 	PLAYER_TAB.statsDivs.get("DEFENSE_STR").innerText = "Defense";
@@ -2528,7 +2592,7 @@ function initStatsInvSkillsGold()
 												},
 												(_text, _input) => {
 													const newSkill = parseInt(_input.value.trim());
-													changeBaseSkillAndPropagate(p, skill, newSkill, div, attackDiv, skillDecrementButtons[skill]);
+													changeBaseSkillAndPropagate(p, skill, newSkill, div, dmgDiv, attackDiv, skillDecrementButtons[skill]);
 												},
 												() => {
 													return `${p.skills[skill]} + ${charNetEffect(p, EFFECT_SKILL_SWORD + skill)}`;
@@ -2553,7 +2617,7 @@ function initStatsInvSkillsGold()
 	const respecSkillsButton = document.createElement("button");
 	respecSkillsButton.innerText = "Respec Skills";
     respecSkillsButton.classList.add("respec-skills-button");
-	respecSkillsButton.addEventListener("click", () => {respecSkillsAndPropagate(p, skillDivs, attackDiv, skillPointsDiv, skillIncrementButtons, skillDecrementButtons);});
+	respecSkillsButton.addEventListener("click", () => {respecSkillsAndPropagate(p, skillDivs, dmgDiv, attackDiv, skillPointsDiv, skillIncrementButtons, skillDecrementButtons);});
 	player_statsInvSkillGold_div.appendChild(respecSkillsButton);
 
 	
