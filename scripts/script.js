@@ -217,7 +217,7 @@ const EFFECT_PERCENT_DEXTERITY = 31;
 const EFFECT_PERCENT_VITALITY = 32;
 const EFFECT_PERCENT_MAGIC = 33;
 const EFFECT_PERCENT_MANA = 34;
-const EFFECT_PERCENT_H_P = 35;
+const EFFECT_PERCENT_HP = 35;
 const EFFECT_PERCENT_STAMINA = 36;
 const EFFECT_PERCENT_SPEED = 37;
 const EFFECT_PERCENT_ATTACK_SPEED = 38;
@@ -1031,10 +1031,10 @@ function handleGradeSelect(iconDiv, it, gradeSelect, star)
 	switch (TYPE_TO_CATEGORY[ITEMS_INFO.get(it.baseName.toUpperCase()).type])
 	{
 		case CATEGORY_WEAPON:
-			iconDiv.querySelector(".item-box-damage").innerText = innerText = `Attack Damage : ${weaponMinDamage(it)} - ${weaponMaxDamage(it)}`;
+			iconDiv.querySelector(".item-box-damage").textContent = textContent = `Attack Damage : ${weaponMinDamage(it)} - ${weaponMaxDamage(it)}`;
 			break;
 		case CATEGORY_ARMOR:
-			iconDiv.querySelector(".item-box-defense").innerText = innerText = `Defense : ${armorDefense(it)}`;
+			iconDiv.querySelector(".item-box-defense").textContent = textContent = `Defense : ${armorDefense(it)}`;
 			break;
 	}
 	// propogate damage to character stats;
@@ -1102,7 +1102,7 @@ function itemHaze(div, it)
 //TODO can do something if slotindex or type are out of expected range
 //TODO what if non equipped but in such a slot? vice versa?
 //TODO right now hard coded for player, but you must generalize
-function computeEquippedEffects()
+function computeEquippedEffects(c, strengthDiv, dmgDiv, strengthDec, dexterityDiv, attackDiv, defenseDiv, dexterityDec, vitalityDiv, hpDiv, staminaDiv, vitalityDec, magicDiv, manaDiv, magicDec, skillDivs, skillDecrementButtons, reqs)
 //also computes equippedItems and inventory icons
 {
 	robj.player.equippedItems = new Array(SLOT_ALL);
@@ -1140,7 +1140,7 @@ function computeEquippedEffects()
 			const graderankDiv = document.createElement("div");
 			const hoverbox = document.createElement("div");
 			itemGradeRank(iconDiv, it, graderankDiv, hoverbox);
-			addHoverboxToItem(iconDiv, it, graderankDiv, hoverbox);
+			addHoverboxToItem(iconDiv, it, graderankDiv, hoverbox, c, strengthDiv, dmgDiv, strengthDec, dexterityDiv, attackDiv, defenseDiv, dexterityDec, vitalityDiv, hpDiv, staminaDiv, vitalityDec, magicDiv, manaDiv, magicDec, skillDivs, skillDecrementButtons, reqs);
 		}
 		else
 		{
@@ -1169,7 +1169,7 @@ function computeEquippedEffects()
 			const graderankDiv = document.createElement("div");
 			const hoverbox = document.createElement("div");
 			itemGradeRank(iconDiv, it, graderankDiv, hoverbox);
-			addHoverboxToItem(iconDiv, it, graderankDiv, hoverbox);
+			addHoverboxToItem(iconDiv, it, graderankDiv, hoverbox, c, strengthDiv, dmgDiv, strengthDec, dexterityDiv, attackDiv, defenseDiv, dexterityDec, vitalityDiv, hpDiv, staminaDiv, vitalityDec, magicDiv, manaDiv, magicDec, skillDivs, skillDecrementButtons, reqs);
 		}
 	}
 }
@@ -1367,19 +1367,44 @@ function charDefense(c)
 		+ Math.trunc(charDexterity(c) / 5); //dexterity bonus
 }
 
-function charMaxHP(c)
+//indicate to charMaxHP, charMaxStamina, charMaxMana that you want [int, hoverboxString]
+const HOVER_TOO = true;
+
+function charMaxHP(c, hoverboxString = false) //-> int || [int, hoverboxString]
 {
-	return c.maxHp + Math.ceil(charNetEffect(c, EFFECT_PERCENT_H_P) * 0.01 * c.maxHp) + Math.trunc(charNetEffect(c, EFFECT_MAX_HP));
+	//TODO hardcoding 18 baseHP...
+	c.maxHp = 18 + 4*c.level + 4*charVitality(c);
+	const val = c.maxHp + Math.ceil(charNetEffect(c, EFFECT_PERCENT_HP) * 0.01 * c.maxHp) + Math.trunc(charNetEffect(c, EFFECT_MAX_HP));
+	return !hoverboxString ? val : [
+		val,
+		"baseHP + 4*vitality + 4*level\n" +
+		`${c.maxHp - 4*c.level - 4*charVitality(c)} + ${4*charVitality(c)} + ${4*c.level} = ${c.maxHp}\n` +
+		`+ ${Math.ceil(charNetEffect(c, EFFECT_PERCENT_HP) * 0.01 * c.maxHp)} [${charNetEffect(c, EFFECT_PERCENT_HP)}%] + ${Math.trunc(charNetEffect(c, EFFECT_MAX_HP))} [FLAT]`
+	];
 }
 
-function charMaxStamina(c)
+function charMaxStamina(c, hoverboxString = false) //-> [int, hoverboxstring]
 {
-	return c.maxStamina + Math.ceil(charNetEffect(c, EFFECT_PERCENT_STAMINA) * 0.01 * c.maxStamina) + Math.trunc(charNetEffect(c, EFFECT_MAX_STAMINA));
+	c.maxStamina = c.level + 2*charVitality(c);
+	const val = c.maxStamina + Math.ceil(charNetEffect(c, EFFECT_PERCENT_STAMINA) * 0.01 * c.maxStamina) + Math.trunc(charNetEffect(c, EFFECT_MAX_STAMINA));
+	return !hoverboxString ? val : [
+		val,
+		"2*vitality + level\n" +
+		`${c.maxStamina - c.level - 2*charVitality(c)} + ${2*charVitality(c)} + ${c.level} = ${c.maxStamina}\n` +
+		`+ ${Math.ceil(charNetEffect(c, EFFECT_PERCENT_STAMINA) * 0.01 * c.maxStamina)} [${charNetEffect(c, EFFECT_PERCENT_STAMINA)}%] + ${Math.trunc(charNetEffect(c, EFFECT_MAX_STAMINA))} [FLAT]`
+	];
 }
 
-function charMaxMana(c)
+function charMaxMana(c, hoverboxString = false) //-> [int, hoverboxstring]
 {
-	return c.maxMana + Math.ceil(charNetEffect(c, EFFECT_PERCENT_MANA) * 0.01 * c.maxMana) + Math.trunc(charNetEffect(c, EFFECT_MAX_MANA));
+	c.maxMana = c.level + 2*charMagic(c);
+	const val = c.maxMana + Math.ceil(charNetEffect(c, EFFECT_PERCENT_MANA) * 0.01 * c.maxMana) + Math.trunc(charNetEffect(c, EFFECT_MAX_MANA));
+	return !hoverboxString ? val : [
+		val,
+		"2*magic + level\n" +
+		`${c.maxMana - c.level - 2*charMagic(c)} + ${2*charMagic(c)} + ${c.level} = ${c.maxMana}\n` +
+		`+ ${Math.ceil(charNetEffect(c, EFFECT_PERCENT_MANA) * 0.01 * c.maxMana)} [${charNetEffect(c, EFFECT_PERCENT_MANA)}%] + ${Math.trunc(charNetEffect(c, EFFECT_MAX_MANA))} [FLAT]`
+	];
 }
 
 let CURRENT_SCREEN = uploadScreen;
@@ -1630,7 +1655,7 @@ function armorDefense(it)
 }
 
 
-function addHoverboxToItem(div, it, graderankDiv, hoverbox)
+function addHoverboxToItem(div, it, graderankDiv, hoverbox, c, strengthDiv, dmgDiv, strengthDec, dexterityDiv, attackDiv, defenseDiv, dexterityDec, vitalityDiv, hpDiv, staminaDiv, vitalityDec, magicDiv, manaDiv, magicDec, skillDivs, skillDecrementButtons, reqs)
 {
 	div.classList.add("item-div");
 	hoverbox.classList.add("hoverbox");
@@ -1675,7 +1700,7 @@ function addHoverboxToItem(div, it, graderankDiv, hoverbox)
 																	(_text, _input) => {
 																		const newVal = _input.value.trim();
 																		it.damageBonusValue[i] = parseInt(newVal);
-																		_text.innerText = it.damageBonusValue[i];
+																		_text.textContent = it.damageBonusValue[i];
 																		hoverbox.classList.remove(hoverbox.classList.contains("lock2") ? "lock2" : "lock");
 																		graderankDiv.classList.remove(graderankDiv.classList.contains("lock2") ? "lock2" : "lock");
 																	},
@@ -1695,13 +1720,13 @@ function addHoverboxToItem(div, it, graderankDiv, hoverbox)
 		case CATEGORY_WEAPON:
 			const damageDiv = document.createElement("div");
 			damageDiv.classList.add("item-box-damage");
-			damageDiv.innerText = `Attack Damage : ${weaponMinDamage(it)} - ${weaponMaxDamage(it)}`;
+			damageDiv.textContent = `Attack Damage : ${weaponMinDamage(it)} - ${weaponMaxDamage(it)}`;
 			hoverbox.appendChild(damageDiv);
 			break;
 		case CATEGORY_ARMOR:
 			const defenseDiv = document.createElement("div");
 			defenseDiv.classList.add("item-box-defense");
-			defenseDiv.innerText = `Defense : ${armorDefense(it)}`;
+			defenseDiv.textContent = `Defense : ${armorDefense(it)}`;
 			hoverbox.appendChild(defenseDiv);
 			break;
 	}
@@ -1724,19 +1749,17 @@ function addHoverboxToItem(div, it, graderankDiv, hoverbox)
 			addEditableFieldAndHoverboxTo(div.querySelector("span"), valStr,	(_text, _input) => {
 																					_input.style.width = `${_text.offsetWidth}px`;
 																					_input.value = e.value;
-																					console.log("adding lock" + DEBUGCNTR++);
 																					hoverbox.classList.add(hoverbox.classList.contains("lock") ? "lock2" : "lock");
 																					graderankDiv.classList.add(graderankDiv.classList.contains("lock") ? "lock2" : "lock");
 																				},
 																				(_text, _input) => {
-																					const newVal = _input.value.trim();
-																					e.value = parseFloat(newVal);
-																					_text.innerText = `${Math.abs(Math.trunc(e.value))}`;
-																					console.log("removing lock" + DEBUGCNTR++)
+																					const newVal = parseFloat(_input.value.trim());
+																					changeEffectAndPropagate(c, e.type, e.value, newVal, "equipped", strengthDiv, dmgDiv, strengthDec, dexterityDiv, attackDiv, defenseDiv, dexterityDec, vitalityDiv, hpDiv, staminaDiv, vitalityDec, magicDiv, manaDiv, magicDec, skillDivs, skillDecrementButtons, reqs);
+																					e.value = newVal;
+																					_text.textContent = `${Math.abs(Math.trunc(e.value))}`;
 																					hoverbox.classList.remove(hoverbox.classList.contains("lock2") ? "lock2" : "lock");
 																					graderankDiv.classList.remove(graderankDiv.classList.contains("lock2") ? "lock2" : "lock");
 																					//TODO WHERE LEFT OFF need to change the entire line, not just the span		
-																					//ALSO NEED TO UPDATE EVERYWHERE (LIKE IN STATS)						
 																				},
 																				() => {
 																					return "hoverbox text";
@@ -1897,9 +1920,151 @@ function addEditableFieldAndHoverboxTo(div, initText, enterFunc, exitFunc, hover
 //for when you want to postpone propagateRequirements() to another time, to avoid redundant computation
 const NO_REQS = null;
 
+function changeEffectAndPropagate(c, whichEffect, oldVal, newVal, equipped_char, strengthDiv, dmgDiv, strengthDec, dexterityDiv, attackDiv, defenseDiv, dexterityDec, vitalityDiv, hpDiv, staminaDiv, vitalityDec, magicDiv, manaDiv, magicDec, skillDivs, skillDecrementButtons, reqs)
+{
+	//TODO validate
+	if (newVal === oldVal) return;
+
+	//TODO harcoding these
+	const eff = equipped_char === "char" ? PLAYER_TAB.equippedEffects : PLAYER_TAB.characterEffects;
+	eff[whichEffect] += newVal - oldVal;
+	switch (whichEffect)
+	{
+		case EFFECT_STRENGTH:
+			changeBaseStrengthAndPropagate(c, c.strength, strengthDiv, dmgDiv, strengthDec, reqs);
+			break;
+		case EFFECT_DEXTERITY:
+			changeBaseDexterityAndPropagate(c, c.dexterity, dexterityDiv, attackDiv, defenseDiv, dexterityDec, reqs);
+			break;
+		case EFFECT_VITALITY:
+			changeBaseVitalityAndPropagate(c, c.vitality, vitalityDiv, hpDiv, staminaDiv, vitalityDec, reqs);
+			break;
+		case EFFECT_MAGIC:
+			changeBaseMagicAndPropagate(c, c.magic, magicDiv, manaDiv, magicDec, reqs);
+			break;
+		case EFFECT_MAX_MANA:
+			propagateMaxMana(c, manaDiv);
+			break;
+		case EFFECT_MAX_HP:
+			propagateMaxHP(c, hpDiv);
+			break;
+		case EFFECT_MAX_STAMINA:
+			propagateMaxStamina(c, staminaDiv);
+			break;
+
+		// case EFFECT_MANA:
+		// case EFFECT_HP:
+		// case EFFECT_STAMINA:
+
+		case EFFECT_ARMOR_BONUS:
+			changeNaturalArmorAndPropagate(c, c.naturalArmor, defenseDiv);
+			break;
+		case EFFECT_TO_HIT_BONUS:
+			changeToHitBonusAndPropagate(c, c.toHitBonus, attackDiv);
+			break;
+		case EFFECT_DAMAGE_BONUS:
+			propagateToDamage(c, dmgDiv);
+			break;
+
+		// case EFFECT_DAMAGE_TAKEN:
+		// case EFFECT_KNOCKBACK:
+
+		case EFFECT_SKILL_SWORD:
+		case EFFECT_SKILL_CLUB:
+		case EFFECT_SKILL_HAMMER:
+		case EFFECT_SKILL_AXE:
+		case EFFECT_SKILL_SPEAR:
+		case EFFECT_SKILL_STAFF:
+		case EFFECT_SKILL_POLEARM:
+		case EFFECT_SKILL_BOW:
+		case EFFECT_SKILL_CROSSBOW:
+		case EFFECT_SKILL_THROWN:
+		case EFFECT_SKILL_DUAL_WIELD:
+		case EFFECT_SKILL_SHIELD:
+		case EFFECT_SKILL_ATTACK_MAGIC:
+		case EFFECT_SKILL_DEFENSE_MAGIC:
+		case EFFECT_SKILL_CHARM_MAGIC:
+			const sk = whichEffect - EFFECT_SKILL_SWORD;
+			changeBaseSkillAndPropagate(c, sk, c.skills[sk], skillDivs[sk], dmgDiv, attackDiv, skillDecrementButtons[sk]);
+			break;
+
+		case EFFECT_PERCENT_STRENGTH:
+			changeBaseStrengthAndPropagate(c, c.strength, strengthDiv, dmgDiv, strengthDec, reqs);
+			break;
+		case EFFECT_PERCENT_DEXTERITY:
+			changeBaseDexterityAndPropagate(c, c.dexterity, dexterityDiv, attackDiv, defenseDiv, dexterityDec, reqs);
+			break;
+		case EFFECT_PERCENT_VITALITY:
+			changeBaseVitalityAndPropagate(c, c.vitality, vitalityDiv, hpDiv, staminaDiv, vitalityDec, reqs);
+			break;
+		case EFFECT_PERCENT_MAGIC:
+			changeBaseMagicAndPropagate(c, c.magic, magicDiv, manaDiv, magicDec, reqs);
+			break;
+		case EFFECT_PERCENT_MANA:
+			propagateMaxMana(c, manaDiv);
+			break;
+		case EFFECT_PERCENT_HP:
+			propagateMaxHP(c, hpDiv);
+			break;
+		case EFFECT_PERCENT_STAMINA:
+			propagateMaxStamina(c, staminaDiv);
+			break;
+
+		// case EFFECT_PERCENT_SPEED:
+		// case EFFECT_PERCENT_ATTACK_SPEED:
+
+		case EFFECT_PERCENT_ARMOR_BONUS:
+			changeNaturalArmorAndPropagate(c, c.naturalArmor, defenseDiv);
+			break;
+		case EFFECT_PERCENT_TO_HIT_BONUS:
+			changeToHitBonusAndPropagate(c, c.toHitBonus, attackDiv);
+			break;
+		case EFFECT_PERCENT_DAMAGE_BONUS:
+			propagateToDamage(c, dmgDiv);
+			break;
+
+		// case EFFECT_PERCENT_DAMAGE_TAKEN:
+		// case EFFECT_PERCENT_MAGICAL_DROP:
+		// case EFFECT_PERCENT_GOLD_DROP:
+		// case EFFECT_PERCENT_CAST_SPEED:
+		// case EFFECT_PERCENT_LIFE_STOLEN:
+		// case EFFECT_PERCENT_MANA_STOLEN:
+		// case EFFECT_PERCENT_DAMAGE_REFLECTED:
+		// case EFFECT_PERCENT_BLOCK_CHANCE:
+
+		case EFFECT_PERCENT_ITEM_REQUIREMENTS:
+			propagateRequirements(c, reqs);
+			break;
+
+		// case EFFECT_PERCENT_PIERCING_RESISTANCE:
+		// case EFFECT_PERCENT_SLASHING_RESISTANCE:
+		// case EFFECT_PERCENT_CRUSHING_RESISTANCE:
+		// case EFFECT_PERCENT_MAGICAL_RESISTANCE:
+		// case EFFECT_PERCENT_FIRE_RESISTANCE:
+		// case EFFECT_PERCENT_ICE_RESISTANCE:
+		// case EFFECT_PERCENT_ELECTRIC_RESISTANCE:
+		// case EFFECT_TYPES:
+		// case EFFECT_REMOVE:
+		// case EFFECT_KNOCKBACK_EFFECT:
+		// case EFFECT_IDENTIFY:
+		// case EFFECT_WRITE_SPELL:
+		// case EFFECT_SUMMON:
+		// case EFFECT_ADD_DAMAGE_TYPE:
+		// case EFFECT_TRANSFORM:
+		// case EFFECT_REVERT_TRANSFORM:
+		// case EFFECT_OPEN_PORTAL:
+		// case EFFECT_DISCOVER:
+		// case EFFECT_FLEE:
+		// case EFFECT_TURN_ALIGNMENT:
+		// case EFFECT_DISPEL:
+		// case EFFECT_DISPEL_ENEMY:
+		// case EFFECT_ALL_TYPES:
+	}
+}
+
 function propagateToDamage(c, dmgDiv)
 {
-	dmgDiv.innerText = charStatmenuDamageRange(c);
+	dmgDiv.textContent = charStatmenuDamageRange(c);
 	//TODO want to add hoverbox too, but not editable field
 }
 
@@ -1962,8 +2127,8 @@ function changeBaseSkillAndPropagate(c, whichSkill, newVal, skillDiv, dmgDiv, at
 {
 	//TODO validate
 	c.skills[whichSkill] = newVal;
-	skillDiv.querySelector("span").innerText = charNetSkill(c, whichSkill);
-	skillDiv.querySelector(".hoverbox").innerText = `${c.skills[whichSkill]} + ${charNetEffect(c, EFFECT_SKILL_SWORD + whichSkill)}`;
+	skillDiv.querySelector("span").textContent = charNetSkill(c, whichSkill);
+	skillDiv.querySelector(".hoverbox").textContent = `${c.skills[whichSkill]} + ${charNetEffect(c, EFFECT_SKILL_SWORD + whichSkill)}`;
 
 	if (whichSkill <= SKILL_BOW)
 	{
@@ -1997,9 +2162,9 @@ function changeNaturalArmorAndPropagate(c, newVal, defenseDiv)
 {
 	//TODO validation
 	c.naturalArmor = newVal;
-	defenseDiv.querySelector("span").innerText = charDefense(c);
+	defenseDiv.querySelector("span").textContent = charDefense(c);
 	const tot = c.naturalArmor + c._inventoryArmor;
-	defenseDiv.querySelector(".hoverbox").innerText =	`${c.naturalArmor} + ${c._inventoryArmor} = ${tot}\n` + 
+	defenseDiv.querySelector(".hoverbox").textContent =	`${c.naturalArmor} + ${c._inventoryArmor} = ${tot}\n` + 
 														`${tot} + ${charNetEffect(c, EFFECT_PERCENT_ARMOR_BONUS)}% [${Math.ceil(charNetEffect(c,  EFFECT_PERCENT_ARMOR_BONUS) * 0.01 * tot)}] + ${Math.trunc(charNetEffect(c, EFFECT_ARMOR_BONUS))} + ${Math.trunc(charDexterity(c) / 5)}`;
 }
 
@@ -2015,7 +2180,7 @@ function changeToHitBonusAndPropagate(c, newVal, attackDiv)
 	const tot = 50 + Math.trunc(charDexterity(c) / 2) + c.level +
 		c.toHitBonus + (__activeWeapon ? charNetSkill(c, TYPE_TO_SKILL[ITEMS_INFO.get(__activeWeapon.baseName.toUpperCase()).type]) : 0) + (__currentAttack ? __currentAttack.toHitBonus : 0);
 
-	attackDiv.querySelector("span").innerText = tot + Math.ceil(charNetEffect(c, EFFECT_PERCENT_TO_HIT_BONUS) * 0.01 * tot) + Math.trunc(charNetEffect(c, EFFECT_TO_HIT_BONUS));
+	attackDiv.querySelector("span").textContent = tot + Math.ceil(charNetEffect(c, EFFECT_PERCENT_TO_HIT_BONUS) * 0.01 * tot) + Math.trunc(charNetEffect(c, EFFECT_TO_HIT_BONUS));
 	attackDiv.querySelector(".hoverbox").innerText = `${c.toHitBonus} + ${50} + ${Math.trunc(charDexterity(c) / 2)} + ${c.level} + ${(__activeWeapon ? charNetSkill(c, TYPE_TO_SKILL[ITEMS_INFO.get(__activeWeapon.baseName.toUpperCase()).type]) : 0)} + ${(__currentAttack ? __currentAttack.toHitBonus : 0)} = ${tot}\n` +
 													 `${tot} + ${charNetEffect(c, EFFECT_PERCENT_TO_HIT_BONUS)}% [${Math.ceil(charNetEffect(c, EFFECT_PERCENT_TO_HIT_BONUS) * 0.01 * tot)}] + ${Math.trunc(charNetEffect(c, EFFECT_TO_HIT_BONUS))}`;
 }
@@ -2024,8 +2189,8 @@ function changeBaseStrengthAndPropagate(c, strength, strengthDiv, dmgDiv, streng
 {
 	//TODO validate
 	c.strength = strength;
-	strengthDiv.querySelector("span").innerText = charStrength(c);
-	strengthDiv.querySelector(".hoverbox").innerText = `${c.strength} + ${charNetEffect(c, EFFECT_PERCENT_STRENGTH)}% [${Math.ceil(charNetEffect(c, EFFECT_PERCENT_STRENGTH) * 0.01 * c.strength)}] + ${Math.trunc(charNetEffect(c, EFFECT_STRENGTH))}`;
+	strengthDiv.querySelector("span").textContent = charStrength(c);
+	strengthDiv.querySelector(".hoverbox").textContent = `${c.strength} + ${charNetEffect(c, EFFECT_PERCENT_STRENGTH)}% [${Math.ceil(charNetEffect(c, EFFECT_PERCENT_STRENGTH) * 0.01 * c.strength)}] + ${Math.trunc(charNetEffect(c, EFFECT_STRENGTH))}`;
 	propagateToDamage(c, dmgDiv);
 
 	propagateToDecrementButton(strength > 25, strengthDec);
@@ -2039,8 +2204,8 @@ function changeBaseDexterityAndPropagate(c, dexterity, dexterityDiv, attackDiv, 
 	//TODO validate
 	const old = charDexterity(c);
 	c.dexterity = dexterity;
-	dexterityDiv.querySelector("span").innerText = charDexterity(c);
-	dexterityDiv.querySelector(".hoverbox").innerText = `${c.dexterity} + ${charNetEffect(c, EFFECT_PERCENT_DEXTERITY)}% [${Math.ceil(charNetEffect(c, EFFECT_PERCENT_DEXTERITY) * 0.01 * c.dexterity)}] + ${Math.trunc(charNetEffect(c, EFFECT_DEXTERITY))}`;
+	dexterityDiv.querySelector("span").textContent = charDexterity(c);
+	dexterityDiv.querySelector(".hoverbox").textContent = `${c.dexterity} + ${charNetEffect(c, EFFECT_PERCENT_DEXTERITY)}% [${Math.ceil(charNetEffect(c, EFFECT_PERCENT_DEXTERITY) * 0.01 * c.dexterity)}] + ${Math.trunc(charNetEffect(c, EFFECT_DEXTERITY))}`;
 	changeNaturalArmorAndPropagate(c, c.naturalArmor, defenseDiv);
 	changeToHitBonusAndPropagate(c, c.toHitBonus, attackDiv);
 
@@ -2055,11 +2220,11 @@ function changeBaseVitalityAndPropagate(c, vitality, vitalityDiv, hpDiv, stamina
 	//TODO validate
 	const old = charVitality(c);
 	c.vitality = vitality;
-	vitalityDiv.querySelector("span").innerText = charVitality(c);
-	vitalityDiv.querySelector(".hoverbox").innerText = `${c.vitality} + ${charNetEffect(c, EFFECT_PERCENT_VITALITY)}% [${Math.ceil(charNetEffect(c, EFFECT_PERCENT_VITALITY) * 0.01 * c.vitality)}] + ${Math.trunc(charNetEffect(c, EFFECT_VITALITY))}`;
+	vitalityDiv.querySelector("span").textContent = charVitality(c);
+	vitalityDiv.querySelector(".hoverbox").textContent = `${c.vitality} + ${charNetEffect(c, EFFECT_PERCENT_VITALITY)}% [${Math.ceil(charNetEffect(c, EFFECT_PERCENT_VITALITY) * 0.01 * c.vitality)}] + ${Math.trunc(charNetEffect(c, EFFECT_VITALITY))}`;
 	//other propagates
-	changeBaseMaxStaminaAndPropagate(c, c.maxStamina + 2*(charVitality(c) - old), staminaDiv);
-	changeBaseMaxHPAndPropagate(c, c.maxHp + 4*(charVitality(c) - old), hpDiv);
+	propagateMaxStamina(c, staminaDiv);
+	propagateMaxHP(c, hpDiv);
 
 	propagateToDecrementButton(vitality > 25, vitalityDec);
 
@@ -2072,10 +2237,10 @@ function changeBaseMagicAndPropagate(c, magic, magicDiv, manaDiv, magicDec, reqs
 	//TODO validate
 	const old = charMagic(c);
 	c.magic = magic;
-	magicDiv.querySelector("span").innerText = charMagic(c);
-	magicDiv.querySelector(".hoverbox").innerText = `${c.magic} + ${charNetEffect(c, EFFECT_PERCENT_MAGIC)}% [${Math.ceil(charNetEffect(c, EFFECT_PERCENT_MAGIC) * 0.01 * c.magic)}] + ${Math.trunc(charNetEffect(c, EFFECT_MAGIC))}`;
+	magicDiv.querySelector("span").textContent = charMagic(c);
+	magicDiv.querySelector(".hoverbox").textContent = `${c.magic} + ${charNetEffect(c, EFFECT_PERCENT_MAGIC)}% [${Math.ceil(charNetEffect(c, EFFECT_PERCENT_MAGIC) * 0.01 * c.magic)}] + ${Math.trunc(charNetEffect(c, EFFECT_MAGIC))}`;
 	//other propagates
-	changeBaseMaxManaAndPropagate(c, c.maxMana + 2*(charMagic(c) - old), manaDiv);
+	propagateMaxMana(c, manaDiv);
 	//TODO propagate spell damage etc
 
 	propagateToDecrementButton(magic > 10, magicDec);
@@ -2085,40 +2250,31 @@ function changeBaseMagicAndPropagate(c, magic, magicDiv, manaDiv, magicDec, reqs
 }
 
 
-function changeBaseMaxStaminaAndPropagate(c, stamina, staminaDiv)
+function propagateMaxStamina(c, staminaDiv)
+//choose not to allow editing because game just overwrites anyway
 {
-	//TODO validation
-	if (stamina < 0) return;
-	c.maxStamina = stamina;
-	staminaDiv.querySelector("span").innerText = charMaxStamina(c);
-	staminaDiv.querySelector(".hoverbox").innerText = `${c.maxStamina} + ${charNetEffect(c, EFFECT_PERCENT_STAMINA)}% [${Math.ceil(charNetEffect(c, EFFECT_PERCENT_STAMINA) * 0.01 * c.maxStamina)}] + ${Math.trunc(charNetEffect(c, EFFECT_MAX_STAMINA))}`;
+	// const [val, hoverStr] = charMaxStamina(c, HOVER_TOO);
+	[staminaDiv.querySelector("span").textContent, staminaDiv.querySelector(".hoverbox").innerText] = charMaxStamina(c, HOVER_TOO);
 }
 
-function changeBaseMaxManaAndPropagate(c, mana, manaDiv)
+function propagateMaxMana(c, manaDiv)
+//choose not to allow editing because game just overwrites anyway
 {
-	//TODO validation
-	if (mana < 0) return;
-	c.maxMana = mana;
-	manaDiv.querySelector("span").innerText = charMaxMana(c);
-	manaDiv.querySelector(".hoverbox").innerText = `${c.maxMana} + ${charNetEffect(c, EFFECT_PERCENT_MANA)}% [${Math.ceil(charNetEffect(c, EFFECT_PERCENT_MANA) * 0.01 * c.maxMana)}] + ${Math.trunc(charNetEffect(c, EFFECT_MAX_MANA))}`;
+	[manaDiv.querySelector("span").textContent, manaDiv.querySelector(".hoverbox").innerText] = charMaxMana(c, HOVER_TOO);
 }
 
-//change attack and propagate() {}
-
-function changeBaseMaxHPAndPropagate(c, hp, hpDiv)
+function propagateMaxHP(c, hpDiv)
+//choose not to allow editing because game just overwrites anyway
 {
-	//TODO validation
-	c.maxHp = hp;
-	hpDiv.querySelector("span").innerText = charMaxHP(c);
-	hpDiv.querySelector(".hoverbox").innerText = `${c.maxHp} + ${charNetEffect(c, EFFECT_PERCENT_H_P)}% [${Math.ceil(charNetEffect(c, EFFECT_PERCENT_H_P) * 0.01 * c.maxHp)}] + ${Math.trunc(charNetEffect(c, EFFECT_MAX_HP))}`;
+	[hpDiv.querySelector("span").textContent, hpDiv.querySelector(".hoverbox").innerText] = charMaxHP(c, HOVER_TOO);
 }
 
 function changeStatPointsAndPropagate(c, stats, statPointsDiv, statIncrementButtons)
 {
 	//TODO validation
 	c.unusedStatPoints = stats;
-	statPointsDiv.querySelector("span").innerText = stats;
-	statPointsDiv.querySelector(".hoverbox").innerText = stats;
+	statPointsDiv.querySelector("span").textContent = stats;
+	statPointsDiv.querySelector(".hoverbox").textContent = stats;
 
 	propagateToIncrementButtons(stats > 0, statIncrementButtons);
 }
@@ -2127,8 +2283,8 @@ function changeSkillPointsAndPropagate(c, skills, skillPointsDiv, skillIncrement
 {
 	//TODO validation
 	c.unusedSkillPoints = skills;
-	skillPointsDiv.querySelector("span").innerText = skills;
-	skillPointsDiv.querySelector(".hoverbox").innerText = skills;
+	skillPointsDiv.querySelector("span").textContent = skills;
+	skillPointsDiv.querySelector(".hoverbox").textContent = skills;
 
 	propagateToIncrementButtons(skills > 0, skillIncrementButtons);
 }
@@ -2149,25 +2305,23 @@ function changeExperienceAndPropagate(c, experience, levelDiv, experienceDiv, ne
 	const oldLevel = c.level;
 	if (experience > c.experience)
 	{
-		experienceDiv.querySelector(".hoverbox").innerText = experienceDiv.querySelector("span").innerText = c.experience = experience;
+		experienceDiv.querySelector(".hoverbox").textContent = experienceDiv.querySelector("span").textContent = c.experience = experience;
 		while (c.level < 99 && experience >= EXPERIENCE_GATE[c.level]) ++c.level;
 		if (c.level > oldLevel)
 		{
-			levelDiv.querySelector(".hoverbox").innerText = levelDiv.querySelector("span").innerText = c.level;
-			nextLevelDiv.innerText = EXPERIENCE_GATE[c.level];
+			levelDiv.querySelector(".hoverbox").textContent = levelDiv.querySelector("span").textContent = c.level;
+			nextLevelDiv.textContent = EXPERIENCE_GATE[c.level];
 
 			const delta = c.level - oldLevel;
 		
-			changeBaseMaxStaminaAndPropagate(c, c.maxStamina + delta, staminaDiv);
-			//does leveling up refill stamina to max?
-		
-			changeBaseMaxManaAndPropagate(c, c.maxMana + delta, manaDiv);
-			//does leveling up refill mana to max?
+			//TODO does leveling up cause these to refill?
+			propagateMaxStamina(c, staminaDiv);
+			propagateMaxMana(c, manaDiv);
+			propagateMaxHP(c, hpDiv);
 		
 			changeToHitBonusAndPropagate(c, c.toHitBonus, attackDiv);
 		
 			//NOTE this is the overriding method in CPlayer! in general you may want CCharacter or even CMonster bleugh!
-			changeBaseMaxHPAndPropagate(c, c.maxHp + 4*delta, hpDiv); //etc like the others
 		
 			//pets auto skill;
 			changeStatPointsAndPropagate(c, c.unusedStatPoints + 5*delta, statPointsDiv, statIncrementButtons);
@@ -2188,10 +2342,10 @@ function changeRenownAndPropagate(newVal, c, nameDiv, renownDiv, fameDiv, nextRe
 		const delta = newVal - c.fameRank;
 		if (newVal > c.fameRank)
 		{
-			renownDiv.querySelector(".hoverbox").innerText = renownDiv.querySelector("span").innerText = c.fameRank = newVal;
+			renownDiv.querySelector(".hoverbox").textContent = renownDiv.querySelector("span").textContent = c.fameRank = newVal;
 			nameDiv; //TODO TODO TODO need to update
-			fameDiv.querySelector(".hoverbox").innerText = fameDiv.querySelector("span").innerText = c.fame = FAME_GATE[c.fameRank - 1];
-			nextRenownDiv.innerText = FAME_GATE[c.fameRank];
+			fameDiv.querySelector(".hoverbox").textContent = fameDiv.querySelector("span").textContent = c.fame = FAME_GATE[c.fameRank - 1];
+			nextRenownDiv.textContent = FAME_GATE[c.fameRank];
 			changeSkillPointsAndPropagate(c, c.unusedSkillPoints + 4 * delta, skillpointsDiv, skillIncrementButtons);
 		}
 		else
@@ -2208,13 +2362,13 @@ function changeFameAndPropagate(newVal, c, nameDiv, renownDiv, fameDiv, nextReno
 		const oldRenown = c.fameRank;
 		if (newVal > c.fame)
 		{
-			fameDiv.querySelector(".hoverbox").innerText = fameDiv.querySelector("span").innerText = c.fame = newVal;
+			fameDiv.querySelector(".hoverbox").textContent = fameDiv.querySelector("span").textContent = c.fame = newVal;
 			while(c.fameRank < 20 && c.fame >= FAME_GATE[c.fameRank]) ++c.fameRank;
 			if (c.fameRank > oldRenown)
 			{
-				renownDiv.querySelector(".hoverbox").innerText = renownDiv.querySelector("span").innerText = c.fameRank;
+				renownDiv.querySelector(".hoverbox").textContent = renownDiv.querySelector("span").textContent = c.fameRank;
 				nameDiv; //TODO TODO TODO need to update
-				nextRenownDiv.innerText = FAME_GATE[c.fameRank];
+				nextRenownDiv.textContent = FAME_GATE[c.fameRank];
 				changeSkillPointsAndPropagate(c, c.unusedSkillPoints + 4 * (c.fameRank - oldRenown), skillpointsDiv, skillIncrementButtons);
 			}
 		}
@@ -2246,11 +2400,11 @@ function propagateRequirements(c, divWithAllTheItems)
 			}
 
 			if (reqDiv.itemBoxReq_stat == STAT_RENOWN)
-				reqDiv.innerText = `Requires Renown of ${FAME_NAMES[val]}`;
+				reqDiv.textContent = `Requires Renown of ${FAME_NAMES[val]}`;
 			else if (reqDiv.itemBoxReq_stat == STAT_LEVEL)
-				reqDiv.innerText = `Requires Level ${val}`;
+				reqDiv.textContent = `Requires Level ${val}`;
 			else
-				reqDiv.innerText = `Requires ${val} ${STAT_INT_STR[reqDiv.itemBoxReq_stat]}`;
+				reqDiv.textContent = `Requires ${val} ${STAT_INT_STR[reqDiv.itemBoxReq_stat]}`;
 
 			if (meetsRequirements(c, reqDiv.itemBoxReq_stat, reqDiv.itemBoxReq_val, reqDiv.itemBoxReq_type != TYPE_SPELL))
 				{ reqDiv.classList.remove("highlight-red"); reqDiv.classList.add("highlight-green"); }
@@ -2386,35 +2540,31 @@ function initStatsInvSkillsGold()
 
 	const p = robj.player;
 	//TODO but consider that the displayed number might not be whats used in game
-
-	computeEquippedEffects();
-	computeCharacterEffects();
-	propagateRequirements(p, player_statsInvSkillGold_div);
 	
 	//TODO but consider that the displayed number might not be whats used in game
 	//TODO there is a petstatsmenu.cpp, how is that different? how about other monsters?
 	//TODO TODO TODO Invenctory::EffectValue is probably different from Character::EffectValue?
-	const nameDiv = PLAYER_TAB.statsDivs.get("NAME"); nameDiv.innerText = robj.player.lineage > 0 ? `${p.name} the ${FAME_NAMES[p.fameRank]} (${romanNumeral(p.lineage)})` :
+	const nameDiv = PLAYER_TAB.statsDivs.get("NAME"); nameDiv.textContent = robj.player.lineage > 0 ? `${p.name} the ${FAME_NAMES[p.fameRank]} (${romanNumeral(p.lineage)})` :
 																									`${p.name} the ${FAME_NAMES[p.fameRank]}`;
-	const levelDiv = PLAYER_TAB.statsDivs.get("LEVEL"); //levelDiv.innerText = p.level;
-	const expDiv = PLAYER_TAB.statsDivs.get("EXPERIENCE"); //expDiv.innerText = p.experience;
-	const nextLevelDiv = PLAYER_TAB.statsDivs.get("NEXT_LEVEL"); nextLevelDiv.innerText = charExperienceGate(p);
-	const renownDiv = PLAYER_TAB.statsDivs.get("RENOWN"); //.innerText = p.fameRank;
-	const fameDiv = PLAYER_TAB.statsDivs.get("FAME"); //.innerText = p.fame;
-	const nextRenownDiv = PLAYER_TAB.statsDivs.get("NEXT_RENOWN"); nextRenownDiv.innerText = charFameGate(p);
-	PLAYER_TAB.statsDivs.get("STRENGTH_STR").innerText = "Strength";
-	PLAYER_TAB.statsDivs.get("DEXTERITY_STR").innerText = "Dexterity";
-	PLAYER_TAB.statsDivs.get("VITALITY_STR").innerText = "Vitality";
-	PLAYER_TAB.statsDivs.get("MAGIC_STR").innerText = "Magic";
-	PLAYER_TAB.statsDivs.get("DAMAGE_STR").innerText = "Damage";
-	const dmgDiv = PLAYER_TAB.statsDivs.get("DAMAGE"); dmgDiv.innerText = charStatmenuDamageRange(p);
-	PLAYER_TAB.statsDivs.get("ATTACK_STR").innerText = "Attack";
+	const levelDiv = PLAYER_TAB.statsDivs.get("LEVEL"); //levelDiv.textContent = p.level;
+	const expDiv = PLAYER_TAB.statsDivs.get("EXPERIENCE"); //expDiv.textContent = p.experience;
+	const nextLevelDiv = PLAYER_TAB.statsDivs.get("NEXT_LEVEL"); nextLevelDiv.textContent = charExperienceGate(p);
+	const renownDiv = PLAYER_TAB.statsDivs.get("RENOWN"); //.textContent = p.fameRank;
+	const fameDiv = PLAYER_TAB.statsDivs.get("FAME"); //.textContent = p.fame;
+	const nextRenownDiv = PLAYER_TAB.statsDivs.get("NEXT_RENOWN"); nextRenownDiv.textContent = charFameGate(p);
+	PLAYER_TAB.statsDivs.get("STRENGTH_STR").textContent = "Strength";
+	PLAYER_TAB.statsDivs.get("DEXTERITY_STR").textContent = "Dexterity";
+	PLAYER_TAB.statsDivs.get("VITALITY_STR").textContent = "Vitality";
+	PLAYER_TAB.statsDivs.get("MAGIC_STR").textContent = "Magic";
+	PLAYER_TAB.statsDivs.get("DAMAGE_STR").textContent = "Damage";
+	const dmgDiv = PLAYER_TAB.statsDivs.get("DAMAGE");
+	PLAYER_TAB.statsDivs.get("ATTACK_STR").textContent = "Attack";
 	const attackDiv = PLAYER_TAB.statsDivs.get("ATTACK");
-	PLAYER_TAB.statsDivs.get("DEFENSE_STR").innerText = "Defense";
+	PLAYER_TAB.statsDivs.get("DEFENSE_STR").textContent = "Defense";
 	const defenseDiv = PLAYER_TAB.statsDivs.get("DEFENSE");
-	PLAYER_TAB.statsDivs.get("LIFE_STR").innerText = "Life";
-	PLAYER_TAB.statsDivs.get("STAMINA_STR").innerText = "Stamina";
-	PLAYER_TAB.statsDivs.get("MANA_STR").innerText = "Mana";
+	PLAYER_TAB.statsDivs.get("LIFE_STR").textContent = "Life";
+	PLAYER_TAB.statsDivs.get("STAMINA_STR").textContent = "Stamina";
+	PLAYER_TAB.statsDivs.get("MANA_STR").textContent = "Mana";
 
 	const strengthDiv = PLAYER_TAB.statsDivs.get("STRENGTH");
 	const dexterityDiv = PLAYER_TAB.statsDivs.get("DEXTERITY");
@@ -2438,6 +2588,17 @@ function initStatsInvSkillsGold()
 	//increment  / decrement buttons
 	const [statIncrementButtons, statDecrementButtons, skillIncrementButtons, skillDecrementButtons] = 
 		addAllIncrementDecrementPairs(p, player_statsInvSkillGold_div, strengthDiv, dexterityDiv, vitalityDiv, magicDiv, dmgDiv, attackDiv, defenseDiv, hpDiv, staminaDiv, manaDiv, statPointsDiv, skillDivs, skillPointsDiv, player_statsInvSkillGold_div);
+
+
+
+	computeEquippedEffects(p, strengthDiv, dmgDiv, statDecrementButtons[0], dexterityDiv, attackDiv, defenseDiv, statDecrementButtons[1], vitalityDiv, hpDiv, staminaDiv, statDecrementButtons[2], magicDiv, manaDiv, statDecrementButtons[3], skillDivs, skillDecrementButtons, player_statsInvSkillGold_div);
+	computeCharacterEffects();
+	propagateRequirements(p, player_statsInvSkillGold_div);
+	
+
+
+
+	dmgDiv.textContent = charStatmenuDamageRange(p);
 
 	if (p.unusedStatPoints <= 0) propagateToIncrementButtons(false, statIncrementButtons);
 	if (p.unusedSkillPoints <= 0) propagateToIncrementButtons(false, skillIncrementButtons);
@@ -2492,10 +2653,7 @@ function initStatsInvSkillsGold()
 	for (const [args, computeEffect, changeAndPropagate, attr, perc, flat] of [	[[strengthDiv, dmgDiv, statDecrementButtons[0], player_statsInvSkillGold_div],					charStrength,	changeBaseStrengthAndPropagate,		"strength",		EFFECT_PERCENT_STRENGTH,	EFFECT_STRENGTH],
 																				[[dexterityDiv, attackDiv, defenseDiv, statDecrementButtons[1], player_statsInvSkillGold_div],	charDexterity,	changeBaseDexterityAndPropagate,	"dexterity", 	EFFECT_PERCENT_DEXTERITY,	EFFECT_DEXTERITY],
 																				[[vitalityDiv, hpDiv, staminaDiv, statDecrementButtons[2], player_statsInvSkillGold_div],		charVitality,	changeBaseVitalityAndPropagate,		"vitality",		EFFECT_PERCENT_VITALITY, 	EFFECT_VITALITY],
-																				[[magicDiv, manaDiv, statDecrementButtons[3], player_statsInvSkillGold_div],					charMagic,		changeBaseMagicAndPropagate,		"magic",		EFFECT_PERCENT_MAGIC, 		EFFECT_MAGIC],
-																				[[hpDiv],		    																			charMaxHP,		changeBaseMaxHPAndPropagate, 		"maxHp",		EFFECT_PERCENT_H_P,			EFFECT_MAX_HP],
-																				[[staminaDiv],																					charMaxStamina, changeBaseMaxStaminaAndPropagate,	"maxStamina",	EFFECT_PERCENT_STAMINA, 	EFFECT_MAX_STAMINA],
-																				[[manaDiv],																						charMaxMana,	changeBaseMaxManaAndPropagate,		"maxMana",		EFFECT_PERCENT_MANA,		EFFECT_MAX_MANA]])
+																				[[magicDiv, manaDiv, statDecrementButtons[3], player_statsInvSkillGold_div],					charMagic,		changeBaseMagicAndPropagate,		"magic",		EFFECT_PERCENT_MAGIC, 		EFFECT_MAGIC]])
 	{
 		addEditableFieldAndHoverboxTo(args[0],	computeEffect(p),
 											(_text, _input) => {
@@ -2503,11 +2661,23 @@ function initStatsInvSkillsGold()
 											},
 											(_text, _input) => {
 												const newVal = parseInt(_input.value.trim());
-												changeAndPropagate(p, newVal, ...args); //TODO TODO TODO strength dexterity vitality magic need to propagate lmao
+												changeAndPropagate(p, newVal, ...args);
 											},
 											() => {
 												return `${p[attr]} + ${charNetEffect(p, perc)}% [${Math.ceil(charNetEffect(p, perc) * 0.01 * p[attr])}] + ${Math.trunc(charNetEffect(p, flat))}`;
 											});
+	}
+
+	//maxhp maxstamina maxmana - these will not be editable, but still hoverbox
+	for (const [div, propagate] of [[staminaDiv, propagateMaxStamina],
+									[manaDiv, propagateMaxMana],
+									[hpDiv, propagateMaxHP]])
+	{
+		div.appendChild(document.createElement("span"));
+		const hoverbox = document.createElement("div");
+		hoverbox.classList.add("hoverbox");
+		div.appendChild(hoverbox);
+		propagate(p, div);
 	}
 
 	//defense attack damage
@@ -2543,7 +2713,7 @@ function initStatsInvSkillsGold()
 														`${tot} + ${charNetEffect(p, EFFECT_PERCENT_TO_HIT_BONUS)}% [${Math.ceil(charNetEffect(p, EFFECT_PERCENT_TO_HIT_BONUS) * 0.01 * tot)}] + ${Math.trunc(charNetEffect(p, EFFECT_TO_HIT_BONUS))}`;
 											});
 
-	PLAYER_TAB.statsDivs.get("POINTS_STR").innerText = "Points Remaining";
+	PLAYER_TAB.statsDivs.get("POINTS_STR").textContent = "Points Remaining";
 	addEditableFieldAndHoverboxTo(statPointsDiv,	p.unusedStatPoints,
 													(_text, _input) => {
 														_input.value = p.unusedStatPoints;
@@ -2557,7 +2727,7 @@ function initStatsInvSkillsGold()
 													});
 										
 	const respecStatsButton = document.createElement("button");
-	respecStatsButton.innerText = "Respec Stats";
+	respecStatsButton.textContent = "Respec Stats";
 	respecStatsButton.classList.add("respec-stats-button");
 	respecStatsButton.addEventListener("click", () => {respecStatsAndPropagate(p, strengthDiv, dexterityDiv, vitalityDiv, magicDiv, dmgDiv, attackDiv, defenseDiv, staminaDiv, hpDiv, manaDiv, statPointsDiv,
 		statDecrementButtons[0], statDecrementButtons[1], statDecrementButtons[2], statDecrementButtons[3], statIncrementButtons, player_statsInvSkillGold_div);});
@@ -2599,9 +2769,9 @@ function initStatsInvSkillsGold()
 												});
 		}
 		else 
-			div.innerText = `${SKILLS_INT_STR[skill]} Skill`;
+			div.textContent = `${SKILLS_INT_STR[skill]} Skill`;
 	}
-	PLAYER_TAB.skillsGoldDivs.get("POINTS_STR").innerText = "Points Remaining";
+	PLAYER_TAB.skillsGoldDivs.get("POINTS_STR").textContent = "Points Remaining";
 	addEditableFieldAndHoverboxTo(skillPointsDiv,	robj.player.unusedSkillPoints,
 													(_text, _input) => {
 														_input.value = p.unusedSkillPoints;
@@ -2615,7 +2785,7 @@ function initStatsInvSkillsGold()
 													});
 
 	const respecSkillsButton = document.createElement("button");
-	respecSkillsButton.innerText = "Respec Skills";
+	respecSkillsButton.textContent = "Respec Skills";
     respecSkillsButton.classList.add("respec-skills-button");
 	respecSkillsButton.addEventListener("click", () => {respecSkillsAndPropagate(p, skillDivs, dmgDiv, attackDiv, skillPointsDiv, skillIncrementButtons, skillDecrementButtons);});
 	player_statsInvSkillGold_div.appendChild(respecSkillsButton);
@@ -2631,7 +2801,7 @@ function initStatsInvSkillsGold()
 																(_text, _input) => {
 																	const newGold = _input.value.trim();
 																	p.gold = parseInt(newGold);
-																	_text.innerText = p.gold;	
+																	_text.textContent = p.gold;	
 																},
 																() => {
 																	p.gold
