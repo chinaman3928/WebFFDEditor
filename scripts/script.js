@@ -1965,7 +1965,7 @@ function addEditableFieldAndHoverboxTo(div, initText, enterFunc, exitFunc, hover
 
 	const input = document.createElement("input");
 	input.style.border = "none" || "1px solid blue"; //TODO WHERE LEFT OFF 
-	input.style.maxWidth = "100%";
+	// input.style.maxWidth = "100%";
 	input.style.background = "transparent";
 	input.style.margin = "0";
 	input.style.padding = "0";
@@ -2923,10 +2923,12 @@ function initStatsInvSkillsGold()
 																	const newGold = _input.value.trim();
 																	p.gold = parseInt(newGold);
 																	_text.textContent = p.gold;	
+																	PLAYER_TAB.skillsGoldDivs.get("GOLD").querySelector(".hoverbox").textContent = p.gold;
 																},
 																() => {
-																	p.gold
+																	return p.gold;
 																});
+	dynamicallyExpand(PLAYER_TAB.skillsGoldDivs.get("GOLD"));
 }
 //does not check if already - done in bottombar
 function switchPlayerTab()
