@@ -1844,6 +1844,7 @@ function addHoverboxToItem(div, it, graderankDiv, hoverbox, c, strengthDiv, dmgD
 		effectize(newEffectDiv, ACTIVATION_PASSIVE, newEffect, hoverbox, graderankDiv, c, strengthDiv, dmgDiv, strengthDec, dexterityDiv, attackDiv, defenseDiv, dexterityDec, vitalityDiv, hpDiv, staminaDiv, vitalityDec, magicDiv, manaDiv, magicDec, skillDivs, skillDecrementButtons, reqs);
 		dynamicallyExpand(newEffectDiv);
 		effectDivs.appendChild(newEffectDiv);
+		changeEffectAndPropagate(c, newType, 0, newEffect.value, "equipped", strengthDiv, dmgDiv, strengthDec, dexterityDiv, attackDiv, defenseDiv, dexterityDec, vitalityDiv, hpDiv, staminaDiv, vitalityDec, magicDiv, manaDiv, magicDec, skillDivs, skillDecrementButtons, reqs);
 
 		newEffectDiv.children[1].querySelector("span").dispatchEvent(new MouseEvent("mousedown"));
 	});
