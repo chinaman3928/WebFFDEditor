@@ -181,6 +181,8 @@ const FAME_GATE =
 	292000, 548000, 1188000, 3236000,7332000, 15524000, 23716000, 40100000, 40100000
 ];
 
+const DURATION_ALWAYS = -1000;
+
 //TODO all thisi is og only
 const EFFECT_STRENGTH = 0;
 const EFFECT_DEXTERITY = 1;
@@ -999,7 +1001,7 @@ function itemGradeRank(iconDiv, it, graderankDiv, hoverbox)
 	gradeSelect.value = it.grade;
 	graderankDiv.appendChild(gradeSelect);
 
-	graderankDiv.addEventListener("click", () => {gradeSelect.style.display = "block"; gradeSelect.focus(); graderankDiv.classList.add(graderankDiv.classList.contains("lock") ? "lock2" : "lock"); hoverbox.classList.add(hoverbox.classList.contains("lock") ? "lock2" : "lock");});
+	graderankDiv.addEventListener("click", (ev) => {if (ev.target === gradeSelect) return; gradeSelect.style.display = "block"; gradeSelect.focus(); graderankDiv.classList.add(graderankDiv.classList.contains("lock") ? "lock2" : "lock"); hoverbox.classList.add(hoverbox.classList.contains("lock") ? "lock2" : "lock");});
 	gradeSelect.addEventListener("blur", () => {gradeSelect.style.display = "none"; graderankDiv.classList.remove(graderankDiv.classList.contains("lock2") ? "lock2" : "lock"); hoverbox.classList.remove(hoverbox.classList.contains("lock2") ? "lock2" : "lock");});
 	gradeSelect.addEventListener("change", () => {handleGradeSelect(iconDiv, it, gradeSelect, star);});
 
@@ -1654,6 +1656,57 @@ function armorDefense(it)
 	return beforeBonus + (it.grade > GRADE_NORMAL ? Math.max(1, Math.ceil(beforeBonus * GRADE_BONUS[it.grade] * 0.01)) : 0);
 }
 
+function effectize(div, act, e, hoverbox, graderankDiv, c, strengthDiv, dmgDiv, strengthDec, dexterityDiv, attackDiv, defenseDiv, dexterityDec, vitalityDiv, hpDiv, staminaDiv, vitalityDec, magicDiv, manaDiv, magicDec, skillDivs, skillDecrementButtons, reqs)
+//iff div.innerHTML === "", adds three spans before continuing
+//does not set span2; leaves that to the addEditableFieldAndHoverboxTo() call
+{
+	const actStr = (act == ACTIVATION_PASSIVE) ? "PASSIVE" : "USAGE";
+	if (div.innerHTML === "")
+	{
+		div.append(document.createElement("span"), document.createElement("span"), document.createElement("span"));
+
+		const valStr = `${Math.abs(Math.trunc(e.value))}`;
+		const span = div.querySelectorAll("span")[1];
+		span.style.position = "relative";
+		addEditableFieldAndHoverboxTo(span, valStr,	(_text, _input) => {
+														_text.textContent = e.value; //this is for the negatives
+														_input.style.width = `${_text.offsetWidth}px`;
+														_text.textContent = `${Math.abs(Math.trunc(e.value))}`;
+														_input.value = e.value;
+														hoverbox.classList.add(hoverbox.classList.contains("lock") ? "lock2" : "lock");
+														graderankDiv.classList.add(graderankDiv.classList.contains("lock") ? "lock2" : "lock");
+													},
+													(_text, _input) => {
+														const newVal = parseFloat(_input.value.trim());
+														changeEffectAndPropagate(c, e.type, e.value, newVal, "equipped", strengthDiv, dmgDiv, strengthDec, dexterityDiv, attackDiv, defenseDiv, dexterityDec, vitalityDiv, hpDiv, staminaDiv, vitalityDec, magicDiv, manaDiv, magicDec, skillDivs, skillDecrementButtons, reqs);
+														e.value = newVal;
+														_text.textContent = `${Math.abs(Math.trunc(e.value))}`;
+														effectize(div, act, e, hoverbox, graderankDiv, c, strengthDiv, dmgDiv, strengthDec, dexterityDiv, attackDiv, defenseDiv, dexterityDec, vitalityDiv, hpDiv, staminaDiv, vitalityDec, magicDiv, manaDiv, magicDec, skillDivs, skillDecrementButtons, reqs);
+														hoverbox.classList.remove(hoverbox.classList.contains("lock2") ? "lock2" : "lock");
+														graderankDiv.classList.remove(graderankDiv.classList.contains("lock2") ? "lock2" : "lock");
+													},
+													() => {
+														return "hoverbox text";
+													});
+
+	}
+	const [span1, span2, span3] = div.children;
+
+	e.positive = Math.sign(e.value) === Math.sign(EFFECT_MAXIMUM[e.type]); 
+	if (e.positive)
+	{
+		span1.textContent = `${actStr} ${EFFECT_FLAT_PERCENT[e.type] == EFFECT_PERCENT ? '' : (e.value > 0 ? '+' : '')}`;
+		span3.textContent = `${EFFECT_FLAT_PERCENT[e.type] == EFFECT_PERCENT ? '' : ' '}${EFFECT_ITEM_POSITIVE_STRINGS[e.type]}`;
+		div.classList.add("highlight-darkPurple"); div.classList.remove("highlight-red");
+	}
+	else
+	{
+		span1.textContent = `${actStr} ${EFFECT_FLAT_PERCENT[e.type] == EFFECT_PERCENT ? '' : (e.value < 0 ? '-' : '')}`;
+		span3.textContent = `${EFFECT_FLAT_PERCENT[e.type] == EFFECT_PERCENT ? '' : ' '}${EFFECT_ITEM_NEGATIVE_STRINGS[e.type]}`;
+		div.classList.add("highlight-red"); div.classList.remove("highlight-darkPurple");
+	}
+}
+
 
 function addHoverboxToItem(div, it, graderankDiv, hoverbox, c, strengthDiv, dmgDiv, strengthDec, dexterityDiv, attackDiv, defenseDiv, dexterityDec, vitalityDiv, hpDiv, staminaDiv, vitalityDec, magicDiv, manaDiv, magicDec, skillDivs, skillDecrementButtons, reqs)
 {
@@ -1732,27 +1785,76 @@ function addHoverboxToItem(div, it, graderankDiv, hoverbox, c, strengthDiv, dmgD
 	}
 
 
-	function effectize(div, act, e)
-	//iff div.innerHTML === "", adds three spans before continuing
-	//does not set span2; leaves that to the addEditableFieldAndHoverboxTo() call
-	{
-		const actStr = (act == ACTIVATION_PASSIVE) ? "PASSIVE" : "USAGE";
-		if (div.innerHTML === "") div.append(document.createElement("span"), document.createElement("span"), document.createElement("span"));
-		const [span1, span2, span3] = div.children;
+	//add effect
+	const addeffect = document.createElement("div");
+	addeffect.classList.add("highlight-darkPurple");
+	const effectSelect = document.createElement("select");
+	const effectDivs = document.createElement("div");
 
-		if (Math.sign(e.value) === Math.sign(EFFECT_MAXIMUM[e.type]))
-		{
-			span1.textContent = `${actStr} ${EFFECT_FLAT_PERCENT[e.type] == EFFECT_PERCENT ? '' : (e.value > 0 ? '+' : '')}`;
-			span3.textContent = `${EFFECT_FLAT_PERCENT[e.type] == EFFECT_PERCENT ? '' : ' '}${EFFECT_ITEM_POSITIVE_STRINGS[e.type]}`;
-			div.classList.add("highlight-darkPurple"); div.classList.remove("highlight-red");
-		}
-		else
-		{
-			span1.textContent = `${actStr} ${EFFECT_FLAT_PERCENT[e.type] == EFFECT_PERCENT ? '' : (e.value < 0 ? '-' : '')}`;
-			span3.textContent = `${EFFECT_FLAT_PERCENT[e.type] == EFFECT_PERCENT ? '' : ' '}${EFFECT_ITEM_NEGATIVE_STRINGS[e.type]}`;
-			div.classList.add("highlight-red"); div.classList.remove("highlight-darkPurple");
-		}
+	effectSelect.classList.add("highlight-darkPurple");
+	effectSelect.style.backgroundColor = "black";
+	effectSelect.style.color = "white";
+	effectSelect.style.opacity = "0.85";
+
+	effectSelect.append(new Option("--ADD NEW ENCHANT--", EFFECT_ALL_TYPES));
+	for (let e = 0; e < EFFECT_TYPES; ++e)
+	{
+		effectSelect.append(new Option(EFFECT_ITEM_POSITIVE_STRINGS[e], e));
 	}
+	effectSelect.addEventListener("change", () => {
+		const newType = parseInt(effectSelect.value);
+		if (newType === EFFECT_ALL_TYPES) return;
+
+		for (let i = 0; i < it.effects[ACTIVATION_PASSIVE].length; ++i) //TODO HARDCODING PASSIVE ACTIVATION
+		{
+			if (it.effects[ACTIVATION_PASSIVE][i].type === newType)
+			{
+				effectDivs.children[i].children[1].querySelector("span").dispatchEvent(new MouseEvent("mousedown"));
+				return;
+			}
+		}
+		const newEffect = {
+			name : "",
+			message : "",
+			exclusive : false,
+			type : newType,
+			damageType : DAMAGE_MAGICAL,
+			positive : true,
+			activation : ACTIVATION_PASSIVE,
+			chanceOfSuccess : 100,
+			chanceOfSuccessBonus : 0,
+			chanceOfSuccessBonusPercent : 0,
+			duration : DURATION_ALWAYS,
+			durationBonus : 0,
+			durationBonusPercent : 0,
+			value : Math.sign(EFFECT_MAXIMUM[newType]),
+			valueBonus : 0.0,
+			valueBonusPercent : 0.0,
+			value2 : Math.sign(EFFECT_MAXIMUM[newType]),
+			value2Bonus : 0.0,
+			value2BonusPercent : 0.0,
+			value3 : Math.sign(EFFECT_MAXIMUM[newType]),
+			value3Bonus : 0.0,
+			value3BonusPercent : 0.0,
+			priceMultiplier : 1.0
+		};
+
+		it.effects[ACTIVATION_PASSIVE].push(newEffect);
+		const newEffectDiv = document.createElement("div");
+		effectize(newEffectDiv, ACTIVATION_PASSIVE, newEffect, hoverbox, graderankDiv, c, strengthDiv, dmgDiv, strengthDec, dexterityDiv, attackDiv, defenseDiv, dexterityDec, vitalityDiv, hpDiv, staminaDiv, vitalityDec, magicDiv, manaDiv, magicDec, skillDivs, skillDecrementButtons, reqs);
+		dynamicallyExpand(newEffectDiv);
+		effectDivs.appendChild(newEffectDiv);
+
+		newEffectDiv.children[1].querySelector("span").dispatchEvent(new MouseEvent("mousedown"));
+	});
+
+	effectSelect.addEventListener("focus", () => { hoverbox.classList.add(hoverbox.classList.contains("lock") ? "lock2" : "lock"); graderankDiv.classList.add(graderankDiv.classList.contains("lock") ? "lock2" : "lock"); });
+	effectSelect.addEventListener("blur", () => { effectSelect.value = EFFECT_ALL_TYPES; /*reset*/ hoverbox.classList.remove(hoverbox.classList.contains("lock2") ? "lock2" : "lock"); graderankDiv.classList.remove(graderankDiv.classList.contains("lock2") ? "lock2" : "lock"); });
+
+	addeffect.appendChild(effectSelect);
+
+	hoverbox.appendChild(addeffect);
+	hoverbox.appendChild(effectDivs);
 
 
 	//effects
@@ -1761,34 +1863,9 @@ function addHoverboxToItem(div, it, graderankDiv, hoverbox, c, strengthDiv, dmgD
 		for (const e of it.effects[act])
 		{
 			const div = document.createElement("div");
-			effectize(div, act, e);
-		
-
-			const valStr = `${Math.abs(Math.trunc(e.value))}`;
-			const span = div.querySelectorAll("span")[1];
-			span.style.position = "relative";
-			addEditableFieldAndHoverboxTo(span, valStr,	(_text, _input) => {
-															_text.textContent = e.value; //this is for the negatives
-															_input.style.width = `${_text.offsetWidth}px`;
-															_text.textContent = `${Math.abs(Math.trunc(e.value))}`;
-															_input.value = e.value;
-															hoverbox.classList.add(hoverbox.classList.contains("lock") ? "lock2" : "lock");
-															graderankDiv.classList.add(graderankDiv.classList.contains("lock") ? "lock2" : "lock");
-														},
-														(_text, _input) => {
-															const newVal = parseFloat(_input.value.trim());
-															changeEffectAndPropagate(c, e.type, e.value, newVal, "equipped", strengthDiv, dmgDiv, strengthDec, dexterityDiv, attackDiv, defenseDiv, dexterityDec, vitalityDiv, hpDiv, staminaDiv, vitalityDec, magicDiv, manaDiv, magicDec, skillDivs, skillDecrementButtons, reqs);
-															e.value = newVal;
-															_text.textContent = `${Math.abs(Math.trunc(e.value))}`;
-															effectize(div, act, e);
-															hoverbox.classList.remove(hoverbox.classList.contains("lock2") ? "lock2" : "lock");
-															graderankDiv.classList.remove(graderankDiv.classList.contains("lock2") ? "lock2" : "lock");
-														},
-														() => {
-															return "hoverbox text";
-														});
+			effectize(div, act, e, hoverbox, graderankDiv, c, strengthDiv, dmgDiv, strengthDec, dexterityDiv, attackDiv, defenseDiv, dexterityDec, vitalityDiv, hpDiv, staminaDiv, vitalityDec, magicDiv, manaDiv, magicDec, skillDivs, skillDecrementButtons, reqs);
 			dynamicallyExpand(div);
-			hoverbox.appendChild(div);
+			effectDivs.appendChild(div);
 		}
 	}
 

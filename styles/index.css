@@ -7,6 +7,10 @@ html {
   width: 100%;
 }
 
+select {
+  text-align: center;
+}
+
 #header {
   display: flex
 }
