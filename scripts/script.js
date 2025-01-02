@@ -1656,7 +1656,7 @@ function armorDefense(it)
 	return beforeBonus + (it.grade > GRADE_NORMAL ? Math.max(1, Math.ceil(beforeBonus * GRADE_BONUS[it.grade] * 0.01)) : 0);
 }
 
-function effectize(div, act, e, hoverbox, graderankDiv, c, strengthDiv, dmgDiv, strengthDec, dexterityDiv, attackDiv, defenseDiv, dexterityDec, vitalityDiv, hpDiv, staminaDiv, vitalityDec, magicDiv, manaDiv, magicDec, skillDivs, skillDecrementButtons, reqs)
+function effectize(div, act, e, effectsDiv, hoverbox, graderankDiv, it, c, strengthDiv, dmgDiv, strengthDec, dexterityDiv, attackDiv, defenseDiv, dexterityDec, vitalityDiv, hpDiv, staminaDiv, vitalityDec, magicDiv, manaDiv, magicDec, skillDivs, skillDecrementButtons, reqs)
 //iff div.innerHTML === "", adds three spans before continuing
 //does not set span2; leaves that to the addEditableFieldAndHoverboxTo() call
 {
@@ -1676,12 +1676,30 @@ function effectize(div, act, e, hoverbox, graderankDiv, c, strengthDiv, dmgDiv, 
 														hoverbox.classList.add(hoverbox.classList.contains("lock") ? "lock2" : "lock");
 														graderankDiv.classList.add(graderankDiv.classList.contains("lock") ? "lock2" : "lock");
 													},
-													(_text, _input) => {
-														const newVal = parseFloat(_input.value.trim());
-														changeEffectAndPropagate(c, e.type, e.value, newVal, "equipped", strengthDiv, dmgDiv, strengthDec, dexterityDiv, attackDiv, defenseDiv, dexterityDec, vitalityDiv, hpDiv, staminaDiv, vitalityDec, magicDiv, manaDiv, magicDec, skillDivs, skillDecrementButtons, reqs);
-														e.value = newVal;
-														_text.textContent = `${Math.abs(Math.trunc(e.value))}`;
-														effectize(div, act, e, hoverbox, graderankDiv, c, strengthDiv, dmgDiv, strengthDec, dexterityDiv, attackDiv, defenseDiv, dexterityDec, vitalityDiv, hpDiv, staminaDiv, vitalityDec, magicDiv, manaDiv, magicDec, skillDivs, skillDecrementButtons, reqs);
+													(_text, _input, discard) => {
+														if (!discard)
+														{
+															let newVal = _input.value.trim();
+															if (newVal === "") //WHERE LEFT OFF ... REMOVE this effect div, remove from item, changeEffectAndPropagate
+															{
+																effectsDiv.removeChild(div);
+																for (let i = 0; i < it.effects[act].length; ++i)
+																	if (it.effects[act][i].type === e.type)
+																		it.effects[act].splice(i, 1);
+																changeEffectAndPropagate(c, e.type, e.value, 0, "equipped", strengthDiv, dmgDiv, strengthDec, dexterityDiv, attackDiv, defenseDiv, dexterityDec, vitalityDiv, hpDiv, staminaDiv, vitalityDec, magicDiv, manaDiv, magicDec, skillDivs, skillDecrementButtons, reqs);
+															}
+															else
+															{
+																newVal = parseFloat(_input.value.trim());
+																if (!isNaN(newVal))
+																{
+																	changeEffectAndPropagate(c, e.type, e.value, newVal, "equipped", strengthDiv, dmgDiv, strengthDec, dexterityDiv, attackDiv, defenseDiv, dexterityDec, vitalityDiv, hpDiv, staminaDiv, vitalityDec, magicDiv, manaDiv, magicDec, skillDivs, skillDecrementButtons, reqs);
+																	e.value = newVal;
+																	_text.textContent = `${Math.abs(Math.trunc(e.value))}`;
+																	effectize(div, act, e, effectsDiv, hoverbox, graderankDiv, it, c, strengthDiv, dmgDiv, strengthDec, dexterityDiv, attackDiv, defenseDiv, dexterityDec, vitalityDiv, hpDiv, staminaDiv, vitalityDec, magicDiv, manaDiv, magicDec, skillDivs, skillDecrementButtons, reqs);
+																}
+															}
+														}
 														hoverbox.classList.remove(hoverbox.classList.contains("lock2") ? "lock2" : "lock");
 														graderankDiv.classList.remove(graderankDiv.classList.contains("lock2") ? "lock2" : "lock");
 													},
@@ -1789,7 +1807,7 @@ function addHoverboxToItem(div, it, graderankDiv, hoverbox, c, strengthDiv, dmgD
 	const addeffect = document.createElement("div");
 	addeffect.classList.add("highlight-darkPurple");
 	const effectSelect = document.createElement("select");
-	const effectDivs = document.createElement("div");
+	const effectsDiv = document.createElement("div");
 
 	effectSelect.classList.add("highlight-darkPurple");
 	effectSelect.style.backgroundColor = "black";
@@ -1809,7 +1827,7 @@ function addHoverboxToItem(div, it, graderankDiv, hoverbox, c, strengthDiv, dmgD
 		{
 			if (it.effects[ACTIVATION_PASSIVE][i].type === newType)
 			{
-				effectDivs.children[i].children[1].querySelector("span").dispatchEvent(new MouseEvent("mousedown"));
+				effectsDiv.children[i].children[1].querySelector("span").dispatchEvent(new MouseEvent("mousedown"));
 				return;
 			}
 		}
@@ -1841,9 +1859,9 @@ function addHoverboxToItem(div, it, graderankDiv, hoverbox, c, strengthDiv, dmgD
 
 		it.effects[ACTIVATION_PASSIVE].push(newEffect);
 		const newEffectDiv = document.createElement("div");
-		effectize(newEffectDiv, ACTIVATION_PASSIVE, newEffect, hoverbox, graderankDiv, c, strengthDiv, dmgDiv, strengthDec, dexterityDiv, attackDiv, defenseDiv, dexterityDec, vitalityDiv, hpDiv, staminaDiv, vitalityDec, magicDiv, manaDiv, magicDec, skillDivs, skillDecrementButtons, reqs);
+		effectize(newEffectDiv, ACTIVATION_PASSIVE, newEffect, effectsDiv, hoverbox, graderankDiv, it, c, strengthDiv, dmgDiv, strengthDec, dexterityDiv, attackDiv, defenseDiv, dexterityDec, vitalityDiv, hpDiv, staminaDiv, vitalityDec, magicDiv, manaDiv, magicDec, skillDivs, skillDecrementButtons, reqs);
 		dynamicallyExpand(newEffectDiv);
-		effectDivs.appendChild(newEffectDiv);
+		effectsDiv.appendChild(newEffectDiv);
 		changeEffectAndPropagate(c, newType, 0, newEffect.value, "equipped", strengthDiv, dmgDiv, strengthDec, dexterityDiv, attackDiv, defenseDiv, dexterityDec, vitalityDiv, hpDiv, staminaDiv, vitalityDec, magicDiv, manaDiv, magicDec, skillDivs, skillDecrementButtons, reqs);
 
 		newEffectDiv.children[1].querySelector("span").dispatchEvent(new MouseEvent("mousedown"));
@@ -1855,7 +1873,7 @@ function addHoverboxToItem(div, it, graderankDiv, hoverbox, c, strengthDiv, dmgD
 	addeffect.appendChild(effectSelect);
 
 	hoverbox.appendChild(addeffect);
-	hoverbox.appendChild(effectDivs);
+	hoverbox.appendChild(effectsDiv);
 
 
 	//effects
@@ -1864,9 +1882,9 @@ function addHoverboxToItem(div, it, graderankDiv, hoverbox, c, strengthDiv, dmgD
 		for (const e of it.effects[act])
 		{
 			const div = document.createElement("div");
-			effectize(div, act, e, hoverbox, graderankDiv, c, strengthDiv, dmgDiv, strengthDec, dexterityDiv, attackDiv, defenseDiv, dexterityDec, vitalityDiv, hpDiv, staminaDiv, vitalityDec, magicDiv, manaDiv, magicDec, skillDivs, skillDecrementButtons, reqs);
+			effectize(div, act, e, effectsDiv, hoverbox, graderankDiv, it, c, strengthDiv, dmgDiv, strengthDec, dexterityDiv, attackDiv, defenseDiv, dexterityDec, vitalityDiv, hpDiv, staminaDiv, vitalityDec, magicDiv, manaDiv, magicDec, skillDivs, skillDecrementButtons, reqs);
 			dynamicallyExpand(div);
-			effectDivs.appendChild(div);
+			effectsDiv.appendChild(div);
 		}
 	}
 
@@ -1972,9 +1990,9 @@ function addEditableFieldAndHoverboxTo(div, initText, enterFunc, exitFunc, hover
 			hoverbox.classList.add("hoverbox-enter");
 		};
 	}
-	function exitFuncGenerator(exitFunc) {
+	function exitFuncGenerator(exitFunc, discard = false) {
 		return () => {
-			exitFunc(text, input);
+			exitFunc(text, input, discard);
 			input.hidden = true;
 			text.hidden = false;
 			hoverbox.classList.remove("hoverbox-enter");
@@ -2005,11 +2023,14 @@ function addEditableFieldAndHoverboxTo(div, initText, enterFunc, exitFunc, hover
 
 	text.addEventListener("mousedown", enterFuncGenerator(enterFunc));
 	input.addEventListener("keydown", (e) => {
-		if (e.key === "Enter" || e.key === "Escape") { //TODO escape should exit
+		if (e.key === "Enter") {
 			exitFuncGenerator(exitFunc)();
 		}
+		else if (e.key === "Escape") {
+			exitFuncGenerator(exitFunc, true)();
+		}
 	});
-	input.addEventListener("blur", exitFuncGenerator(exitFunc));
+	input.addEventListener("blur", exitFuncGenerator(exitFunc, true));
 	input.addEventListener("input", checkInputGenerator());
 
 	div.appendChild(text);
