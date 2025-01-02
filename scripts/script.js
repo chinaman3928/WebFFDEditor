@@ -1741,10 +1741,13 @@ function addHoverboxToItem(div, it, graderankDiv, hoverbox, c, strengthDiv, dmgD
 																			hoverbox.classList.add(hoverbox.classList.contains("lock") ? "lock2" : "lock");
 																			graderankDiv.classList.add(graderankDiv.classList.contains("lock") ? "lock2" : "lock");
 																		},
-																		(_text, _input) => {
-																			const newVal = _input.value;
-																			it.name = escapeUserFriendlyName(newVal);
-																			_text.innerHTML = displayItemName(it.name);
+																		(_text, _input, discard) => {
+																			if (!discard)
+																			{
+																				const newVal = _input.value;
+																				it.name = escapeUserFriendlyName(newVal);
+																				_text.innerHTML = displayItemName(it.name);
+																			}
 																			hoverbox.classList.remove(hoverbox.classList.contains("lock2") ? "lock2" : "lock");
 																			graderankDiv.classList.remove(graderankDiv.classList.contains("lock2") ? "lock2" : "lock");
 																		},
@@ -1768,10 +1771,13 @@ function addHoverboxToItem(div, it, graderankDiv, hoverbox, c, strengthDiv, dmgD
 																		hoverbox.classList.add(hoverbox.classList.contains("lock") ? "lock2" : "lock");
 																		graderankDiv.classList.add(graderankDiv.classList.contains("lock") ? "lock2" : "lock");
 																	},
-																	(_text, _input) => {
-																		const newVal = _input.value.trim();
-																		it.damageBonusValue[i] = parseInt(newVal);
-																		_text.textContent = it.damageBonusValue[i];
+																	(_text, _input, discard) => {
+																		if (!discard)
+																		{
+																			const newVal = _input.value.trim();
+																			it.damageBonusValue[i] = parseInt(newVal);
+																			_text.textContent = it.damageBonusValue[i];
+																		}
 																		hoverbox.classList.remove(hoverbox.classList.contains("lock2") ? "lock2" : "lock");
 																		graderankDiv.classList.remove(graderankDiv.classList.contains("lock2") ? "lock2" : "lock");
 																	},
@@ -2734,7 +2740,8 @@ function initStatsInvSkillsGold()
 											(_text, _input) => {
 												_input.value = p.level;
 											},
-											(_text, _input) => {
+											(_text, _input, discard) => {
+												if (discard) return;
 												const newVal = parseInt(_input.value.trim());
 												changeLevelAndPropagate(p, newVal, levelDiv, expDiv, nextLevelDiv, staminaDiv, manaDiv, hpDiv, attackDiv, statPointsDiv, skillPointsDiv, statIncrementButtons, skillIncrementButtons, player_statsInvSkillGold_div);
 											},
@@ -2743,7 +2750,8 @@ function initStatsInvSkillsGold()
 											(_text, _input) => {
 												_input.value = p.experience;
 											},
-											(_text, _input) => {
+											(_text, _input, discard) => {
+												if (discard) return;
 												const newVal = parseInt(_input.value.trim());
 												changeExperienceAndPropagate(p, newVal, levelDiv, expDiv, nextLevelDiv, staminaDiv, manaDiv, hpDiv, attackDiv, statPointsDiv, skillPointsDiv, statIncrementButtons, skillIncrementButtons, player_statsInvSkillGold_div);
 											},
@@ -2755,7 +2763,8 @@ function initStatsInvSkillsGold()
 												(_text, _input) => {
 													_input.value = p.fameRank;
 												},
-												(_text, _input) => {
+												(_text, _input, discard) => {
+													if (discard) return;
 													const newVal = parseInt(_input.value.trim());
 													changeRenownAndPropagate(newVal, p, nameDiv, renownDiv, fameDiv, nextRenownDiv, skillPointsDiv, skillIncrementButtons, player_statsInvSkillGold_div);
 												},
@@ -2764,7 +2773,8 @@ function initStatsInvSkillsGold()
 											(_text, _input) => {
 												_input.value = p.fame;
 											},
-											(_text, _input) => {
+											(_text, _input, discard) => {
+												if (discard) return;
 												const newVal = parseInt(_input.value.trim());
 												changeFameAndPropagate(newVal, p, nameDiv, renownDiv, fameDiv, nextRenownDiv, skillPointsDiv, skillIncrementButtons, player_statsInvSkillGold_div);
 											},
@@ -2780,7 +2790,8 @@ function initStatsInvSkillsGold()
 											(_text, _input) => {
 												_input.value = p[attr];
 											},
-											(_text, _input) => {
+											(_text, _input, discard) => {
+												if (discard) return;
 												const newVal = parseInt(_input.value.trim());
 												changeAndPropagate(p, newVal, ...args);
 											},
@@ -2806,7 +2817,8 @@ function initStatsInvSkillsGold()
 											(_text, _input) => {
 												_input.value = p.naturalArmor;
 											},
-											(_text, _input) => {
+											(_text, _input, discard) => {
+												if (discard) return;
 												const newVal = parseInt(_input.value.trim());
 												changeNaturalArmorAndPropagate(p, newVal, defenseDiv);
 											},
@@ -2820,7 +2832,8 @@ function initStatsInvSkillsGold()
 											(_text, _input) => {
 												_input.value = p.toHitBonus;
 											},
-											(_text, _input) => {
+											(_text, _input, discard) => {
+												if (discard) return;
 												const newVal = parseInt(_input.value.trim());
 												changeToHitBonusAndPropagate(p, newVal, attackDiv);
 											},
@@ -2839,7 +2852,8 @@ function initStatsInvSkillsGold()
 													(_text, _input) => {
 														_input.value = p.unusedStatPoints;
 													},
-													(_text, _input) => {
+													(_text, _input, discard) => {
+														if (discard) return;
 														const newVal = parseInt(_input.value.trim());
 														changeStatPointsAndPropagate(p, newVal, statPointsDiv, statIncrementButtons);
 													},
@@ -2881,7 +2895,8 @@ function initStatsInvSkillsGold()
 												(_text, _input) => {
 													_input.value = p.skills[skill];
 												},
-												(_text, _input) => {
+												(_text, _input, discard) => {
+													if (discard) return;
 													const newSkill = parseInt(_input.value.trim());
 													changeBaseSkillAndPropagate(p, skill, newSkill, div, dmgDiv, attackDiv, skillDecrementButtons[skill]);
 												},
@@ -2897,7 +2912,8 @@ function initStatsInvSkillsGold()
 													(_text, _input) => {
 														_input.value = p.unusedSkillPoints;
 													},
-													(_text, _input) => {
+													(_text, _input, discard) => {
+														if (discard) return;
 														const newVal = parseInt(_input.value.trim());
 														changeSkillPointsAndPropagate(p, newVal, skillPointsDiv, skillIncrementButtons);
 													},
@@ -2919,7 +2935,8 @@ function initStatsInvSkillsGold()
 																(_text, _input) => {
 																	_input.value = p.gold;
 																}, 
-																(_text, _input) => {
+																(_text, _input, discard) => {
+																	if (discard) return;
 																	const newGold = _input.value.trim();
 																	p.gold = parseInt(newGold);
 																	_text.textContent = p.gold;	
