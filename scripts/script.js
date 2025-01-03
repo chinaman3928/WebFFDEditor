@@ -1455,8 +1455,7 @@ function primaryDual(c) //-> double
 
 //c.m_toHitBonus can be set through .dat, and for monsters in other various functions
 
-//TODO TODO TODO WHERE LEFT OFF. also: damage.
-function charAttack(c)
+function charAttack(c, hoverboxString = false)
 {
 	//AttackDescriptions have tohitbonus
 	//  unarmed: 0 (player) unless <- monsters.dat "UNARMED_ATTACK"
@@ -1468,11 +1467,19 @@ function charAttack(c)
 
 	let attack = 50 + Math.trunc(charDexterity(c) / 2) + c.level +
 		c.toHitBonus + (__activeWeapon ? charNetSkill(c, TYPE_TO_SKILL[ITEMS_INFO.get(__activeWeapon.baseName.toUpperCase()).type]) : 0) + (__currentAttack ? __currentAttack.toHitBonus : 0);
-	return attack + Math.ceil(charNetEffect(c, EFFECT_PERCENT_TO_HIT_BONUS) * 0.01 * attack) + Math.trunc(charNetEffect(c, EFFECT_TO_HIT_BONUS));
+
+	const ret = attack + Math.ceil(charNetEffect(c, EFFECT_PERCENT_TO_HIT_BONUS) * 0.01 * attack) + Math.trunc(charNetEffect(c, EFFECT_TO_HIT_BONUS));
+	if (!hoverboxString) return ret;
+	return [
+		ret,
+		"(Natural + 50 + Dexterity / 2 + Level + Skill + ?)\n" +
+		`(${c.toHitBonus} + ${50} + ${Math.trunc(charDexterity(c) / 2)} + ${c.level} + ${(__activeWeapon ? charNetSkill(c, TYPE_TO_SKILL[ITEMS_INFO.get(__activeWeapon.baseName.toUpperCase()).type]) : 0)} + ${(__currentAttack ? __currentAttack.toHitBonus : 0)}) = ${attack}\n` +
+		`${attack} + ${Math.ceil(charNetEffect(c, EFFECT_PERCENT_TO_HIT_BONUS) * 0.01 * attack)} [${charNetEffect(c, EFFECT_PERCENT_TO_HIT_BONUS)}%] + ${Math.trunc(charNetEffect(c, EFFECT_TO_HIT_BONUS))} [FLAT]`
+	]
 }
 
 
-function charDefense(c)
+function charDefense(c, hoverboxString = false)
 {
 	let armor = 0;
 	//inventory armor
@@ -1487,11 +1494,19 @@ function charDefense(c)
 		}
 	}
 	c._inventoryArmor = armor;
+
 	//natural armor TODO WHERE LEFT OFF - what is it?
 	//hardcoding false - you should probably find an easier way to determine what the pet is
 	armor += c.naturalArmor + c.level * 3 * (false && HasMaster() && Master().isPlayer() && !IsSummoned());
-	return armor + Math.ceil(charNetEffect(c,  EFFECT_PERCENT_ARMOR_BONUS) * 0.01 * armor) + Math.trunc(charNetEffect(c, EFFECT_ARMOR_BONUS))
+	const ret = armor + Math.ceil(charNetEffect(c,  EFFECT_PERCENT_ARMOR_BONUS) * 0.01 * armor) + Math.trunc(charNetEffect(c, EFFECT_ARMOR_BONUS))
 		+ Math.trunc(charDexterity(c) / 5); //dexterity bonus
+	if (!hoverboxString) return ret;
+	return [
+		ret,
+		`(Natural + Inventory)\n` +
+		`(${c.naturalArmor} + ${c._inventoryArmor}) = ${armor}\n` + 
+		`${armor} + ${Math.ceil(charNetEffect(c,  EFFECT_PERCENT_ARMOR_BONUS) * 0.01 * armor)} [${charNetEffect(c, EFFECT_PERCENT_ARMOR_BONUS)}%] + ${Math.trunc(charNetEffect(c, EFFECT_ARMOR_BONUS))} [FLAT] + ${Math.trunc(charDexterity(c) / 5)} [Dexterity / 5]`
+	];
 }
 
 //indicate to charMaxHP, charMaxStamina, charMaxMana that you want [int, hoverboxString]
@@ -1504,9 +1519,9 @@ function charMaxHP(c, hoverboxString = false) //-> int || [int, hoverboxString]
 	const val = c.maxHp + Math.ceil(charNetEffect(c, EFFECT_PERCENT_HP) * 0.01 * c.maxHp) + Math.trunc(charNetEffect(c, EFFECT_MAX_HP));
 	return !hoverboxString ? val : [
 		val,
-		"baseHP + 4*vitality + 4*level\n" +
-		`${c.maxHp - 4*c.level - 4*charVitality(c)} + ${4*charVitality(c)} + ${4*c.level} = ${c.maxHp}\n` +
-		`+ ${Math.ceil(charNetEffect(c, EFFECT_PERCENT_HP) * 0.01 * c.maxHp)} [${charNetEffect(c, EFFECT_PERCENT_HP)}%] + ${Math.trunc(charNetEffect(c, EFFECT_MAX_HP))} [FLAT]`
+		"(BaseHP + 4*Vitality + 4*Level)\n" +
+		`(${c.maxHp - 4*c.level - 4*charVitality(c)} + ${4*charVitality(c)} + ${4*c.level}) = ${c.maxHp}\n` +
+		`${c.maxHp} + ${Math.ceil(charNetEffect(c, EFFECT_PERCENT_HP) * 0.01 * c.maxHp)} [${charNetEffect(c, EFFECT_PERCENT_HP)}%] + ${Math.trunc(charNetEffect(c, EFFECT_MAX_HP))} [FLAT]`
 	];
 }
 
@@ -1516,9 +1531,9 @@ function charMaxStamina(c, hoverboxString = false) //-> [int, hoverboxstring]
 	const val = c.maxStamina + Math.ceil(charNetEffect(c, EFFECT_PERCENT_STAMINA) * 0.01 * c.maxStamina) + Math.trunc(charNetEffect(c, EFFECT_MAX_STAMINA));
 	return !hoverboxString ? val : [
 		val,
-		"2*vitality + level\n" +
-		`${c.maxStamina - c.level - 2*charVitality(c)} + ${2*charVitality(c)} + ${c.level} = ${c.maxStamina}\n` +
-		`+ ${Math.ceil(charNetEffect(c, EFFECT_PERCENT_STAMINA) * 0.01 * c.maxStamina)} [${charNetEffect(c, EFFECT_PERCENT_STAMINA)}%] + ${Math.trunc(charNetEffect(c, EFFECT_MAX_STAMINA))} [FLAT]`
+		"(2*Vitality + Level)\n" +
+		`${c.maxStamina - c.level - 2*charVitality(c)} + (${2*charVitality(c)} + ${c.level}) = ${c.maxStamina}\n` +
+		`${c.maxStamina} + ${Math.ceil(charNetEffect(c, EFFECT_PERCENT_STAMINA) * 0.01 * c.maxStamina)} [${charNetEffect(c, EFFECT_PERCENT_STAMINA)}%] + ${Math.trunc(charNetEffect(c, EFFECT_MAX_STAMINA))} [FLAT]`
 	];
 }
 
@@ -1528,9 +1543,9 @@ function charMaxMana(c, hoverboxString = false) //-> [int, hoverboxstring]
 	const val = c.maxMana + Math.ceil(charNetEffect(c, EFFECT_PERCENT_MANA) * 0.01 * c.maxMana) + Math.trunc(charNetEffect(c, EFFECT_MAX_MANA));
 	return !hoverboxString ? val : [
 		val,
-		"2*magic + level\n" +
-		`${c.maxMana - c.level - 2*charMagic(c)} + ${2*charMagic(c)} + ${c.level} = ${c.maxMana}\n` +
-		`+ ${Math.ceil(charNetEffect(c, EFFECT_PERCENT_MANA) * 0.01 * c.maxMana)} [${charNetEffect(c, EFFECT_PERCENT_MANA)}%] + ${Math.trunc(charNetEffect(c, EFFECT_MAX_MANA))} [FLAT]`
+		"(2*Magic + Level)\n" +
+		`${c.maxMana - c.level - 2*charMagic(c)} + (${2*charMagic(c)} + ${c.level}) = ${c.maxMana}\n` +
+		`${c.maxMana} + ${Math.ceil(charNetEffect(c, EFFECT_PERCENT_MANA) * 0.01 * c.maxMana)} [${charNetEffect(c, EFFECT_PERCENT_MANA)}%] + ${Math.trunc(charNetEffect(c, EFFECT_MAX_MANA))} [FLAT]`
 	];
 }
 
@@ -2490,27 +2505,15 @@ function changeNaturalArmorAndPropagate(c, newVal, defenseDiv)
 {
 	//TODO validation
 	c.naturalArmor = newVal;
-	defenseDiv.querySelector("span").textContent = charDefense(c);
-	const tot = c.naturalArmor + c._inventoryArmor;
-	defenseDiv.querySelector(".hoverbox").textContent =	`${c.naturalArmor} + ${c._inventoryArmor} = ${tot}\n` + 
-														`${tot} + ${charNetEffect(c, EFFECT_PERCENT_ARMOR_BONUS)}% [${Math.ceil(charNetEffect(c,  EFFECT_PERCENT_ARMOR_BONUS) * 0.01 * tot)}] + ${Math.trunc(charNetEffect(c, EFFECT_ARMOR_BONUS))} + ${Math.trunc(charDexterity(c) / 5)}`;
+	[defenseDiv.querySelector("span").textContent, defenseDiv.querySelector(".hoverbox").innerText] = charDefense(c, hoverboxString=true);
 }
 
 function changeToHitBonusAndPropagate(c, newVal, attackDiv)
 {
 	//TODO validate
 	c.toHitBonus = newVal;
-	
-	//doesnt go through charAttack()...smells like stinky design
 	//TODO for now i will set __currentAttack contribution to 0, and hardcode robj.player's SLOT_RIGHTHAND || SLOT_LEFTHAND ONLY for skill bonus
-	const __activeWeapon = robj.player.equippedItems[SLOT_RIGHTHAND] || robj.player.equippedItems[SLOT_LEFTHAND];
-	const __currentAttack = undefined;
-	const tot = 50 + Math.trunc(charDexterity(c) / 2) + c.level +
-		c.toHitBonus + (__activeWeapon ? charNetSkill(c, TYPE_TO_SKILL[ITEMS_INFO.get(__activeWeapon.baseName.toUpperCase()).type]) : 0) + (__currentAttack ? __currentAttack.toHitBonus : 0);
-
-	attackDiv.querySelector("span").textContent = tot + Math.ceil(charNetEffect(c, EFFECT_PERCENT_TO_HIT_BONUS) * 0.01 * tot) + Math.trunc(charNetEffect(c, EFFECT_TO_HIT_BONUS));
-	attackDiv.querySelector(".hoverbox").innerText = `${c.toHitBonus} + ${50} + ${Math.trunc(charDexterity(c) / 2)} + ${c.level} + ${(__activeWeapon ? charNetSkill(c, TYPE_TO_SKILL[ITEMS_INFO.get(__activeWeapon.baseName.toUpperCase()).type]) : 0)} + ${(__currentAttack ? __currentAttack.toHitBonus : 0)} = ${tot}\n` +
-													 `${tot} + ${charNetEffect(c, EFFECT_PERCENT_TO_HIT_BONUS)}% [${Math.ceil(charNetEffect(c, EFFECT_PERCENT_TO_HIT_BONUS) * 0.01 * tot)}] + ${Math.trunc(charNetEffect(c, EFFECT_TO_HIT_BONUS))}`;
+	[attackDiv.querySelector("span").textContent, attackDiv.querySelector(".hoverbox").innerText] = charAttack(c, hoverboxString=true);
 }
 
 function changeBaseStrengthAndPropagate(c, strength, strengthDiv, dmgDiv, strengthDec, reqs)
@@ -2518,7 +2521,7 @@ function changeBaseStrengthAndPropagate(c, strength, strengthDiv, dmgDiv, streng
 	//TODO validate
 	c.strength = strength;
 	strengthDiv.querySelector("span").textContent = charStrength(c);
-	strengthDiv.querySelector(".hoverbox").textContent = `${c.strength} + ${charNetEffect(c, EFFECT_PERCENT_STRENGTH)}% [${Math.ceil(charNetEffect(c, EFFECT_PERCENT_STRENGTH) * 0.01 * c.strength)}] + ${Math.trunc(charNetEffect(c, EFFECT_STRENGTH))}`;
+	strengthDiv.querySelector(".hoverbox").textContent = `${c.strength} + ${Math.ceil(charNetEffect(c, EFFECT_PERCENT_STRENGTH) * 0.01 * c.strength)} [${charNetEffect(c, EFFECT_PERCENT_STRENGTH)}%] + ${Math.trunc(charNetEffect(c, EFFECT_STRENGTH))}`;
 	propagateToDamage(c, dmgDiv);
 
 	propagateToDecrementButton(strength > 25, strengthDec);
@@ -2533,7 +2536,7 @@ function changeBaseDexterityAndPropagate(c, dexterity, dexterityDiv, attackDiv, 
 	const old = charDexterity(c);
 	c.dexterity = dexterity;
 	dexterityDiv.querySelector("span").textContent = charDexterity(c);
-	dexterityDiv.querySelector(".hoverbox").textContent = `${c.dexterity} + ${charNetEffect(c, EFFECT_PERCENT_DEXTERITY)}% [${Math.ceil(charNetEffect(c, EFFECT_PERCENT_DEXTERITY) * 0.01 * c.dexterity)}] + ${Math.trunc(charNetEffect(c, EFFECT_DEXTERITY))}`;
+	dexterityDiv.querySelector(".hoverbox").textContent = `${c.dexterity} + ${Math.ceil(charNetEffect(c, EFFECT_PERCENT_DEXTERITY) * 0.01 * c.dexterity)} [${charNetEffect(c, EFFECT_PERCENT_DEXTERITY)}%] + ${Math.trunc(charNetEffect(c, EFFECT_DEXTERITY))}`;
 	changeNaturalArmorAndPropagate(c, c.naturalArmor, defenseDiv);
 	changeToHitBonusAndPropagate(c, c.toHitBonus, attackDiv);
 
@@ -2549,7 +2552,7 @@ function changeBaseVitalityAndPropagate(c, vitality, vitalityDiv, hpDiv, stamina
 	const old = charVitality(c);
 	c.vitality = vitality;
 	vitalityDiv.querySelector("span").textContent = charVitality(c);
-	vitalityDiv.querySelector(".hoverbox").textContent = `${c.vitality} + ${charNetEffect(c, EFFECT_PERCENT_VITALITY)}% [${Math.ceil(charNetEffect(c, EFFECT_PERCENT_VITALITY) * 0.01 * c.vitality)}] + ${Math.trunc(charNetEffect(c, EFFECT_VITALITY))}`;
+	vitalityDiv.querySelector(".hoverbox").textContent = `${c.vitality} + ${Math.ceil(charNetEffect(c, EFFECT_PERCENT_VITALITY) * 0.01 * c.vitality)} [${charNetEffect(c, EFFECT_PERCENT_VITALITY)}%] + ${Math.trunc(charNetEffect(c, EFFECT_VITALITY))}`;
 	//other propagates
 	propagateMaxStamina(c, staminaDiv);
 	propagateMaxHP(c, hpDiv);
@@ -2566,7 +2569,7 @@ function changeBaseMagicAndPropagate(c, magic, magicDiv, manaDiv, magicDec, reqs
 	const old = charMagic(c);
 	c.magic = magic;
 	magicDiv.querySelector("span").textContent = charMagic(c);
-	magicDiv.querySelector(".hoverbox").textContent = `${c.magic} + ${charNetEffect(c, EFFECT_PERCENT_MAGIC)}% [${Math.ceil(charNetEffect(c, EFFECT_PERCENT_MAGIC) * 0.01 * c.magic)}] + ${Math.trunc(charNetEffect(c, EFFECT_MAGIC))}`;
+	magicDiv.querySelector(".hoverbox").textContent = `${c.magic} + ${Math.ceil(charNetEffect(c, EFFECT_PERCENT_MAGIC) * 0.01 * c.magic)} [${charNetEffect(c, EFFECT_PERCENT_MAGIC)}%] + ${Math.trunc(charNetEffect(c, EFFECT_MAGIC))}`;
 	//other propagates
 	propagateMaxMana(c, manaDiv);
 	//TODO propagate spell damage etc
@@ -2993,7 +2996,7 @@ function initStatsInvSkillsGold()
 												changeAndPropagate(p, newVal, ...args);
 											},
 											() => {
-												return `${p[attr]} + ${charNetEffect(p, perc)}% [${Math.ceil(charNetEffect(p, perc) * 0.01 * p[attr])}] + ${Math.trunc(charNetEffect(p, flat))}`;
+												return `${p[attr]} + ${Math.ceil(charNetEffect(p, perc) * 0.01 * p[attr])} [${charNetEffect(p, perc)}%] + ${Math.trunc(charNetEffect(p, flat))}`;
 											});
 	}
 
@@ -3020,9 +3023,7 @@ function initStatsInvSkillsGold()
 												changeNaturalArmorAndPropagate(p, newVal, defenseDiv);
 											},
 											() => {
-												const tot = p.naturalArmor + p._inventoryArmor;
-												return	`${p.naturalArmor} + ${p._inventoryArmor} = ${tot}\n` + 
-														`${tot} + ${charNetEffect(p, EFFECT_PERCENT_ARMOR_BONUS)}% [${Math.ceil(charNetEffect(p,  EFFECT_PERCENT_ARMOR_BONUS) * 0.01 * tot)}] + ${Math.trunc(charNetEffect(p, EFFECT_ARMOR_BONUS))} + ${Math.trunc(charDexterity(p) / 5)}`;
+												return charDefense(p, hoverboxString=true)[1];
 											});
 
     addEditableFieldAndHoverboxTo(attackDiv, charAttack(p),
@@ -3035,13 +3036,7 @@ function initStatsInvSkillsGold()
 												changeToHitBonusAndPropagate(p, newVal, attackDiv);
 											},
 											() => {
-												//TODO for now i will set __currentAttack contribution to 0, and hardcode robj.player's SLOT_RIGHTHAND || SLOT_LEFTHAND ONLY for skill bonus
-												const __activeWeapon = robj.player.equippedItems[SLOT_RIGHTHAND] || robj.player.equippedItems[SLOT_LEFTHAND];
-												const __currentAttack = undefined;
-												const tot = 50 + Math.trunc(charDexterity(p) / 2) + p.level +
-													p.toHitBonus + (__activeWeapon ? charNetSkill(p, TYPE_TO_SKILL[ITEMS_INFO.get(__activeWeapon.baseName.toUpperCase()).type]) : 0) + (__currentAttack ? __currentAttack.toHitBonus : 0);
-												return	`${p.toHitBonus} + ${50} + ${Math.trunc(charDexterity(p) / 2)} + ${p.level} + ${(__activeWeapon ? charNetSkill(p, TYPE_TO_SKILL[ITEMS_INFO.get(__activeWeapon.baseName.toUpperCase()).type]) : 0)} + ${(__currentAttack ? __currentAttack.toHitBonus : 0)} = ${tot}\n` +
-														`${tot} + ${charNetEffect(p, EFFECT_PERCENT_TO_HIT_BONUS)}% [${Math.ceil(charNetEffect(p, EFFECT_PERCENT_TO_HIT_BONUS) * 0.01 * tot)}] + ${Math.trunc(charNetEffect(p, EFFECT_TO_HIT_BONUS))}`;
+												return charAttack(p, hoverboxString=true)[1];
 											});
 
 	PLAYER_TAB.statsDivs.get("POINTS_STR").textContent = "Points Remaining";
