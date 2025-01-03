@@ -721,6 +721,10 @@ const GRADE_EXCEPTIONAL  = 2;
 const GRADE_FLAWLESS     = 3;
 const GRADE_ALL          = 4;
 
+const RANK_NORMAL = 0;
+const RANK_ELITE = 1;
+const RANK_LEGENDARY = 2;
+
 const GRADE_BONUS = [0, 20, 40, 60];
 
 
@@ -982,7 +986,7 @@ function itemGradeRank(iconDiv, it, graderankDiv, hoverbox)
 	graderankDiv.appendChild(rank);
 	let the_rank = 0;
 	for (let i = 1 /*deliberate*/; i < RANK_INT_STR.length; ++i)
-		if (it.baseName.length > RANK_INT_STR[i].length && it.baseName.slice(0, RANK_INT_STR[i].length) == RANK_INT_STR[i])
+		if (it.baseName.length > RANK_INT_STR[i].length + 1 && it.baseName.slice(0, RANK_INT_STR[i].length + 1) === RANK_INT_STR[i] + " ")
 		{
 			the_rank = i;
 			break;
@@ -994,18 +998,99 @@ function itemGradeRank(iconDiv, it, graderankDiv, hoverbox)
 
 	const gradeSelect = document.createElement("select");
 	gradeSelect.classList.add("hoverbox");
-	gradeSelect.innerHTML = ` 	<option value=${GRADE_NORMAL}>-</option> 
+	gradeSelect.innerHTML = ` 	<option value=${GRADE_NORMAL}>(Ungraded)</option> 
 								<option value=${GRADE_SUPERIOR}>Superior</option> 
 								<option value=${GRADE_EXCEPTIONAL}>Exceptional</option> 
 								<option value=${GRADE_FLAWLESS}>Flawless</option> `;
 	gradeSelect.value = it.grade;
 	graderankDiv.appendChild(gradeSelect);
 
-	graderankDiv.addEventListener("click", (ev) => {if (ev.target === gradeSelect) return; gradeSelect.style.display = "block"; gradeSelect.focus(); graderankDiv.classList.add(graderankDiv.classList.contains("lock") ? "lock2" : "lock"); hoverbox.classList.add(hoverbox.classList.contains("lock") ? "lock2" : "lock");});
-	gradeSelect.addEventListener("blur", () => {gradeSelect.style.display = "none"; graderankDiv.classList.remove(graderankDiv.classList.contains("lock2") ? "lock2" : "lock"); hoverbox.classList.remove(hoverbox.classList.contains("lock2") ? "lock2" : "lock");});
-	gradeSelect.addEventListener("change", () => {handleGradeSelect(iconDiv, it, gradeSelect, star);});
+	const rankSelect = document.createElement("select");
+	rankSelect.classList.add("hoverbox");
+	rankSelect.innerHTML = ` 	<option value=${0}>(Unranked)</option> 
+								<option value=${1}>Elite</option> 
+								<option value=${2}>Legendary</option>`;
+	rankSelect.style.transform = "translate(-50%, 100%)";
+	rankSelect.value =  it.baseName.startsWith("Legendary ") ? RANK_LEGENDARY : (it.baseName.startsWith("Elite ") ? RANK_ELITE : RANK_NORMAL); //lazy dumbass. mind the spaces though
+	graderankDiv.appendChild(rankSelect);
+
+	graderankDiv.addEventListener("click", (ev) => {
+		if (ev.target === gradeSelect || ev.target === rankSelect) return; 
+		rankSelect.style.display = "block";
+		gradeSelect.style.display = "block"; 
+		gradeSelect.focus(); 
+		graderankDiv.classList.add(graderankDiv.classList.contains("lock") ? "lock2" : "lock"); 
+		hoverbox.classList.add(hoverbox.classList.contains("lock") ? "lock2" : "lock");
+	});
+	gradeSelect.addEventListener("blur", (ev) => {
+		if (ev.relatedTarget === rankSelect) return;
+		gradeSelect.style.display = "none";
+		rankSelect.style.display = "none";
+		graderankDiv.classList.remove(graderankDiv.classList.contains("lock2") ? "lock2" : "lock");
+		hoverbox.classList.remove(hoverbox.classList.contains("lock2") ? "lock2" : "lock");
+	});
+	rankSelect.addEventListener("blur", (ev) => {
+		if (ev.relatedTarget === gradeSelect) return;
+		gradeSelect.style.display = "none";
+		rankSelect.style.display = "none";
+		graderankDiv.classList.remove(graderankDiv.classList.contains("lock2") ? "lock2" : "lock");
+		hoverbox.classList.remove(hoverbox.classList.contains("lock2") ? "lock2" : "lock");
+	});
+	gradeSelect.addEventListener("change", () => {
+		handleGradeSelect(iconDiv, it, gradeSelect, star);
+	});
+	rankSelect.addEventListener("change", () => {
+		handleRankSelect(iconDiv, it, rankSelect, rank);
+	});
 
 	iconDiv.appendChild(graderankDiv);
+}
+
+function handleRankSelect(iconDiv, it, rankSelect, rank)
+{
+	const newRank = parseInt(rankSelect.value);
+	const oldRank = it.baseName.startsWith("Legendary ") ? RANK_LEGENDARY : (it.baseName.startsWith("Elite ") ? RANK_ELITE : RANK_NORMAL); //lazy dumbass. mind the spaces though
+	const tooLow = 12 > ITEMS_INFO.get((oldRank == RANK_NORMAL ? it.baseName : (oldRank == RANK_ELITE ? it.baseName.slice(6) : it.baseName.slice(10))).toUpperCase()).maximumDepth; //this is correct, because defaults to 32000 which is not < 12
+	const itType = TYPE_TO_CATEGORY[ITEMS_INFO.get(it.baseName.toUpperCase()).type];
+	if (newRank == oldRank || 
+		newRank > 0 && ((itType != CATEGORY_WEAPON && itType != CATEGORY_ARMOR) || tooLow))
+		return;
+
+	const oldBaseName = it.baseName;
+	if (newRank == RANK_NORMAL)
+	{
+		it.baseName = it.baseName.slice(it.baseName.indexOf(" ") + 1);
+		rank.classList.add("graderank-transparent");
+	}
+	else
+	{
+		it.baseName = it.baseName.replace(RANK_INT_STR[oldRank], RANK_INT_STR[newRank] + (oldRank ? "" : " "));
+		rank.classList.remove("graderank-transparent");
+	}
+
+	it.name = it.name.replace(oldBaseName, it.baseName);
+	iconDiv.querySelector(".item-box-name").querySelector("span").innerHTML = displayItemName(it.name);
+
+	switch (itType)
+	{
+		case CATEGORY_WEAPON:
+			iconDiv.querySelector(".item-box-damage").textContent = textContent = `Attack Damage : ${weaponMinDamage(it)} - ${weaponMaxDamage(it)}`;
+			break;
+		case CATEGORY_ARMOR:
+			it.armorBonus = it.armorBonus * RANK_POWER_MULTIPLIER[newRank] / RANK_POWER_MULTIPLIER[oldRank];
+			iconDiv.querySelector(".item-box-defense").textContent = textContent = `Defense : ${armorDefense(it)}`;
+			break;
+	}
+	
+	// damage bonuses; RANK_POWER_MULTIPLIER;
+
+	// requirements RANK_REQS_MULTIPLIER;
+
+	//TODO "TOHITBONUS";
+	//TODO "SOCKETS";
+	//TODO GoldValue = (int32)( (float32)GoldValue * KRankPriceMultiplier[Rank] );
+
+	//propagate damage/armor/bonuses/requirements out
 }
 
 function handleGradeSelect(iconDiv, it, gradeSelect, star)
@@ -1016,17 +1101,16 @@ function handleGradeSelect(iconDiv, it, gradeSelect, star)
 	if (newGrade == GRADE_NORMAL)
 	{
 		removeGradeFromItemName(it);
-		iconDiv.querySelector(".item-box-name").querySelector("span").innerHTML = displayItemName(it.name);
 		star.classList.add("graderank-transparent");
 	}
 	else
 	{
 		if (it.grade == GRADE_NORMAL) addGradeToItemName(it, newGrade);
 		else                          it.name = it.name.replace(GRADE_INT_STR[it.grade], GRADE_INT_STR[newGrade]); //TODO this is simple and dumb replacement
-		iconDiv.querySelector(".item-box-name").querySelector("span").innerHTML = displayItemName(it.name);
 		star.classList.remove("graderank-transparent");
 	}
 
+	iconDiv.querySelector(".item-box-name").querySelector("span").innerHTML = displayItemName(it.name);
 	it.grade = newGrade;
 
 	// updating damage / defense / ...
@@ -1039,7 +1123,7 @@ function handleGradeSelect(iconDiv, it, gradeSelect, star)
 			iconDiv.querySelector(".item-box-defense").textContent = textContent = `Defense : ${armorDefense(it)}`;
 			break;
 	}
-	// propogate damage to character stats;
+	// propogate damage/armor to character stats;
 }
 
 function addGradeToItemName(it, newGrade)
@@ -4630,9 +4714,9 @@ function addTemplateItem(it)
 {
 	for (rank in [0, 1, 2])
 	{
-		if (rank == 1 && (it.type === undefined || !ITEMTYPES_ARMS.has(it.type) ||
+		if (rank > 0 && (it.type === undefined || !ITEMTYPES_ARMS.has(it.type) ||
 			it.maximumDepth !== undefined && it.maximumDepth < 12))
-			break;
+			return;
 
 		const it2 = structuredClone(it);
 		if (rank >= 1)
