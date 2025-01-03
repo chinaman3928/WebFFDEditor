@@ -174,7 +174,7 @@ select {
   transform: translateX(-50%);
   background-color: black;
   color: white;
-  opacity: 0.85;
+  opacity: 0.75;
 
   max-width: 50vw;
   overflow: auto;
@@ -291,7 +291,7 @@ select {
   cursor: pointer;
   background-color: black;
   color: white;
-  opacity: 0.85;
+  opacity: 0.75;
   height: 3.90625%;
   position: absolute;
   top: calc(615 / 640 * 100%);
@@ -333,5 +333,5 @@ select {
 
   background-color: black;
   color: white;
-  opacity: 0.85;
+  opacity: 0.75;
 }

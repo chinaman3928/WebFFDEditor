@@ -499,6 +499,17 @@ const DAMAGE_ELECTRIC = 6;
 const DAMAGE_UNDEAD = 7;
 const DAMAGE_TYPES = 8;
 
+const DAMAGE_NAMES = [
+	"PIERCING",
+	"SLASHING",
+	"CRUSHING",
+	"MAGIC",
+	"FIRE",
+	"ICE",
+	"ELECTRIC",
+	"UNDEAD"
+];
+
 const DAMAGE_STRS = [
 	"Piercing Damage",
 	"Slashing Damage",
@@ -966,7 +977,7 @@ const PLAYER_TAB =
 };
 
 
-function itemGradeRank(iconDiv, it, graderankDiv, hoverbox)
+function itemGradeRank(iconDiv, it, graderankDiv, hoverbox, c, dmgDiv, defenseDiv, reqs)
 {
 	graderankDiv.style.cursor = "pointer";
 	graderankDiv.classList.add("grade-rank-icon");
@@ -1037,16 +1048,16 @@ function itemGradeRank(iconDiv, it, graderankDiv, hoverbox)
 		hoverbox.classList.remove(hoverbox.classList.contains("lock2") ? "lock2" : "lock");
 	});
 	gradeSelect.addEventListener("change", () => {
-		handleGradeSelect(iconDiv, it, gradeSelect, star);
+		handleGradeSelect(iconDiv, it, gradeSelect, star, c, dmgDiv, defenseDiv);
 	});
 	rankSelect.addEventListener("change", () => {
-		handleRankSelect(iconDiv, it, rankSelect, rank);
+		handleRankSelect(iconDiv, it, rankSelect, rank, c, dmgDiv, defenseDiv, hoverbox, graderankDiv, reqs);
 	});
 
 	iconDiv.appendChild(graderankDiv);
 }
 
-function handleRankSelect(iconDiv, it, rankSelect, rank)
+function handleRankSelect(iconDiv, it, rankSelect, rank, c, dmgDiv, defenseDiv, hoverbox, graderankDiv, reqs)
 {
 	const newRank = parseInt(rankSelect.value);
 	const oldRank = it.baseName.startsWith("Legendary ") ? RANK_LEGENDARY : (it.baseName.startsWith("Elite ") ? RANK_ELITE : RANK_NORMAL); //lazy dumbass. mind the spaces though
@@ -1054,7 +1065,7 @@ function handleRankSelect(iconDiv, it, rankSelect, rank)
 	const itType = TYPE_TO_CATEGORY[ITEMS_INFO.get(it.baseName.toUpperCase()).type];
 	if (newRank == oldRank || 
 		newRank > 0 && ((itType != CATEGORY_WEAPON && itType != CATEGORY_ARMOR) || tooLow))
-		return;
+		{ rankSelect.value = oldRank; /*for when cannot rank*/ return; }
 
 	const oldBaseName = it.baseName;
 	if (newRank == RANK_NORMAL)
@@ -1070,30 +1081,59 @@ function handleRankSelect(iconDiv, it, rankSelect, rank)
 
 	it.name = it.name.replace(oldBaseName, it.baseName);
 	iconDiv.querySelector(".item-box-name").querySelector("span").innerHTML = displayItemName(it.name);
+	
+	// damage bonuses
+	const bonusesDiv = iconDiv.querySelector(".item-box-bonuses");
+	for (const [t, v] of ITEMS_INFO.get(it.baseName.toUpperCase()).bonuses)
+	{
+		let i = 0;
+		for (; i < it.damageBonus.length; ++i)
+		{
+			if (it.damageBonus[i] === t)
+			{
+				//TODO what if this goes negative
+				it.damageBonusValue[i] += v - v * (RANK_POWER_MULTIPLIER[oldRank] / RANK_POWER_MULTIPLIER[newRank]);
+				bonusesDiv.children[i].querySelector("span").querySelector("span").textContent = it.damageBonusValue[i];
+				break;
+			}
+		}
+		if (i === it.damageBonus.length)
+		{
+			it.damageBonus.push(t); it.damageBonusValue.push(v); 
+			const bonusDiv = document.createElement("div");
+			bonusize(bonusDiv, bonusesDiv, it, t, v, hoverbox, graderankDiv, c, dmgDiv);
+			bonusesDiv.appendChild(bonusDiv);
+		}
+	}
+
+	//TODO dat effects...
 
 	switch (itType)
 	{
 		case CATEGORY_WEAPON:
 			iconDiv.querySelector(".item-box-damage").textContent = textContent = `Attack Damage : ${weaponMinDamage(it)} - ${weaponMaxDamage(it)}`;
+			propagateToDamage(c, dmgDiv); //TODO once you do effects youll have to pull this out
 			break;
 		case CATEGORY_ARMOR:
 			it.armorBonus = it.armorBonus * RANK_POWER_MULTIPLIER[newRank] / RANK_POWER_MULTIPLIER[oldRank];
 			iconDiv.querySelector(".item-box-defense").textContent = textContent = `Defense : ${armorDefense(it)}`;
+			changeNaturalArmorAndPropagate(c, c.naturalArmor, defenseDiv); //TODO once you do effects youll have to pull this out
 			break;
 	}
-	
-	// damage bonuses; RANK_POWER_MULTIPLIER;
 
-	// requirements RANK_REQS_MULTIPLIER;
+	const reqsDiv = iconDiv.querySelector(".item-box-reqs");
+	reqsDiv.itemBoxReq_stats = ITEMS_INFO.get(it.baseName.toUpperCase()).requireStats;
+	reqsDiv.itemBoxReq_vals = ITEMS_INFO.get(it.baseName.toUpperCase()).requireVals;
+	reqsDiv.replaceChildren();
+	for (let _ = 0; _ < reqsDiv.itemBoxReq_stats.length; ++_) reqsDiv.appendChild(document.createElement("div"));
+	propagateRequirements(c, reqs); //or to be more efficient, only propagate to this one item
 
 	//TODO "TOHITBONUS";
 	//TODO "SOCKETS";
-	//TODO GoldValue = (int32)( (float32)GoldValue * KRankPriceMultiplier[Rank] );
-
-	//propagate damage/armor/bonuses/requirements out
+	//TODO GoldValue = (int32)( (float32)GoldValue * KRankPriceMultiplier[Rank] )
 }
 
-function handleGradeSelect(iconDiv, it, gradeSelect, star)
+function handleGradeSelect(iconDiv, it, gradeSelect, star, c, dmgDiv, defenseDiv)
 {
 	const newGrade = parseInt(gradeSelect.value);
 	if (newGrade == it.grade) return;
@@ -1118,12 +1158,13 @@ function handleGradeSelect(iconDiv, it, gradeSelect, star)
 	{
 		case CATEGORY_WEAPON:
 			iconDiv.querySelector(".item-box-damage").textContent = textContent = `Attack Damage : ${weaponMinDamage(it)} - ${weaponMaxDamage(it)}`;
+			propagateToDamage(c, dmgDiv);
 			break;
 		case CATEGORY_ARMOR:
 			iconDiv.querySelector(".item-box-defense").textContent = textContent = `Defense : ${armorDefense(it)}`;
+			changeNaturalArmorAndPropagate(c, c.naturalArmor, defenseDiv);
 			break;
 	}
-	// propogate damage/armor to character stats;
 }
 
 function addGradeToItemName(it, newGrade)
@@ -1225,7 +1266,7 @@ function computeEquippedEffects(c, strengthDiv, dmgDiv, strengthDec, dexterityDi
 
 			const graderankDiv = document.createElement("div");
 			const hoverbox = document.createElement("div");
-			itemGradeRank(iconDiv, it, graderankDiv, hoverbox);
+			itemGradeRank(iconDiv, it, graderankDiv, hoverbox, c, dmgDiv, defenseDiv, reqs);
 			addHoverboxToItem(iconDiv, it, graderankDiv, hoverbox, c, strengthDiv, dmgDiv, strengthDec, dexterityDiv, attackDiv, defenseDiv, dexterityDec, vitalityDiv, hpDiv, staminaDiv, vitalityDec, magicDiv, manaDiv, magicDec, skillDivs, skillDecrementButtons, reqs);
 		}
 		else
@@ -1254,7 +1295,7 @@ function computeEquippedEffects(c, strengthDiv, dmgDiv, strengthDec, dexterityDi
 
 			const graderankDiv = document.createElement("div");
 			const hoverbox = document.createElement("div");
-			itemGradeRank(iconDiv, it, graderankDiv, hoverbox);
+			itemGradeRank(iconDiv, it, graderankDiv, hoverbox, c, dmgDiv, defenseDiv, reqs);
 			addHoverboxToItem(iconDiv, it, graderankDiv, hoverbox, c, strengthDiv, dmgDiv, strengthDec, dexterityDiv, attackDiv, defenseDiv, dexterityDec, vitalityDiv, hpDiv, staminaDiv, vitalityDec, magicDiv, manaDiv, magicDec, skillDivs, skillDecrementButtons, reqs);
 		}
 	}
@@ -1740,6 +1781,56 @@ function armorDefense(it)
 	return beforeBonus + (it.grade > GRADE_NORMAL ? Math.max(1, Math.ceil(beforeBonus * GRADE_BONUS[it.grade] * 0.01)) : 0);
 }
 
+function bonusize(bonusDiv, bonusesDiv, it, dmgType, val, hoverbox, graderankDiv, c, dmgDiv)
+//TODO only for first bonusizing; subsequent edits will be manual unless i decide to bring that here too
+{
+	bonusDiv.innerHTML = `+<span></span> ${DAMAGE_STRS[dmgType]}`;
+	const span = bonusDiv.querySelector("span");
+	span.style.position = "relative";
+	addEditableFieldAndHoverboxTo(span, val, (_text, _input) => {
+												_input.style.width = `${_text.offsetWidth}px`;
+
+												for (let i = 0; i < it.damageBonus.length; ++i) //first occurrence
+													if (it.damageBonus[i] === dmgType)
+														_input.value = it.damageBonusValue[i];
+
+												hoverbox.classList.add(hoverbox.classList.contains("lock") ? "lock2" : "lock");
+												graderankDiv.classList.add(graderankDiv.classList.contains("lock") ? "lock2" : "lock");
+											},
+											(_text, _input, discard) => {
+												if (!discard)
+												{
+													let newVal = _input.value.trim();
+													if (newVal === "")
+													{
+														bonusesDiv.removeChild(bonusDiv);
+														for (let i = 0; i < it.damageBonus.length; ++i)
+															if (it.damageBonus[i] === dmgType)
+																{ it.damageBonus.splice(i, 1); it.damageBonusValue.splice(i, 1); }
+														propagateToDamage(c, dmgDiv);
+													}
+													else
+													{
+														newVal = parseInt(newVal);
+														if (!isNaN(newVal))
+														{
+															for (let i = 0; i < it.damageBonus.length; ++i)
+																if (it.damageBonus[i] === dmgType)
+																	_text.textContent = it.damageBonusValue[i] = parseInt(newVal);
+															propagateToDamage(c, dmgDiv);
+														}
+													}
+												}
+												hoverbox.classList.remove(hoverbox.classList.contains("lock2") ? "lock2" : "lock");
+												graderankDiv.classList.remove(graderankDiv.classList.contains("lock2") ? "lock2" : "lock");
+											},
+											() => {
+												return "hoverbox text";
+											});
+	bonusDiv.classList.add("highlight-lightPurple");
+	dynamicallyExpand(bonusDiv);
+}
+
 function effectize(div, act, e, effectsDiv, hoverbox, graderankDiv, it, c, strengthDiv, dmgDiv, strengthDec, dexterityDiv, attackDiv, defenseDiv, dexterityDec, vitalityDiv, hpDiv, staminaDiv, vitalityDec, magicDiv, manaDiv, magicDec, skillDivs, skillDecrementButtons, reqs)
 //iff div.innerHTML === "", adds three spans before continuing
 //does not set span2; leaves that to the addEditableFieldAndHoverboxTo() call
@@ -1764,10 +1855,10 @@ function effectize(div, act, e, effectsDiv, hoverbox, graderankDiv, it, c, stren
 														if (!discard)
 														{
 															let newVal = _input.value.trim();
-															if (newVal === "") //WHERE LEFT OFF ... REMOVE this effect div, remove from item, changeEffectAndPropagate
+															if (newVal === "")
 															{
 																effectsDiv.removeChild(div);
-																for (let i = 0; i < it.effects[act].length; ++i)
+																for (let i = 0; i < it.effects[act].length; ++i) //this removes first occurrence found
 																	if (it.effects[act][i].type === e.type)
 																		it.effects[act].splice(i, 1);
 																changeEffectAndPropagate(c, e.type, e.value, 0, "equipped", strengthDiv, dmgDiv, strengthDec, dexterityDiv, attackDiv, defenseDiv, dexterityDec, vitalityDiv, hpDiv, staminaDiv, vitalityDec, magicDiv, manaDiv, magicDec, skillDivs, skillDecrementButtons, reqs);
@@ -1830,8 +1921,8 @@ function addHoverboxToItem(div, it, graderankDiv, hoverbox, c, strengthDiv, dmgD
 																			{
 																				const newVal = _input.value;
 																				it.name = escapeUserFriendlyName(newVal);
-																				_text.innerHTML = displayItemName(it.name);
 																			}
+																			_text.innerHTML = displayItemName(it.name);
 																			hoverbox.classList.remove(hoverbox.classList.contains("lock2") ? "lock2" : "lock");
 																			graderankDiv.classList.remove(graderankDiv.classList.contains("lock2") ? "lock2" : "lock");
 																		},
@@ -1843,34 +1934,14 @@ function addHoverboxToItem(div, it, graderankDiv, hoverbox, c, strengthDiv, dmgD
 	hoverbox.appendChild(nameDiv);
 
 	//bonuses
+	const bonusesDiv = document.createElement("div");
+	bonusesDiv.classList.add("item-box-bonuses");
+	hoverbox.appendChild(bonusesDiv);
 	for (let i = 0; i < it.damageBonus.length; ++i)
 	{
 		const bonusDiv = document.createElement("div");
-		bonusDiv.innerHTML = `+<span></span> ${DAMAGE_STRS[it.damageBonus[i]]}`;
-		const span = bonusDiv.querySelector("span");
-		span.style.position = "relative";
-		addEditableFieldAndHoverboxTo(span, it.damageBonusValue[i], (_text, _input) => {
-																		_input.style.width = `${_text.offsetWidth}px`;
-																		_input.value = it.damageBonusValue[i];
-																		hoverbox.classList.add(hoverbox.classList.contains("lock") ? "lock2" : "lock");
-																		graderankDiv.classList.add(graderankDiv.classList.contains("lock") ? "lock2" : "lock");
-																	},
-																	(_text, _input, discard) => {
-																		if (!discard)
-																		{
-																			const newVal = _input.value.trim();
-																			it.damageBonusValue[i] = parseInt(newVal);
-																			_text.textContent = it.damageBonusValue[i];
-																		}
-																		hoverbox.classList.remove(hoverbox.classList.contains("lock2") ? "lock2" : "lock");
-																		graderankDiv.classList.remove(graderankDiv.classList.contains("lock2") ? "lock2" : "lock");
-																	},
-																	() => {
-																		return "hoverbox text";
-																	});
-		bonusDiv.classList.add("highlight-lightPurple");
-		dynamicallyExpand(bonusDiv);
-		hoverbox.appendChild(bonusDiv);
+		bonusize(bonusDiv, bonusesDiv, it, it.damageBonus[i], it.damageBonusValue[i], hoverbox, graderankDiv, c, dmgDiv)
+		bonusesDiv.appendChild(bonusDiv);
 	}
 
 	//damage / defense / ...
@@ -1902,7 +1973,7 @@ function addHoverboxToItem(div, it, graderankDiv, hoverbox, c, strengthDiv, dmgD
 	effectSelect.classList.add("highlight-darkPurple");
 	effectSelect.style.backgroundColor = "black";
 	effectSelect.style.color = "white";
-	effectSelect.style.opacity = "0.85";
+	// effectSelect.style.opacity = "0.75";
 
 	effectSelect.append(new Option("--ADD NEW ENCHANT--", EFFECT_ALL_TYPES));
 	for (let e = 0; e < EFFECT_TYPES; ++e)
@@ -1978,19 +2049,15 @@ function addHoverboxToItem(div, it, graderankDiv, hoverbox, c, strengthDiv, dmgD
 		}
 	}
 
-	// RELIES ON COMPUTNG EFFECTS, but this function occurrs in that function! moved out to after computeEquippedEffects() and computeCharacterEffects()
 	//requirements
-	const requireStats = ITEMS_INFO.get(it.baseName.toUpperCase()).requireStats;
-	const requireVals = ITEMS_INFO.get(it.baseName.toUpperCase()).requireVals;
-	for (let i = 0; i < requireStats.length; ++i)
-	{
-		const reqDiv = document.createElement("div");
-		reqDiv.classList.add("item-box-req");
-		reqDiv.itemBoxReq_stat = requireStats[i];
-		reqDiv.itemBoxReq_val = requireVals[i];
-		reqDiv.itemBoxReq_type = itType;
-		hoverbox.appendChild(reqDiv);
-	}
+	// RELIES ON COMPUTNG EFFECTS, but this function occurrs in that function! moved out to after computeEquippedEffects() and computeCharacterEffects()
+	const reqsDiv = document.createElement("div");
+	reqsDiv.itemBoxReq_stats = ITEMS_INFO.get(it.baseName.toUpperCase()).requireStats;
+	reqsDiv.itemBoxReq_vals = ITEMS_INFO.get(it.baseName.toUpperCase()).requireVals;
+	reqsDiv.itemBoxReq_type = itType;
+	reqsDiv.classList.add("item-box-reqs");
+	for (let i = 0; i < reqsDiv.itemBoxReq_stats.length; ++i) reqsDiv.appendChild(document.createElement("div"));
+	hoverbox.appendChild(reqsDiv);
 
 	div.appendChild(hoverbox);
 }
@@ -2591,6 +2658,7 @@ function changeFameAndPropagate(newVal, c, nameDiv, renownDiv, fameDiv, nextReno
 	}
 }
 
+
 //TODO TODO TODO there might be a mismatch between the ingame hoverbox showings and the actual equippability 
 // and even between this function's setup and the meetsRequirement() call
 //divWithAllTheItems: can be NO_REQS, in which case this function does nothing
@@ -2600,41 +2668,36 @@ function propagateRequirements(c, divWithAllTheItems)
 	for (let itemDiv of divWithAllTheItems?.querySelectorAll(".item-div") || [])
 	{
 		let unmetRequirement = false;
-		for (let reqDiv of itemDiv.querySelectorAll(".item-box-req"))
+
+		const reqsDiv = itemDiv.querySelector(".item-box-reqs");
+		for (let i = 0; i < reqsDiv.children.length; ++i)
 		{
-			let val = reqDiv.itemBoxReq_val;
-			const itCategory = TYPE_TO_CATEGORY[reqDiv.itemBoxReq_type]; 
+
+			let val = reqsDiv.itemBoxReq_vals[i];
+			const itCategory = TYPE_TO_CATEGORY[reqsDiv.itemBoxReq_type]; 
 			if (itCategory == CATEGORY_WEAPON || itCategory == CATEGORY_ARMOR || itCategory == CATEGORY_JEWELRY)
 			{
 				const redreq = Math.min(75, charNetEffect(c, EFFECT_PERCENT_ITEM_REQUIREMENTS));
-				if (reqDiv.itemBoxReq_stat != STAT_RENOWN) val = Math.trunc(val - val * redreq * 0.01);
+				if (reqsDiv.itemBoxReq_stats[i] != STAT_RENOWN) val = Math.trunc(val - val * redreq * 0.01);
 			}
 
-			if (reqDiv.itemBoxReq_stat == STAT_RENOWN)
-				reqDiv.textContent = `Requires Renown of ${FAME_NAMES[val]}`;
-			else if (reqDiv.itemBoxReq_stat == STAT_LEVEL)
-				reqDiv.textContent = `Requires Level ${val}`;
+			if (reqsDiv.itemBoxReq_stats[i] == STAT_RENOWN)
+				reqsDiv.children[i].textContent = `Requires Renown of ${FAME_NAMES[val]}`;
+			else if (reqsDiv.itemBoxReq_stats[i] == STAT_LEVEL)
+				reqsDiv.children[i].textContent = `Requires Level ${val}`;
 			else
-				reqDiv.textContent = `Requires ${val} ${STAT_INT_STR[reqDiv.itemBoxReq_stat]}`;
+				reqsDiv.children[i].textContent = `Requires ${val} ${STAT_INT_STR[reqsDiv.itemBoxReq_stats[i]]}`;
 
-			if (meetsRequirements(c, reqDiv.itemBoxReq_stat, reqDiv.itemBoxReq_val, reqDiv.itemBoxReq_type != TYPE_SPELL))
-				{ reqDiv.classList.remove("highlight-red"); reqDiv.classList.add("highlight-green"); }
+			if (meetsRequirements(c, reqsDiv.itemBoxReq_stats[i], reqsDiv.itemBoxReq_vals[i], reqsDiv.itemBoxReq_type != TYPE_SPELL))
+				{ reqsDiv.children[i].classList.remove("highlight-red"); reqsDiv.children[i].classList.add("highlight-green"); }
 			else
-				{ reqDiv.classList.remove("highlight-green"); reqDiv.classList.add("highlight-red"); unmetRequirement = true; }
+				{ reqsDiv.children[i].classList.remove("highlight-green"); reqsDiv.children[i].classList.add("highlight-red"); unmetRequirement = true; }
 		}
 		if (unmetRequirement) itemDiv.classList.add("red-border");
 		else				  itemDiv.classList.remove("red-border");
 	}
 }
 
-//TODO also the hoverboxing and span editing
-//TODO also the hoverboxing and span editing
-//TODO also the hoverboxing and span editing
-//TODO also the hoverboxing and span editing
-//TODO also the hoverboxing and span editing
-//TODO also the hoverboxing and span editing
-//TODO also the hoverboxing and span editing
-//TODO also the hoverboxing and span editingv
 function addAllIncrementDecrementPairs(c, addTo, strengthDiv, dexterityDiv, vitalityDiv, magicDiv, dmgDiv, attackDiv, defenseDiv, hpDiv, staminaDiv, manaDiv, statPointsDiv, skillDivs, skillPointsDiv, reqs)
 //returns [statIncrementButtons, statDecrementButtons, skillIncrementButtons, skillDecrementButtons]
 {
@@ -4657,7 +4720,7 @@ function defaultizeItemTemplate(it)
 	if (it.type === undefined)				it.type = ITEMTYPE_STR_INT.get("GENERIC");
 	if (it.name === undefined)				it.name = "";
 	if (it.effects === undefined)			it.effects = [];
-	if (it.bonuses === undefined)			it.bonuses = [];
+											// it.bonuses; dont defaultize; use it directly
 	if (it.armor === undefined)				it.armor = [0, 0];
 	if (it.damage === undefined)			it.damage = [0, 0];
 	if (it.toHitBonus === undefined)		it.toHitBonus = 0;
@@ -4685,7 +4748,7 @@ function undefineItemTemplate(it)
 	it.type = undefined;				
 	it.name = undefined;				
 	it.effects = undefined;
-	it.bonuses = undefined;
+	it.bonuses = [];
 	it.armor = undefined;				
 	it.damage = undefined;				
 	it.toHitBonus = undefined;			
@@ -4722,7 +4785,8 @@ function addTemplateItem(it)
 		if (rank >= 1)
 			it2.name = `${RANK_INT_STR[rank]} ${it2.name}`;
 
-		//TODO bonuses...
+		for (let b = 0; b < it2.bonuses.length; ++b)
+			it2.bonuses[b][1] *= RANK_POWER_MULTIPLIER[rank];
 
 		if (it2.armor !== undefined)
 		{
@@ -4806,7 +4870,7 @@ async function parseItemsDat(datFile)
 		type: undefined,				//KItemGeneric
 		name: undefined,				//""
 		effects: undefined,
-		bonuses: undefined,
+		bonuses: [],
 		armor: undefined,				//[0,0]
 		damage: undefined,				//[0,0]
 		toHitBonus: undefined,			//0
@@ -4852,7 +4916,21 @@ async function parseItemsDat(datFile)
 			else if (it.name === undefined && tokens[0].slice(1, -1) == "NAME")
 				it.name = tokens[1];
 			//TODO effects...
-			//TODO bonuses...
+			else if (tokens[0].slice(1, -1) == "DAMAGE_BONUS")
+			{
+				if (tokens.length < 3)
+				{
+					ERR_MSGS.push(`items.dat: The line before ${i} has too few tokens (Which? For your security I can't know).`);
+					return;	
+				}
+				let dmgType = DAMAGE_FIRE;
+				for (let t = 0; t < DAMAGE_TYPES; ++t)
+					if (tokens[1] === DAMAGE_NAMES[t]) dmgType = t;
+				let i = 0;
+				for (; i < it.bonuses.length; ++i)
+					if (it.bonuses[i][0] === dmgType) { it.bonuses[i][1] += parseInt(tokens[2]); break; }
+				if (i === it.bonuses.length) it.bonuses.push([dmgType, parseInt(tokens[2])]);
+			}
 			else if (it.armor === undefined && tokens[0].slice(1, -1) == "ARMOR")
 			{
 				if (tokens.length < 3)
